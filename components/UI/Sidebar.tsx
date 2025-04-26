@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-export default function ExpoSidebar() {
+export default function Sidebar() {
   return (
-    <div className="flex flex-col h-screen border-r border-gray-200">
+    <div className="flex flex-col h-screen border-r border-gray-200 sticky top-0 overflow-y-auto">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <Link href="/" className="flex items-center gap-1 font-bold text-xl">
