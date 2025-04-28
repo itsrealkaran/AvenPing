@@ -10,7 +10,7 @@ interface CardProps {
 
 export default function Card({ title, children, className = "", viewAllLink }: CardProps) {
   return (
-    <div className={`border rounded-lg border-gray-300 overflow-hidden ${className}`}>
+    <div className={`border rounded-lg border-gray-300 overflow-hidden shadow-xs ${className}`}>
       <div className="p-4 flex items-center justify-between border-b border-gray-300">
         <div className="font-medium flex items-center gap-2">{title}</div>
         {viewAllLink && (

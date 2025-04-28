@@ -23,6 +23,28 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Define navigation items with typed icon names
+  const navigationItems = [
+    {
+      iconName: "LayoutDashboard" as const,
+      label: "Dashboard",
+      href: "/dashboard",
+    },
+    { iconName: "User" as const, label: "Profile", href: "/profile" },
+    { iconName: "Users" as const, label: "Contacts", href: "/contacts" },
+    { iconName: "FileText" as const, label: "Templates", href: "/templates" },
+    { iconName: "Send" as const, label: "Campaigns", href: "/campaigns" },
+    {
+      iconName: "MessageSquare" as const,
+      label: "Messages",
+      href: "/messages",
+    },
+    { iconName: "GitBranch" as const, label: "Flow", href: "/flow" },
+    { iconName: "Bot" as const, label: "AI Bot", href: "/aibot" },
+    { iconName: "BarChart" as const, label: "Analytics", href: "/analytics" },
+    { iconName: "Settings" as const, label: "Settings", href: "/settings" },
+  ];
+
   return (
     <html lang="en">
       <body
@@ -30,7 +52,21 @@ export default function RootLayout({
       >
         <div className="flex h-screen overflow-hidden">
           <div className="w-64 flex-shrink-0">
-            <Sidebar />
+            <Sidebar
+              brand={{
+                name: "AvenPing",
+                logo: "https://www.apectory.com/logo.png",
+              }}
+              navigationItems={navigationItems}
+              accountInfo={{
+                name: ["+91 9876543210", "+91 9876543217"],
+              }}
+              userProfile={{
+                name: "John Doe",
+                email: "john.doe@example.com",
+                // avatar: "/images/avatar.jpg" // Uncomment if you have an avatar image
+              }}
+            />
           </div>
           <div className="flex h-full w-full">{children}</div>
         </div>
