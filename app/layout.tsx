@@ -68,7 +68,7 @@ export default function RootLayout({
               }}
             />
           </div>
-          <div className="flex h-full w-full">{children}</div>
+          <div className="flex h-full w-full bg-[#fcfcfd]">{children}</div>
         </div>
       </body>
     </html>
