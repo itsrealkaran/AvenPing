@@ -1,30 +1,23 @@
 "use client";
 
 import Body from "@/components/ui/body";
-import {
-  Users,
-  Edit,
-  Trash,
-  Pause,
-  Play,
-  Plus,
-  Filter,
-  Search,
-} from "lucide-react";
+import { Users, Edit, Trash, Pause, Play, Plus } from "lucide-react";
 import React, { useState } from "react";
-import { Box, ListItemIcon, MenuItem } from "@mui/material";
-import {
-  MaterialReactTable,
-  MRT_ToggleFiltersButton,
-  useMaterialReactTable,
-} from "material-react-table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import Card from "@/components/ui/card";
+import Table, { ActionMenuItem } from "@/components/ui/table";
+import { MRT_ColumnDef } from "material-react-table";
+
+type Contact = {
+  id: string;
+  name: string;
+  phone: string;
+  group: string;
+  status: string;
+  createdAt: string;
+};
 
 export default function ContactsPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [contacts, setContacts] = useState([
+  const [contacts, setContacts] = useState<Contact[]>([
     {
       id: "1",
       name: "John Doe",
@@ -59,11 +52,30 @@ export default function ContactsPage() {
     },
   ]);
 
-  const handleDeleteContact = (contact: any) => {
+  const handleDeleteContact = (contact: Contact) => {
     setContacts(contacts.filter((c) => c.id !== contact.id));
   };
 
-  const columns = [
+  const handleAddContact = () => {
+    console.log("Add contact");
+    // Implement your add contact logic here
+  };
+
+  const handleEditContact = (contact: Contact) => {
+    console.log("Edit contact", contact);
+    // Implement your edit contact logic here
+  };
+
+  const handleToggleStatus = (contact: Contact) => {
+    const newStatus = contact.status === "Active" ? "Inactive" : "Active";
+    setContacts(
+      contacts.map((c) =>
+        c.id === contact.id ? { ...c, status: newStatus } : c
+      )
+    );
+  };
+
+  const columns: MRT_ColumnDef<Contact>[] = [
     {
       accessorKey: "name",
       header: "Name",
@@ -79,7 +91,7 @@ export default function ContactsPage() {
     {
       accessorKey: "status",
       header: "Status",
-      Cell: ({ row }: any) => {
+      Cell: ({ row }) => {
         const value = row.original.status;
         return (
           <span
@@ -97,191 +109,66 @@ export default function ContactsPage() {
     {
       accessorKey: "createdAt",
       header: "Created At",
-      Cell: ({ row }: any) => {
+      Cell: ({ row }) => {
         const date = new Date(row.original.createdAt);
         return date.toLocaleString("en-US", {
           year: "numeric",
           month: "short",
           day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-      },
-    },
-    {
-      accessorKey: "createdAt",
-      header: "Created At",
-      Cell: ({ row }: any) => {
-        const date = new Date(row.original.createdAt);
-        return date.toLocaleString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-      },
-    },
-    {
-      accessorKey: "createdAt",
-      header: "Created At",
-      Cell: ({ row }: any) => {
-        const date = new Date(row.original.createdAt);
-        return date.toLocaleString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
         });
       },
     },
   ];
 
-  const table = useMaterialReactTable({
-    columns,
-    data: contacts,
-    enableRowSelection: true,
-    enableColumnResizing: true,
-    enableColumnOrdering: true,
-    enableGlobalFilter: true,
-    enableColumnFilters: true,
-    enablePagination: true,
-    enableSorting: true,
-    enableRowActions: true,
-    enableColumnActions: false,
-    positionActionsColumn: "last",
-    enableStickyHeader: true,
-    initialState: {
-      showGlobalFilter: false, // Hide the global filter initially to match the image
-      columnPinning: {
-        left: ["mrt-row-select"],
-        right: ["mrt-row-actions"],
-      },
-      density: "compact", // Use comfortable density to match the spacing in the image
-    },
-    muiTablePaperProps: {
-      elevation: 0, // Remove shadow to match the flat design in the image
-      sx: {
-        "--mui-palette-primary-main": "#7c3aed",
-        "--mui-palette-primary-light": "#7c3aed",
-        "--mui-palette-primary-dark": "#7c3aed",
-        boxShadow: "none",
-        backgroundColor: "transparent", // Light red background color
+  const actionMenuItems: ActionMenuItem[] = [
+    {
+      key: "edit",
+      label: "Edit",
+      icon: <Edit className="size-4" />,
+      onClick: (contact, closeMenu) => {
+        handleEditContact(contact);
+        closeMenu();
       },
     },
-    muiTableContainerProps: {
-      sx: {
-        "--mui-palette-primary-main": "#7c3aed",
-        "--mui-palette-primary-light": "#7c3aed",
-        "--mui-palette-primary-dark": "#7c3aed",
-        height: "340px",
-        border: "1px solid rgb(201, 201, 201)",
-        borderRadius: "8px",
+    {
+      key: "toggle",
+      label: (row: Contact) =>
+        row.status === "Active" ? "Deactivate" : "Activate",
+      icon: (row: Contact) =>
+        row.status === "Active" ? (
+          <Pause className="size-4" />
+        ) : (
+          <Play className="size-4" />
+        ),
+      onClick: (contact, closeMenu) => {
+        handleToggleStatus(contact);
+        closeMenu();
       },
     },
-
-    muiTableHeadCellProps: {
-      sx: {
-        // backgroundColor: "#F3F4F6", // Light gray header background
-        color: "#6b7280", // Medium gray text for headers
-        fontSize: "small",
-        fontWeight: "500",
-        borderBottom: "1px solid #e5e7eb",
+    {
+      key: "delete",
+      label: "Delete",
+      icon: <Trash className="text-red-600 size-4" />,
+      onClick: (contact, closeMenu) => {
+        handleDeleteContact(contact);
+        closeMenu();
       },
+      className: "text-red-600",
     },
-
-    muiTableHeadProps: {
-      sx: {
-        boxShadow: "none",
-      },
-    },
-
-    muiTableBodyCellProps: {
-      sx: {
-        py: "12px",
-      },
-    },
-
-    renderTopToolbar: ({ table }) => (
-      <div className="flex justify-between items-center pb-3 bg-transparent">
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="Search contacts..."
-            value={table.getState().globalFilter ?? ""}
-            onChange={(e) => table.setGlobalFilter(e.target.value)}
-            className="w-64 bg-white"
-          />
-          <MRT_ToggleFiltersButton table={table} />
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={() => {
-              // Handle create contact
-            }}
-            variant={"outline"}
-            disabled={isLoading}
-            className="flex items-center gap-1"
-          >
-            Add Contact
-          </Button>
-        </div>
-      </div>
-    ),
-    renderRowActionMenuItems: ({ row, closeMenu }) => [
-      <MenuItem
-        key={1}
-        onClick={() => {
-          // Handle edit contact
-          closeMenu();
-        }}
-        sx={{ m: 0 }}
-      >
-        <ListItemIcon>
-          <Edit className="size-4" />
-        </ListItemIcon>
-        Edit
-      </MenuItem>,
-      <MenuItem
-        key={2}
-        onClick={() => {
-          // Handle toggle status
-          closeMenu();
-        }}
-        sx={{ m: 0 }}
-      >
-        <ListItemIcon>
-          {row.original.status === "Active" ? (
-            <Pause className="size-4" />
-          ) : (
-            <Play className="size-4" />
-          )}
-        </ListItemIcon>
-        {row.original.status === "Active" ? "Deactivate" : "Activate"}
-      </MenuItem>,
-      <MenuItem
-        key={3}
-        onClick={() => {
-          handleDeleteContact(row.original);
-          closeMenu();
-        }}
-        sx={{ m: 0 }}
-        className="text-red-600"
-      >
-        <ListItemIcon>
-          <Trash className="text-red-600 size-4" />
-        </ListItemIcon>
-        Delete
-      </MenuItem>,
-    ],
-    state: {
-      isLoading,
-    },
-  });
+  ];
 
   return (
     <Body icon={Users} title="Contacts">
-      <MaterialReactTable table={table} />
+      <Table
+        data={contacts}
+        columns={columns}
+        isLoading={isLoading}
+        actionMenuItems={actionMenuItems}
+        onAddItem={handleAddContact}
+        addButtonLabel="Add Contact"
+        searchPlaceholder="Search contacts..."
+        tableHeight="340px"
+      />
     </Body>
   );
 }
