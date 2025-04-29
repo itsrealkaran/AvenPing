@@ -1,7 +1,10 @@
-export default function CampaignsPage() {
+import Body from "@/components/ui/body";
+import { Send } from "lucide-react";
+
+export default function CampaignPage() {
   return (
-    <div>
+    <Body icon={Send} title="Campaigns">
       <h1>Campaigns</h1>
-    </div>
+    </Body>
   );
 } 

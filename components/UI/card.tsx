@@ -11,8 +11,8 @@ interface CardProps {
 export default function Card({ title, children, className = "", viewAllLink }: CardProps) {
   return (
     <div className={`border rounded-lg border-gray-300 overflow-hidden shadow-xs ${className}`}>
-      <div className="p-4 flex items-center justify-between border-b border-gray-300">
-        <div className="font-medium flex items-center gap-2">{title}</div>
+      <div className="py-2 px-4 flex items-center justify-between border-b border-gray-300">
+        <div className="font-large flex items-center gap-2">{title}</div>
         {viewAllLink && (
           <Link href={viewAllLink} className="text-sm text-gray-600 flex items-center hover:text-gray-900">
             All {title} <span className="ml-1">→</span>

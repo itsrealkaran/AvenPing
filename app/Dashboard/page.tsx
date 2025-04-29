@@ -11,7 +11,7 @@ import WAButtonModal from "@/components/ui/wa-button-modal"
 export default function DashboardPage() {
   // QR Generator state
   const [qrText, setQrText] = useState("")
-  const [phoneNumber, setPhoneNumber] = useState("1234567890")
+  const [phoneNumber, setPhoneNumber] = useState("+91 9876543210")
   const [showQrModal, setShowQrModal] = useState(false)
 
   // Register Number state
@@ -29,14 +29,6 @@ export default function DashboardPage() {
 
   // Business Verification state
   const [isVerified, setIsVerified] = useState(false)
-
-  // Sample projects data
-  const projects = [
-    { id: "1", name: "AvenCRM", icon: "A", color: "#F59E0B" },
-    { id: "2", name: "cumess", icon: "C", color: "#0369A1" },
-    { id: "3", name: "Toddle", icon: "T", color: "#8B5CF6" },
-  ]
-
   const handleRegister = (pin: string) => {
     console.log("Registered with PIN:", pin)
     setIsRegistered(true)

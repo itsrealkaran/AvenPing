@@ -39,7 +39,7 @@ export default function RootLayout({
       label: "Messages",
       href: "/messages",
     },
-    { iconName: "GitBranch" as const, label: "Flow", href: "/flow" },
+    { iconName: "GitBranch" as const, label: "Flow", href: "/flows" },
     { iconName: "Bot" as const, label: "AI Bot", href: "/aibot" },
     { iconName: "BarChart" as const, label: "Analytics", href: "/analytics" },
     { iconName: "Settings" as const, label: "Settings", href: "/settings" },
