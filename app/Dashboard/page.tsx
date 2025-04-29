@@ -1,43 +1,49 @@
-"use client"
+"use client";
 
-import { LayoutDashboard, Phone, MessageSquare, CheckCircle, AlertCircle } from "lucide-react"
-import { useState } from "react"
-import Body from "@/components/ui/body"
-import Card from "@/components/ui/card"
-import QRCodeModal from "@/components/ui/qr-code-modal"
-import RegisterNumberModal from "@/components/ui/register-number-modal"
-import WAButtonModal from "@/components/ui/wa-button-modal"
+import {
+  LayoutDashboard,
+  Phone,
+  MessageSquare,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
+import { useState } from "react";
+import Body from "@/components/ui/body";
+import Card from "@/components/ui/card";
+import QRCodeModal from "@/components/dashboard/qr-code-modal";
+import RegisterNumberModal from "@/components/dashboard/register-number-modal";
+import WAButtonModal from "@/components/dashboard/wa-button-modal";
 
 export default function DashboardPage() {
   // QR Generator state
-  const [qrText, setQrText] = useState("")
-  const [phoneNumber, setPhoneNumber] = useState("+91 9876543210")
-  const [showQrModal, setShowQrModal] = useState(false)
+  const [qrText, setQrText] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("+91 9876543210");
+  const [showQrModal, setShowQrModal] = useState(false);
 
   // Register Number state
-  const [isRegistered, setIsRegistered] = useState(false)
-  const [showRegisterModal, setShowRegisterModal] = useState(false)
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   // WAButton state
-  const [buttonColor, setButtonColor] = useState("#25D366")
-  const [buttonRoundness, setButtonRoundness] = useState("8")
-  const [buttonText, setButtonText] = useState("Chat with us on WhatsApp")
-  const [showWAButtonModal, setShowWAButtonModal] = useState(false)
+  const [buttonColor, setButtonColor] = useState("#25D366");
+  const [buttonRoundness, setButtonRoundness] = useState("8");
+  const [buttonText, setButtonText] = useState("Chat with us on WhatsApp");
+  const [showWAButtonModal, setShowWAButtonModal] = useState(false);
 
   // WhatsApp Account state
-  const [connectedAccounts, setConnectedAccounts] = useState<string[]>([])
+  const [connectedAccounts, setConnectedAccounts] = useState<string[]>([]);
 
   // Business Verification state
-  const [isVerified, setIsVerified] = useState(false)
+  const [isVerified, setIsVerified] = useState(false);
   const handleRegister = (pin: string) => {
-    console.log("Registered with PIN:", pin)
-    setIsRegistered(true)
-  }
+    console.log("Registered with PIN:", pin);
+    setIsRegistered(true);
+  };
 
   const handleConnectAccount = () => {
-    const newAccount = `+1234567${Math.floor(Math.random() * 1000)}`
-    setConnectedAccounts([...connectedAccounts, newAccount])
-  }
+    const newAccount = `+1234567${Math.floor(Math.random() * 1000)}`;
+    setConnectedAccounts([...connectedAccounts, newAccount]);
+  };
 
   return (
     <Body icon={LayoutDashboard} title="Dashboard">
@@ -45,7 +51,10 @@ export default function DashboardPage() {
         <Card title="QR Generator" className="md:col-span-1">
           <div className="space-y-4 p-4">
             <div>
-              <label htmlFor="qrText" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="qrText"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Enter Text
               </label>
               <textarea
@@ -59,7 +68,10 @@ export default function DashboardPage() {
             </div>
 
             <div>
-              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="phoneNumber"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Phone Number
               </label>
               <input
@@ -88,7 +100,9 @@ export default function DashboardPage() {
               <div className="flex flex-col items-center">
                 <CheckCircle className="w-12 h-12 text-green-500 mb-2" />
                 <p className="text-lg font-medium">Account Registered</p>
-                <p className="text-sm text-gray-500">Your number is registered and ready to use</p>
+                <p className="text-sm text-gray-500">
+                  Your number is registered and ready to use
+                </p>
               </div>
             ) : (
               <div className="flex flex-col items-center">
@@ -110,7 +124,10 @@ export default function DashboardPage() {
           <div className="space-y-4 p-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="buttonColor" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="buttonColor"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Color
                 </label>
                 <input
@@ -123,7 +140,10 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label htmlFor="buttonRoundness" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="buttonRoundness"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Roundness
                 </label>
                 <input
@@ -139,7 +159,10 @@ export default function DashboardPage() {
             </div>
 
             <div>
-              <label htmlFor="buttonText" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="buttonText"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Text
               </label>
               <input
@@ -180,10 +203,15 @@ export default function DashboardPage() {
           <div className="space-y-4 p-4">
             {connectedAccounts.length > 0 ? (
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Connected Accounts</h3>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  Connected Accounts
+                </h3>
                 <ul className="space-y-2">
                   {connectedAccounts.map((account, index) => (
-                    <li key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
+                    <li
+                      key={index}
+                      className="flex items-center gap-2 p-2 bg-gray-50 rounded-md"
+                    >
                       <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white">
                         <MessageSquare size={16} />
                       </div>
@@ -210,7 +238,11 @@ export default function DashboardPage() {
         </Card>
 
         {/* Business Verification Card */}
-        <Card title="Business Verification" className="md:col-span-2">
+        <Card
+          title="Business Verification"
+          variant="darkHeader"
+          className="md:col-span-2"
+        >
           <div className="flex items-center justify-between p-4">
             <div>
               {isVerified ? (
@@ -221,7 +253,10 @@ export default function DashboardPage() {
               ) : (
                 <div className="flex items-center gap-2">
                   <AlertCircle className="w-5 h-5 text-yellow-500" />
-                  <span>Your business is not verified. Verify now to unlock all features.</span>
+                  <span>
+                    Your business is not verified. Verify now to unlock all
+                    features.
+                  </span>
                 </div>
               )}
             </div>
@@ -241,7 +276,12 @@ export default function DashboardPage() {
       </div>
 
       {/* Modals */}
-      <QRCodeModal isOpen={showQrModal} onClose={() => setShowQrModal(false)} text={qrText} phoneNumber={phoneNumber} />
+      <QRCodeModal
+        isOpen={showQrModal}
+        onClose={() => setShowQrModal(false)}
+        text={qrText}
+        phoneNumber={phoneNumber}
+      />
 
       <RegisterNumberModal
         isOpen={showRegisterModal}
@@ -257,5 +297,5 @@ export default function DashboardPage() {
         text={buttonText}
       />
     </Body>
-  )
+  );
 }
