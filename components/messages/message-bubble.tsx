@@ -58,9 +58,9 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
             )}
           </div>
         )}
-        
+
         <div className="text-sm">{message.content}</div>
-        
+
         <div className="flex items-center justify-end gap-1 mt-1">
           <span className="text-[10px] text-gray-500">{time}</span>
           {isMe && renderStatus()}
@@ -88,4 +88,4 @@ const DocumentIcon = () => (
   </svg>
 );
 
-export default MessageBubble; 
+export default MessageBubble;

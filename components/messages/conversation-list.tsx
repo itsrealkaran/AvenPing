@@ -10,10 +10,10 @@ interface ConversationListProps {
   onSelectConversation: (conversation: Conversation) => void;
 }
 
-const ConversationList = ({ 
-  conversations, 
-  selectedConversationId, 
-  onSelectConversation 
+const ConversationList = ({
+  conversations,
+  selectedConversationId,
+  onSelectConversation,
 }: ConversationListProps) => {
   if (conversations.length === 0) {
     return (
@@ -24,11 +24,17 @@ const ConversationList = ({
   }
 
   return (
-    <div>
+    <div className="min-h-full">
       {conversations.map((conversation) => {
         const { contact, lastMessage, unreadCount, isGroup } = conversation;
-        const lastMsg = lastMessage || conversation.messages[conversation.messages.length - 1];
-        const timeAgo = lastMsg ? formatDistanceToNow(new Date(lastMsg.timestamp), { addSuffix: true }) : "";
+        const lastMsg =
+          lastMessage ||
+          conversation.messages[conversation.messages.length - 1];
+        const timeAgo = lastMsg
+          ? formatDistanceToNow(new Date(lastMsg.timestamp), {
+              addSuffix: true,
+            })
+          : "";
         const isSelected = conversation.id === selectedConversationId;
 
         return (
@@ -59,21 +65,25 @@ const ConversationList = ({
                 <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white"></div>
               )}
             </div>
-            
+
             <div className="ml-3 flex-1 overflow-hidden">
               <div className="flex justify-between items-center">
-                <h3 className="font-medium text-gray-900 truncate">{contact.name}</h3>
-                <span className="text-xs text-gray-500">{timeAgo}</span>
+                <h3 className="font-medium text-gray-900 truncate">
+                  {contact.name}
+                </h3>
+                <span className="text-xs text-gray-500 flex-shrink-0">
+                  {timeAgo}
+                </span>
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <p className="text-sm text-gray-500 truncate">
                   {lastMsg?.sender === "me" ? "You: " : ""}
                   {lastMsg?.content || "No messages yet"}
                 </p>
-                
+
                 {unreadCount > 0 && (
-                  <div className="ml-2 bg-purple-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs">
+                  <div className="ml-2 bg-purple-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs flex-shrink-0">
                     {unreadCount}
                   </div>
                 )}
@@ -86,4 +96,4 @@ const ConversationList = ({
   );
 };
 
-export default ConversationList; 
+export default ConversationList;

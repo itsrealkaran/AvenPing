@@ -17,7 +17,7 @@ const MessageList = ({ messages }: MessageListProps) => {
 
   // Group messages by date
   const groupedMessages: { [key: string]: Message[] } = {};
-  
+
   messages.forEach((message) => {
     const date = new Date(message.timestamp).toLocaleDateString();
     if (!groupedMessages[date]) {
@@ -27,7 +27,7 @@ const MessageList = ({ messages }: MessageListProps) => {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-h-full">
       {Object.entries(groupedMessages).map(([date, dateMessages]) => (
         <div key={date}>
           <div className="flex justify-center my-4">
@@ -35,7 +35,7 @@ const MessageList = ({ messages }: MessageListProps) => {
               {date}
             </div>
           </div>
-          
+
           <div className="space-y-1">
             {dateMessages.map((message) => (
               <MessageBubble key={message.id} message={message} />
@@ -48,4 +48,4 @@ const MessageList = ({ messages }: MessageListProps) => {
   );
 };
 
-export default MessageList; 
+export default MessageList;
