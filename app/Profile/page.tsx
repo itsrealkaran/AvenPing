@@ -147,7 +147,9 @@ export default function ProfilePage() {
 
               {/* Right Column: Business Name */}
               <div className="flex justify-end">
-                <Button type="submit">Save Changes</Button>
+                <Button type="submit" className="text-white">
+                  Save Changes
+                </Button>
               </div>
             </div>
 
@@ -307,17 +309,16 @@ export default function ProfilePage() {
 
         {/* WhatsApp Profile Preview */}
         <div className="border-l border-gray-200 bg-[#F1F4F7] p-4 max-w-sm mx-auto lg:mx-0">
-
           {/* Profile header with picture and name */}
           <div className="bg-white p-2 mb-2 flex flex-col items-center">
-          <div className="flex justify-between w-full">
-            <button className="text-gray-600">
-              <ArrowLeft size={20} />
-            </button>
-            <button className="text-gray-600">
-              <MoreVertical size={20} />
-            </button>
-          </div>
+            <div className="flex justify-between w-full">
+              <button className="text-gray-600">
+                <ArrowLeft size={20} />
+              </button>
+              <button className="text-gray-600">
+                <MoreVertical size={20} />
+              </button>
+            </div>
             <div className="w-30 h-30 rounded-full bg-gray-200 overflow-hidden mb-2">
               {profile.profilePicture ? (
                 <img
@@ -333,20 +334,22 @@ export default function ProfilePage() {
             <h3 className="text-lg font-semibold text-gray-800 text-center">
               {profile.displayName}
             </h3>
-            <p className="font-medium text-lg text-gray-800 mt-1">{profile.phoneNumber}</p>
+            <p className="font-medium text-lg text-gray-800 mt-1">
+              {profile.phoneNumber}
+            </p>
 
             {/* Share button */}
             <div className="mt-4 flex flex-col items-center">
-                <img 
-                  src="https://static.xx.fbcdn.net/rsrc.php/v4/y3/r/jZeThiu706q.png" 
-                  alt="Description icon"
-                  style={{ 
-                    width: "20px", 
-                    height: "20px", 
-                    objectFit: "none",
-                    objectPosition: "-276px -221px",
-                  }}
-                />
+              <img
+                src="https://static.xx.fbcdn.net/rsrc.php/v4/y3/r/jZeThiu706q.png"
+                alt="Description icon"
+                style={{
+                  width: "20px",
+                  height: "20px",
+                  objectFit: "none",
+                  objectPosition: "-276px -221px",
+                }}
+              />
               <span className="text-sm text-gray-800 mt-2">Share</span>
             </div>
           </div>
@@ -358,15 +361,15 @@ export default function ProfilePage() {
             {/* Description */}
             <div className="flex mb-2">
               <div className="mr-4 text-gray-500">
-                <img 
-                  src="https://static.xx.fbcdn.net/rsrc.php/v4/yA/r/WnArqot5JSj.png" 
+                <img
+                  src="https://static.xx.fbcdn.net/rsrc.php/v4/yA/r/WnArqot5JSj.png"
                   alt="Description icon"
-                  style={{ 
-                    maxWidth: "16px", 
-                    width: "16px", 
-                    height: "16px", 
+                  style={{
+                    maxWidth: "16px",
+                    width: "16px",
+                    height: "16px",
                     objectFit: "none",
-                    objectPosition: "-68px -338px"
+                    objectPosition: "-68px -338px",
                   }}
                 />
               </div>
@@ -376,15 +379,15 @@ export default function ProfilePage() {
             {/* Category */}
             <div className="flex mb-2">
               <div className="mr-4 text-gray-500">
-                <img 
-                  src="https://static.xx.fbcdn.net/rsrc.php/v4/y3/r/jZeThiu706q.png" 
+                <img
+                  src="https://static.xx.fbcdn.net/rsrc.php/v4/y3/r/jZeThiu706q.png"
                   alt="Category icon"
-                  style={{ 
-                    maxWidth: "16px", 
-                    width: "16px", 
-                    height: "16px", 
+                  style={{
+                    maxWidth: "16px",
+                    width: "16px",
+                    height: "16px",
                     objectFit: "none",
-                    objectPosition: "-318px -221px"
+                    objectPosition: "-318px -221px",
                   }}
                 />
               </div>
@@ -393,16 +396,16 @@ export default function ProfilePage() {
 
             {/* Address */}
             <div className="flex mb-2">
-            <div className="mr-4 text-gray-500">
-                <img 
-                  src="https://static.xx.fbcdn.net/rsrc.php/v4/yJ/r/CJ4Zti0ZGNK.png" 
+              <div className="mr-4 text-gray-500">
+                <img
+                  src="https://static.xx.fbcdn.net/rsrc.php/v4/yJ/r/CJ4Zti0ZGNK.png"
                   alt="Category icon"
-                  style={{ 
-                    maxWidth: "16px", 
-                    width: "16px", 
-                    height: "16px", 
+                  style={{
+                    maxWidth: "16px",
+                    width: "16px",
+                    height: "16px",
                     objectFit: "none",
-                    objectPosition: "0px -313px"
+                    objectPosition: "0px -313px",
                   }}
                 />
               </div>
@@ -411,16 +414,16 @@ export default function ProfilePage() {
 
             {/* Email */}
             <div className="flex mb-2">
-            <div className="mr-4 text-gray-500">
-                <img 
-                  src="https://static.xx.fbcdn.net/rsrc.php/v4/yA/r/WnArqot5JSj.png" 
+              <div className="mr-4 text-gray-500">
+                <img
+                  src="https://static.xx.fbcdn.net/rsrc.php/v4/yA/r/WnArqot5JSj.png"
                   alt="Category icon"
-                  style={{ 
-                    maxWidth: "16px", 
-                    width: "16px", 
-                    height: "16px", 
+                  style={{
+                    maxWidth: "16px",
+                    width: "16px",
+                    height: "16px",
                     objectFit: "none",
-                    objectPosition: "-136px -321px"
+                    objectPosition: "-136px -321px",
                   }}
                 />
               </div>
@@ -429,16 +432,16 @@ export default function ProfilePage() {
 
             {/* Website */}
             <div className="flex mb-2">
-            <div className="mr-4 text-gray-500">
-                <img 
-                  src="https://static.xx.fbcdn.net/rsrc.php/v4/ym/r/k0gSR9QfhKU.png" 
+              <div className="mr-4 text-gray-500">
+                <img
+                  src="https://static.xx.fbcdn.net/rsrc.php/v4/ym/r/k0gSR9QfhKU.png"
                   alt="Category icon"
-                  style={{ 
-                    maxWidth: "16px", 
-                    width: "16px", 
-                    height: "16px", 
+                  style={{
+                    maxWidth: "16px",
+                    width: "16px",
+                    height: "16px",
                     objectFit: "none",
-                    objectPosition: "0px -264px"
+                    objectPosition: "0px -264px",
                   }}
                 />
               </div>
@@ -452,16 +455,16 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex mb-2">
-            <div className="mr-4 text-gray-500">
-                <img 
-                  src="https://static.xx.fbcdn.net/rsrc.php/v4/ym/r/k0gSR9QfhKU.png" 
+              <div className="mr-4 text-gray-500">
+                <img
+                  src="https://static.xx.fbcdn.net/rsrc.php/v4/ym/r/k0gSR9QfhKU.png"
                   alt="Category icon"
-                  style={{ 
-                    maxWidth: "16px", 
-                    width: "16px", 
-                    height: "16px", 
+                  style={{
+                    maxWidth: "16px",
+                    width: "16px",
+                    height: "16px",
                     objectFit: "none",
-                    objectPosition: "0px -264px"
+                    objectPosition: "0px -264px",
                   }}
                 />
               </div>
@@ -476,8 +479,8 @@ export default function ProfilePage() {
           </div>
           {/* Bottom message */}
           <div className="text-center mt-4 text-xs text-gray-500">
-              This experience may look different across devices.
-            </div>
+            This experience may look different across devices.
+          </div>
         </div>
       </Card>
     </Body>
