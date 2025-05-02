@@ -213,7 +213,7 @@ export default function Sidebar({
                     item.hasSubmenu ? "justify-between" : "gap-3"
                   } px-2 py-2 text-sm rounded-md ${
                     isActive
-                      ? "bg-blue-100 text-blue-600"
+                      ? "bg-sky-100 text-sky-400"
                       : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
