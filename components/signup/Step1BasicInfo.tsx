@@ -1,10 +1,13 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Mail, User, Lock } from "lucide-react";
+import axios from "axios";
+import bcrypt from "bcryptjs"
+import { toast } from "sonner";
 
 interface Step1Props {
   formData: {
@@ -13,23 +16,53 @@ interface Step1Props {
     size: string;
     email: string;
     password: string;
+    confirmPassword: string;
   };
   updateFormData: (field: string, value: string) => void;
   onNext: () => void;
-  isLoading: boolean;
 }
 
 const Step1BasicInfo: React.FC<Step1Props> = ({
   formData,
   updateFormData,
   onNext,
-  isLoading,
 }) => {
   const [showPassword, setShowPassword] = React.useState(false);
+  const [isPasswordMatch, setIsPasswordMatch] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (formData.password !== formData.confirmPassword) {
+      setIsPasswordMatch(false)
+    } else {
+      setIsPasswordMatch(true)
+    }
+  }, [formData.confirmPassword, formData.password])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onNext();
+    try {
+      setIsLoading(true)
+      const salt = await bcrypt.genSalt(Number(process.env.NEXT_PUBLIC_SALT_ROUND));
+      const password = await bcrypt.hash(formData.password, salt)
+      const confirmPassword = await bcrypt.hash(formData.confirmPassword, salt)
+
+      await axios.post('/api/auth/signup', {
+        name: formData.name,
+        email: formData.email,
+        password,
+        confirm_password: confirmPassword,
+        size: formData.size,
+        industry: formData.industry
+      })
+      toast.success("Account created successfully")
+      setIsLoading(false)
+      onNext();
+    } catch (err) {
+      console.log(err)
+      toast.error("Somthing went wrong")
+      setIsLoading(false)
+    }
   };
 
   const industries = [
@@ -144,6 +177,41 @@ const Step1BasicInfo: React.FC<Step1Props> = ({
         <p className="text-xs text-muted-foreground">
           Password must be at least 8 characters long
         </p>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Confirm Password</Label>
+        <div className="relative">
+          <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+          <Input
+            id="confirmpassword"
+            type={showPassword ? "text" : "password"}
+            value={formData.confirmPassword}
+            onChange={(e) => updateFormData("confirmPassword", e.target.value)}
+            placeholder="••••••••"
+            className="pl-10 pr-10"
+            required
+            minLength={8}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute right-0 top-0 h-full px-3 py-2"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? (
+              <EyeOff className="h-5 w-5 text-gray-400" />
+            ) : (
+              <Eye className="h-5 w-5 text-gray-400" />
+            )}
+          </Button>
+        </div>
+
+        {!isPasswordMatch && (
+          <div>
+            <p className="text-rose-600 font-mono text-xs">Password and Confirm Password are not matching</p>
+          </div>
+        )}
       </div>
 
       <Button

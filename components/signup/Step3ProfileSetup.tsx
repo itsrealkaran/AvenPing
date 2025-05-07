@@ -1,9 +1,9 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import axios from "axios";
 
 interface Step3Props {
   formData: {
@@ -26,24 +26,42 @@ const Step3ProfileSetup: React.FC<Step3Props> = ({
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [headerPreview, setHeaderPreview] = useState<string | null>(null);
 
-  const handleFileChange = (
+  const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     type: "profilePic" | "headerPic"
   ) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      updateFormData(type, file);
 
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (event) => {
+      // Create FormData to send to our backend
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', type);
+
+      try {
+        // Send the file to our backend endpoint
+        const uploadResponse = await axios.post('/api/whatsapp/upload-file', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        console.log(uploadResponse.data, "upload response");
+
+        // Update the form data with the file
+        updateFormData(type, file);
+        
+        // Create preview URL for the image
+        const previewUrl = URL.createObjectURL(file);
         if (type === "profilePic") {
-          setProfilePreview(event.target?.result as string);
+          setProfilePreview(previewUrl);
         } else {
-          setHeaderPreview(event.target?.result as string);
+          setHeaderPreview(previewUrl);
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        // You might want to show an error message to the user here
+      }
     }
   };
 
@@ -84,7 +102,7 @@ const Step3ProfileSetup: React.FC<Step3Props> = ({
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           <div className="space-y-2">
             <Label>Profile Picture</Label>
             <div className="flex flex-col items-center p-4 border-2 border-dashed rounded-md">
@@ -130,56 +148,6 @@ const Step3ProfileSetup: React.FC<Step3Props> = ({
               </Label>
               <p className="text-xs text-muted-foreground mt-2">
                 Recommended: Square, 320x320px
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Header Image</Label>
-            <div className="flex flex-col items-center p-4 border-2 border-dashed rounded-md">
-              {headerPreview ? (
-                <div className="relative w-full h-24 overflow-hidden rounded-md mb-4">
-                  <img
-                    src={headerPreview}
-                    alt="Header preview"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="w-full h-24 rounded-md bg-gray-100 flex items-center justify-center mb-4">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-gray-400"
-                  >
-                    <rect width="18" height="18" x="3" y="3" rx="2" />
-                    <circle cx="9" cy="9" r="2" />
-                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                  </svg>
-                </div>
-              )}
-              <Input
-                type="file"
-                id="headerPic"
-                className="hidden"
-                accept="image/*"
-                onChange={(e) => handleFileChange(e, "headerPic")}
-              />
-              <Label
-                htmlFor="headerPic"
-                className="bg-secondary text-secondary-foreground hover:bg-secondary/80 cursor-pointer px-4 py-2 rounded text-sm"
-              >
-                Select Image
-              </Label>
-              <p className="text-xs text-muted-foreground mt-2">
-                Recommended: 1080x608px
               </p>
             </div>
           </div>

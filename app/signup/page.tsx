@@ -14,10 +14,11 @@ const Page: React.FC = () => {
   const [formData, setFormData] = useState({
     // Step 1
     name: "",
-    industry: "",
-    size: "",
+    industry: "E-commerce",
+    size: "1-10",
     email: "",
     password: "",
+    confirmPassword: "",
     
     // Step 3
     displayName: "",
@@ -65,6 +66,7 @@ const Page: React.FC = () => {
         size: "",
         email: "",
         password: "",
+        confirmPassword: "",
         displayName: "",
         description: "",
         profilePic: null,
@@ -112,7 +114,6 @@ const Page: React.FC = () => {
             formData={formData}
             updateFormData={updateFormData}
             onNext={handleNextStep}
-            isLoading={isLoading}
           />
         );
       case 2:
