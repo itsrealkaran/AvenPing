@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     // Validate required fields
     if (!name || !email || !password || !confirm_password || !size || !industry) {
       return NextResponse.json(
-        { status: 'error', error: 'All fields are required', fields: { name, email, password, confirm_password, size, industry } },
+        { status: 'error', error: 'All fields are required', fields: { name: name ? true : false, email: email ? true : false, password: password ? true : false, confirm_password: confirm_password ? true : false, size: size ? true : false, industry: industry ? true : false } },
         { status: 400 }
       );
     }
