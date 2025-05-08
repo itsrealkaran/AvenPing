@@ -9,6 +9,7 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import bcrypt from "bcryptjs";
 
 const Page: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -21,10 +22,13 @@ const Page: React.FC = () => {
     e.preventDefault();
     try {
       setIsLoading(true);
+      const salt = await bcrypt.genSalt(Number(process.env.NEXT_PUBLIC_SALT_ROUND));
+
+      const passwordHash = await bcrypt.hash(password, salt);
       
       const response = await axios.post("/api/auth/signin", {
         email,
-        password
+        password: passwordHash
       });
       
       console.log(response);

@@ -6,13 +6,16 @@ import {
   MessageSquare,
   CheckCircle,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Body from "@/components/ui/body";
 import Card from "@/components/ui/card";
 import QRCodeModal from "@/components/dashboard/qr-code-modal";
 import RegisterNumberModal from "@/components/dashboard/register-number-modal";
 import WAButtonModal from "@/components/dashboard/wa-button-modal";
+import axios from "axios";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
   // QR Generator state
@@ -29,6 +32,8 @@ export default function DashboardPage() {
   const [buttonRoundness, setButtonRoundness] = useState("8");
   const [buttonText, setButtonText] = useState("Chat with us on WhatsApp");
   const [showWAButtonModal, setShowWAButtonModal] = useState(false);
+  const [whatsAppCode, setWhatsAppCode] = useState("");
+  const [connecting, setConnecting] = useState(false);
 
   // WhatsApp Account state
   const [connectedAccounts, setConnectedAccounts] = useState<string[]>([]);
@@ -41,9 +46,39 @@ export default function DashboardPage() {
   };
 
   const handleConnectAccount = () => {
-    const newAccount = `+1234567${Math.floor(Math.random() * 1000)}`;
-    setConnectedAccounts([...connectedAccounts, newAccount]);
-  };
+    //@ts-ignore
+  FB.login(
+    (response: any) => {
+      if (response.authResponse) {
+        console.log('Logged in as:', response.authResponse);
+        //@ts-ignore
+        FB.api('/me', { fields: 'name, email' }, (userInfo) => {
+          console.log('Logged in as:', userInfo.name, 'Email:', userInfo.email);
+          setWhatsAppCode(response.authResponse.code);
+        });
+      } else {
+        console.log('User cancelled login or did not fully authorize.');
+      }
+    },
+    {
+      config_id: '1931062140756222',
+      response_type: 'code',
+      override_default_response_type: true,
+      scope: 'whatsapp_business_management,whatsapp_business_messaging,business_management',
+    }
+  );
+};
+
+useEffect(() => {
+  if (whatsAppCode) {
+    setConnecting(true);
+    axios.post('/api/whatsapp', { code: whatsAppCode }).then((res) => {
+      toast.success('WhatsApp connected successfully');
+    }).catch((err) => {
+      toast.error('Failed to connect WhatsApp');
+    });
+  }
+}, [whatsAppCode]);
 
   return (
     <Body icon={LayoutDashboard} title="Dashboard">
@@ -231,7 +266,11 @@ export default function DashboardPage() {
               onClick={handleConnectAccount}
               className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 flex items-center justify-center gap-2"
             >
-              <Phone size={16} />
+              {connecting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Phone size={16} />
+              )}
               Connect WhatsApp Account
             </button>
           </div>

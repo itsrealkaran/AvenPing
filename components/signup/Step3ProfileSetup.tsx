@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import axios from "axios";
-
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 interface Step3Props {
   formData: {
     displayName: string;
@@ -25,6 +26,7 @@ const Step3ProfileSetup: React.FC<Step3Props> = ({
 }) => {
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [headerPreview, setHeaderPreview] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -68,6 +70,8 @@ const Step3ProfileSetup: React.FC<Step3Props> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit();
+    toast.success("Profile setup complete!");
+    router.push("/dashboard");
   };
 
   return (
