@@ -70,7 +70,7 @@ importers:
         version: 0.488.0(react@19.1.0)
       material-react-table:
         specifier: ^3.2.1
-        version: 3.2.1(af29249e818ec7ec4ddcf554d1e9c77b)
+        version: 3.2.1(wry2zvq2jig6wvpc6bry7qfbde)
       next:
         specifier: 15.3.0
         version: 15.3.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -3292,7 +3292,7 @@ snapshots:
     dependencies:
       semver: 6.3.1
 
-  material-react-table@3.2.1(af29249e818ec7ec4ddcf554d1e9c77b):
+  material-react-table@3.2.1(wry2zvq2jig6wvpc6bry7qfbde):
     dependencies:
       '@emotion/react': 11.14.0(@types/react@19.1.2)(react@19.1.0)
       '@emotion/styled': 11.14.0(@emotion/react@11.14.0(@types/react@19.1.2)(react@19.1.0))(@types/react@19.1.2)(react@19.1.0)
