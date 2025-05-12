@@ -32,7 +32,7 @@ export default function SidebarContainer({
   return (
     <div
       className={`transition-all duration-300 ease-in-out flex-shrink-0 ${
-        isSidebarCollapsed ? "w-[70px]" : "w-[250px]"
+        isSidebarCollapsed ? "w-[76px]" : "w-[250px]"
       }`}
     >
       <Sidebar
