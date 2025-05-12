@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
+import { Input } from "@/components/ui/input";
 
 interface MessageInputProps {
   onSendMessage: (content: string) => void;
@@ -218,7 +219,7 @@ const MessageInput = ({ onSendMessage }: MessageInputProps) => {
               onClick={() => handleAttachmentTypeSelect("image")}
               className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md transition-colors w-full text-left"
             >
-              <ImageIcon size={18} className="text-gray-500" />
+              <ImageIcon size={18} className="text-purple-500" />
               <span>Image</span>
             </button>
 
@@ -289,13 +290,22 @@ const MessageInput = ({ onSendMessage }: MessageInputProps) => {
               stopRecording();
               inputRef.current?.focus();
             }}
-            className="p-2 text-white bg-gray-600 rounded-full hover:bg-gray-700"
+            className="p-2 text-white bg-primary rounded-full hover:bg-primary/80"
           >
             <SendHorizontal size={18} />
           </button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="flex items-center gap-2">
+          <button
+            type="button"
+            className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
+            onClick={handleAttachmentClick}
+            data-attachment-button="true"
+          >
+            <Paperclip size={20} />
+          </button>
+
           <button
             type="button"
             className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
@@ -307,30 +317,21 @@ const MessageInput = ({ onSendMessage }: MessageInputProps) => {
             <Smile size={20} />
           </button>
 
-          <button
-            type="button"
-            className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
-            onClick={handleAttachmentClick}
-            data-attachment-button="true"
-          >
-            <Paperclip size={20} />
-          </button>
-
           <div className="flex-1 relative">
-            <input
+            <Input
               ref={inputRef}
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type a message"
-              className="w-full px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full px-4 py-2 rounded-full"
             />
           </div>
 
           {message.trim() ? (
             <button
               type="submit"
-              className="p-2 text-white bg-gray-600 rounded-full hover:bg-gray-700"
+              className="p-2 text-white bg-primary rounded-full hover:bg-primary/80"
             >
               <SendHorizontal size={20} />
             </button>

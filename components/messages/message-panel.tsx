@@ -3,8 +3,7 @@
 import { Conversation } from "./messages-interface";
 import MessageList from "./message-list";
 import MessageInput from "./message-input";
-import { Bookmark, Search, MoreVertical, User, Users } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { Bookmark, Search, MoreVertical, User } from "lucide-react";
 
 interface MessagePanelProps {
   conversation: Conversation;
@@ -12,7 +11,7 @@ interface MessagePanelProps {
 }
 
 const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
-  const { contact, isGroup, messages } = conversation;
+  const { contact, messages } = conversation;
 
   return (
     <div className="flex flex-col h-full">
@@ -27,15 +26,11 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
               />
             ) : (
               <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-                {isGroup ? (
-                  <Users size={18} className="text-gray-500" />
-                ) : (
-                  <User size={18} className="text-gray-500" />
-                )}
+                <User size={18} className="text-gray-500" />
               </div>
             )}
             {contact.isOnline && (
-              <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white"></div>
+              <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-primary border-2 border-white"></div>
             )}
           </div>
 
@@ -46,8 +41,6 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
                 ? "Online"
                 : contact.lastSeen
                 ? `Last seen ${contact.lastSeen}`
-                : isGroup
-                ? `${conversation.groupMembers?.length || 0} members`
                 : ""}
             </p>
           </div>
