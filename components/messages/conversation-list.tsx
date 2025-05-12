@@ -2,10 +2,7 @@
 
 import { Conversation } from "./messages-interface";
 import { formatDistanceToNow } from "date-fns";
-import { User, Filter } from "lucide-react";
-import { useState, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import SearchableDropdown from "@/components/ui/searchable-dropdown";
+import { User } from "lucide-react";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -13,50 +10,11 @@ interface ConversationListProps {
   onSelectConversation: (conversation: Conversation) => void;
 }
 
-type FilterType = "all" | "unread" | "label";
-
 const ConversationList = ({
   conversations,
   selectedConversationId,
   onSelectConversation,
 }: ConversationListProps) => {
-  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
-  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
-
-  // Extract unique labels from conversations
-  const labels = Array.from(
-    new Set(
-      conversations
-        .map((conv) => conv.contact.label)
-        .filter((label): label is string => !!label)
-    )
-  );
-
-  const labelItems = labels.map((label) => ({
-    id: label,
-    label: label,
-    value: label,
-  }));
-
-  // Filter conversations based on active filter
-  const filteredConversations = conversations.filter((conversation) => {
-    if (activeFilter === "unread") {
-      return conversation.unreadCount > 0;
-    }
-    if (activeFilter === "label" && selectedLabel) {
-      return conversation.contact.label === selectedLabel;
-    }
-    return true;
-  });
-
-  const handleLabelSelect = useCallback(
-    (item: { id: string; label: string; value: string }) => {
-      setSelectedLabel(item.value);
-      setActiveFilter("label");
-    },
-    []
-  );
-
   if (conversations.length === 0) {
     return (
       <div className="p-4 text-center text-gray-500">
@@ -67,50 +25,8 @@ const ConversationList = ({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-3 pt-0 border-b border-gray-200">
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => {
-              setActiveFilter("all");
-              setSelectedLabel(null);
-            }}
-            className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
-              activeFilter === "all"
-                ? "bg-active-filter-bg text-active-filter font-medium"
-                : "text-gray-600 bg-gray-100"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => {
-              setActiveFilter("unread");
-              setSelectedLabel(null);
-            }}
-            className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
-              activeFilter === "unread"
-                ? "bg-active-filter-bg text-active-filter font-medium"
-                : "text-gray-600 bg-gray-100"
-            }`}
-          >
-            Unread
-          </button>
-          <SearchableDropdown
-            items={labelItems}
-            placeholder="Label"
-            onSelect={handleLabelSelect}
-            className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
-              activeFilter === "label"
-                ? "bg-active-filter-bg text-active-filter font-medium"
-                : "text-gray-600 bg-gray-100"
-            }`}
-            selectedLabel={selectedLabel}
-          />
-        </div>
-      </div>
-
       <div className="overflow-y-auto flex-1">
-        {filteredConversations.map((conversation) => {
+        {conversations.map((conversation) => {
           const { contact, lastMessage, unreadCount } = conversation;
           const lastMsg =
             lastMessage ||

@@ -6,6 +6,7 @@ import MessagePanel from "./message-panel";
 import { Search, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import MessageCard from "./message-card";
+import SearchableDropdown from "@/components/ui/searchable-dropdown";
 
 // Updated type definitions
 export type Contact = {
@@ -36,6 +37,8 @@ export type Conversation = {
   unreadCount: number;
   lastMessage?: Message;
 };
+
+type FilterType = "all" | "unread" | "label";
 
 const MessagesInterface = () => {
   const [conversations, setConversations] = useState<Conversation[]>([
@@ -336,6 +339,32 @@ const MessagesInterface = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
   >(null);
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+
+  // Extract unique labels from conversations
+  const labels = Array.from(
+    new Set(
+      conversations
+        .map((conv) => conv.contact.label)
+        .filter((label): label is string => !!label)
+    )
+  );
+
+  const labelItems = labels.map((label) => ({
+    id: label,
+    label: label,
+    value: label,
+  }));
+
+  const handleLabelSelect = (item: {
+    id: string;
+    label: string;
+    value: string;
+  }) => {
+    setSelectedLabel(item.value);
+    setActiveFilter("label");
+  };
 
   useEffect(() => {
     // Set the first conversation as selected by default
@@ -348,8 +377,10 @@ const MessagesInterface = () => {
     setSearchQuery(e.target.value);
   };
 
-  const filteredConversations = conversations.filter(
-    (conversation) =>
+  // Filter conversations based on search and active filter
+  const filteredConversations = conversations.filter((conversation) => {
+    // First apply search filter
+    const matchesSearch =
       conversation.contact.name
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
@@ -358,8 +389,19 @@ const MessagesInterface = () => {
         .includes(searchQuery.toLowerCase()) ||
       conversation.contact.label
         ?.toLowerCase()
-        .includes(searchQuery.toLowerCase())
-  );
+        .includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    // Then apply type filter
+    if (activeFilter === "unread") {
+      return conversation.unreadCount > 0;
+    }
+    if (activeFilter === "label" && selectedLabel) {
+      return conversation.contact.label === selectedLabel;
+    }
+    return true;
+  });
 
   const handleSendMessage = (content: string) => {
     if (!selectedConversationId || !content.trim()) return;
@@ -425,6 +467,45 @@ const MessagesInterface = () => {
               value={searchQuery}
               onChange={handleSearch}
               className="pl-10"
+            />
+          </div>
+          <div className="flex items-center space-x-2 mt-3">
+            <button
+              onClick={() => {
+                setActiveFilter("all");
+                setSelectedLabel(null);
+              }}
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
+                activeFilter === "all"
+                  ? "bg-active-filter-bg text-active-filter font-medium"
+                  : "text-gray-600 bg-gray-100"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => {
+                setActiveFilter("unread");
+                setSelectedLabel(null);
+              }}
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
+                activeFilter === "unread"
+                  ? "bg-active-filter-bg text-active-filter font-medium"
+                  : "text-gray-600 bg-gray-100"
+              }`}
+            >
+              Unread
+            </button>
+            <SearchableDropdown
+              items={labelItems}
+              placeholder="Label"
+              onSelect={handleLabelSelect}
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
+                activeFilter === "label"
+                  ? "bg-active-filter-bg text-active-filter font-medium"
+                  : "text-gray-600 bg-gray-100"
+              }`}
+              selectedLabel={selectedLabel}
             />
           </div>
         </div>
