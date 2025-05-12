@@ -107,7 +107,7 @@ export default function FlowBuilder({
 
   return (
     <div className="relative h-full w-full bg-gray-50 rounded-lg border border-gray-200 shadow">
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-3 bg-white border-b border-gray-200">
+      <div className="absolute rounded-t-lg top-0 left-0 right-0 z-20 flex items-center justify-between p-3 bg-white border-b border-gray-200">
         <button
           onClick={onBack}
           className="flex items-center gap-1 text-xs text-gray-600 hover:text-blue-600 px-2 py-1 rounded transition"

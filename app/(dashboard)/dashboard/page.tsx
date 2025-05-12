@@ -192,7 +192,7 @@ export default function DashboardPage() {
             />
             <Button
               onClick={() => setShowWAButtonModal(true)}
-              className="w-full bg-blue-500 text-white text-sm py-2 rounded-md hover:bg-blue-600 transition"
+              className="w-full text-sm py-2 rounded-md transition"
             >
               Get Code
             </Button>
@@ -229,7 +229,7 @@ export default function DashboardPage() {
             )}
             <Button
               onClick={handleConnectAccount}
-              className="w-full mt-4 bg-green-500 text-white text-sm py-2 rounded-md hover:bg-green-600 transition flex items-center justify-center gap-2"
+              className="w-full mt-4 bg-green-500 text-sm py-2 rounded-md hover:bg-green-600 transition flex items-center justify-center gap-2"
             >
               <Phone size={14} /> Connect WhatsApp Account
             </Button>
@@ -258,14 +258,14 @@ export default function DashboardPage() {
               )}
             </div>
             {!isVerified && (
-              <a
-                href="https://business.example.com/verify"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition"
+              <Button
+                onClick={() => {
+                  window.open("https://business.example.com/verify", "_blank");
+                }}
+                className="px-4 py-2 text-sm rounded-md transition"
               >
                 Verify Now
-              </a>
+              </Button>
             )}
           </div>
         </Card>
