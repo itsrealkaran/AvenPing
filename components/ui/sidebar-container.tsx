@@ -31,7 +31,7 @@ export default function SidebarContainer({
 
   return (
     <div
-      className={`transition-all duration-300 ease-in-out flex-shrink-0 ${
+      className={`transition-all duration-300 ease-in-out flex-shrink-0 z-100 ${
         isSidebarCollapsed ? "w-[76px]" : "w-[250px]"
       }`}
     >
