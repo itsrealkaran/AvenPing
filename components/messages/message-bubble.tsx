@@ -26,12 +26,12 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
   };
 
   return (
-    <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+    <div className={`flex ${isMe ? "justify-end" : "justify-start"} group`}>
       <div
-        className={`max-w-[70%] px-3 py-2 rounded-lg ${
+        className={`relative max-w-[70%] px-3 py-2 rounded-lg ${
           isMe
-            ? "bg-outgoing text-gray-800 rounded-tr-none"
-            : "bg-white text-gray-800 rounded-tl-none"
+            ? "bg-outgoing text-gray-800 rounded-tr-none shadow-[0_2px_4px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_6px_rgba(0,0,0,0.08)] transition-shadow"
+            : "bg-white text-gray-800 rounded-tl-none shadow-[0_2px_4px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-shadow"
         }`}
       >
         {message.isMedia && message.mediaUrl && (

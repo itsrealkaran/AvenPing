@@ -24,7 +24,7 @@ const ConversationList = ({
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full border-t border-gray-100">
       <div className="overflow-y-auto flex-1">
         {conversations.map((conversation) => {
           const { contact, lastMessage, unreadCount } = conversation;
