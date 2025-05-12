@@ -67,17 +67,17 @@ const ConversationList = ({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-3 border-b border-gray-200">
+      <div className="p-3 pt-0 border-b border-gray-200">
         <div className="flex items-center space-x-2">
           <button
             onClick={() => {
               setActiveFilter("all");
               setSelectedLabel(null);
             }}
-            className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
+            className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
               activeFilter === "all"
-                ? "bg-primary/10 text-primary font-medium"
-                : "text-gray-600 hover:bg-gray-100"
+                ? "bg-active-filter-bg text-active-filter font-medium"
+                : "text-gray-600 bg-gray-100"
             }`}
           >
             All
@@ -87,10 +87,10 @@ const ConversationList = ({
               setActiveFilter("unread");
               setSelectedLabel(null);
             }}
-            className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
+            className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
               activeFilter === "unread"
-                ? "bg-primary/10 text-primary font-medium"
-                : "text-gray-600 hover:bg-gray-100"
+                ? "bg-active-filter-bg text-active-filter font-medium"
+                : "text-gray-600 bg-gray-100"
             }`}
           >
             Unread
@@ -99,10 +99,10 @@ const ConversationList = ({
             items={labelItems}
             placeholder="Label"
             onSelect={handleLabelSelect}
-            className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
+            className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
               activeFilter === "label"
-                ? "bg-primary/10 text-primary font-medium"
-                : "text-gray-600 hover:bg-gray-100"
+                ? "bg-active-filter-bg text-active-filter font-medium"
+                : "text-gray-600 bg-gray-100"
             }`}
             selectedLabel={selectedLabel}
           />
@@ -153,11 +153,6 @@ const ConversationList = ({
                     <h3 className="font-medium text-gray-900 truncate">
                       {contact.name}
                     </h3>
-                    {contact.label && (
-                      <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
-                        {contact.label}
-                      </span>
-                    )}
                   </div>
                   <span
                     className={`text-xs ${

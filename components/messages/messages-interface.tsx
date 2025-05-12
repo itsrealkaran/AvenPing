@@ -333,15 +333,16 @@ const MessagesInterface = () => {
   ]);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedConversation, setSelectedConversation] =
-    useState<Conversation | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     // Set the first conversation as selected by default
-    if (conversations.length > 0 && !selectedConversation) {
-      setSelectedConversation(conversations[0]);
+    if (conversations.length > 0 && !selectedConversationId) {
+      setSelectedConversationId(conversations[0].id);
     }
-  }, [conversations, selectedConversation]);
+  }, [conversations, selectedConversationId]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -361,7 +362,7 @@ const MessagesInterface = () => {
   );
 
   const handleSendMessage = (content: string) => {
-    if (!selectedConversation || !content.trim()) return;
+    if (!selectedConversationId || !content.trim()) return;
 
     const newMessage: Message = {
       id: `m${Date.now()}`,
@@ -373,7 +374,7 @@ const MessagesInterface = () => {
 
     // Update the selected conversation with the new message
     const updatedConversations = conversations.map((conv) => {
-      if (conv.id === selectedConversation.id) {
+      if (conv.id === selectedConversationId) {
         return {
           ...conv,
           messages: [...conv.messages, newMessage],
@@ -384,18 +385,39 @@ const MessagesInterface = () => {
     });
 
     setConversations(updatedConversations);
-    setSelectedConversation({
-      ...selectedConversation,
-      messages: [...selectedConversation.messages, newMessage],
-      lastMessage: newMessage,
-    });
+    setSelectedConversationId(updatedConversations[0].id);
   };
+
+  const handleConversationSelect = (conversation: Conversation) => {
+    setSelectedConversationId(conversation.id);
+    // Mark conversation as read when selected
+    if (conversation.unreadCount > 0) {
+      setConversations((prevConversations) =>
+        prevConversations.map((conv) =>
+          conv.id === conversation.id
+            ? {
+                ...conv,
+                unreadCount: 0,
+                messages: conv.messages.map((msg) => ({
+                  ...msg,
+                  status: msg.sender !== "me" ? ("read" as const) : msg.status,
+                })),
+              }
+            : conv
+        )
+      );
+    }
+  };
+
+  const selectedConversation = conversations.find(
+    (conv) => conv.id === selectedConversationId
+  );
 
   return (
     <MessageCard>
       {/* Sidebar */}
       <div className="w-1/3 md:w-1/3 border-r border-gray-200 flex flex-col max-w-[350px] min-w-[280px] h-[84vh]">
-        <div className="p-3 border-b border-gray-200 flex-shrink-0">
+        <div className="p-3 flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -407,11 +429,18 @@ const MessagesInterface = () => {
           </div>
         </div>
         <div className="overflow-y-auto ">
-          <ConversationList
-            conversations={filteredConversations}
-            selectedConversationId={selectedConversation?.id || ""}
-            onSelectConversation={setSelectedConversation}
-          />
+          {conversations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[calc(100%-5rem)] text-gray-500">
+              <MessageSquare className="h-12 w-12 mb-2 opacity-20" />
+              <p>No messages yet</p>
+            </div>
+          ) : (
+            <ConversationList
+              conversations={filteredConversations}
+              selectedConversationId={selectedConversationId || ""}
+              onSelectConversation={handleConversationSelect}
+            />
+          )}
         </div>
       </div>
 
