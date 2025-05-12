@@ -41,7 +41,7 @@ const ConversationList = ({
           <div
             key={conversation.id}
             className={`flex items-center p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-              isSelected ? "bg-purple-50" : ""
+              isSelected ? "bg-gray-50" : ""
             }`}
             onClick={() => onSelectConversation(conversation)}
           >
@@ -53,11 +53,11 @@ const ConversationList = ({
                   className="h-12 w-12 rounded-full object-cover"
                 />
               ) : (
-                <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
                   {isGroup ? (
-                    <Users size={20} className="text-purple-500" />
+                    <Users size={20} className="text-gray-500" />
                   ) : (
-                    <User size={20} className="text-purple-500" />
+                    <User size={20} className="text-gray-500" />
                   )}
                 </div>
               )}
@@ -83,7 +83,7 @@ const ConversationList = ({
                 </p>
 
                 {unreadCount > 0 && (
-                  <div className="ml-2 bg-purple-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs flex-shrink-0">
+                  <div className="ml-2 bg-gray-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs flex-shrink-0">
                     {unreadCount}
                   </div>
                 )}

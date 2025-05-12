@@ -30,7 +30,7 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
       <div
         className={`max-w-[70%] px-3 py-2 rounded-lg ${
           isMe
-            ? "bg-purple-100 text-gray-800 rounded-tr-none"
+            ? "bg-gray-100 text-gray-800 rounded-tr-none"
             : "bg-white text-gray-800 rounded-tl-none"
         }`}
       >

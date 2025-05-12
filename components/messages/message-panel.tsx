@@ -26,11 +26,11 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
                 className="h-10 w-10 rounded-full object-cover"
               />
             ) : (
-              <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
                 {isGroup ? (
-                  <Users size={18} className="text-purple-500" />
+                  <Users size={18} className="text-gray-500" />
                 ) : (
-                  <User size={18} className="text-purple-500" />
+                  <User size={18} className="text-gray-500" />
                 )}
               </div>
             )}

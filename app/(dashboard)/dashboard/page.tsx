@@ -13,6 +13,9 @@ import Card from "@/components/ui/card";
 import QRCodeModal from "@/components/dashboard/qr-code-modal";
 import RegisterNumberModal from "@/components/dashboard/register-number-modal";
 import WAButtonModal from "@/components/dashboard/wa-button-modal";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
   // QR Generator state
@@ -57,11 +60,11 @@ export default function DashboardPage() {
             >
               Message
             </label>
-            <textarea
+            <Textarea
               id="qrText"
               value={qrText}
               onChange={(e) => setQrText(e.target.value)}
-              className="w-full p-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition"
+              className="w-full"
               rows={3}
               placeholder="Enter text for QR code"
             />
@@ -71,20 +74,20 @@ export default function DashboardPage() {
             >
               Phone Number
             </label>
-            <input
+            <Input
               type="tel"
               id="phoneNumber"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              className="w-full p-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition"
+              className="w-full"
             />
-            <button
+            <Button
               onClick={() => setShowQrModal(true)}
-              className="w-full bg-blue-500 text-white text-sm py-2 rounded-md hover:bg-blue-600 transition disabled:opacity-50"
+              className="w-full text-sm py-2 rounded-md transition disabled:opacity-50"
               disabled={!qrText.trim()}
             >
               Generate QR Code
-            </button>
+            </Button>
           </div>
         </Card>
 
@@ -111,12 +114,12 @@ export default function DashboardPage() {
                 <div className="text-base font-semibold text-gray-800 mb-1">
                   Not Registered
                 </div>
-                <button
+                <Button
                   onClick={() => setShowRegisterModal(true)}
-                  className="px-4 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition"
+                  className="px-4 py-2 text-sm rounded-md transition"
                 >
                   Register Now
-                </button>
+                </Button>
               </>
             )}
           </div>
@@ -148,7 +151,7 @@ export default function DashboardPage() {
                 >
                   Color
                 </label>
-                <input
+                <Input
                   type="color"
                   id="buttonColor"
                   value={buttonColor}
@@ -163,7 +166,7 @@ export default function DashboardPage() {
                 >
                   Roundness
                 </label>
-                <input
+                <Input
                   type="range"
                   id="buttonRoundness"
                   min="0"
@@ -180,19 +183,19 @@ export default function DashboardPage() {
             >
               Text
             </label>
-            <input
+            <Input
               type="text"
               id="buttonText"
               value={buttonText}
               onChange={(e) => setButtonText(e.target.value)}
-              className="w-full p-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition"
+              className="w-full"
             />
-            <button
+            <Button
               onClick={() => setShowWAButtonModal(true)}
               className="w-full bg-blue-500 text-white text-sm py-2 rounded-md hover:bg-blue-600 transition"
             >
               Get Code
-            </button>
+            </Button>
           </div>
         </Card>
 
@@ -224,12 +227,12 @@ export default function DashboardPage() {
                 No accounts connected
               </div>
             )}
-            <button
+            <Button
               onClick={handleConnectAccount}
               className="w-full mt-4 bg-green-500 text-white text-sm py-2 rounded-md hover:bg-green-600 transition flex items-center justify-center gap-2"
             >
               <Phone size={14} /> Connect WhatsApp Account
-            </button>
+            </Button>
           </div>
         </Card>
 
