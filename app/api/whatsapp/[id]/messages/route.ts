@@ -14,6 +14,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const { id } = await params;
+    const { phoneNumberId } = await request.json()
+    ;
     // Get pagination parameters from URL
     const { searchParams } = new URL(request.url);
     const cursor = searchParams.get('cursor');
@@ -21,9 +23,10 @@ export async function GET(
     const take = Math.min(limit, 100); // Maximum 100 messages per request
 
     // Build the query
-    const query: Prisma.WhatsAppMessageFindManyArgs = {
+    const query: Prisma.WhatsAppRecipientFindManyArgs = {
       where: {
         whatsAppPhoneNumber: {
+          id: phoneNumberId,
           account: {
             id: id,
             user: {
@@ -32,9 +35,27 @@ export async function GET(
           }
         }
       },
-      include: {
-        recipient: true,
-        whatsAppPhoneNumber: true
+      select: {
+        id: true,
+        phoneNumber: true,
+        name: true,
+        messages: {
+          where: {
+            createdAt: {
+              gt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4) // 4 days ago
+            }
+          },
+          select: {
+            id: true,
+            message: true,
+            createdAt: true,
+            status: true,
+            isOutbound: true,
+          },
+          orderBy: {
+            createdAt: 'desc'
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc'
@@ -52,7 +73,7 @@ export async function GET(
       };
     }
 
-    const messages = await prisma.whatsAppMessage.findMany(query);
+    const messages = await prisma.whatsAppRecipient.findMany(query);
 
     // Check if there are more results
     const hasMore = messages.length > take;
