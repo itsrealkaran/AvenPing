@@ -48,10 +48,10 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
 
         <div className="flex items-center gap-4">
           <button className="text-gray-500 hover:text-gray-700">
-            <Bookmark size={18} />
+            <Search size={18} />
           </button>
           <button className="text-gray-500 hover:text-gray-700">
-            <Search size={18} />
+            <Bookmark size={18} />
           </button>
           <button className="text-gray-500 hover:text-gray-700">
             <MoreVertical size={18} />

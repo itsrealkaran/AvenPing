@@ -1,10 +1,44 @@
+"use client";
+
 import Body from "@/components/ui/body";
-import { BarChart } from "lucide-react";
+import { BarChart as BarChartIcon } from "lucide-react";
+import MetricCard from "@/components/analytics/metric-card";
+import CampaignChart from "@/components/analytics/campaign-chart";
+import FlowChart from "@/components/analytics/flow-chart";
+import ResponseTimeChart from "@/components/analytics/response-time-chart";
+import ContactGrowthChart from "@/components/analytics/contact-growth-chart";
+import TemplateChart from "@/components/analytics/template-chart";
+import {
+  sampleMetrics,
+  sampleCampaignData,
+  sampleFlowData,
+  sampleResponseTimeData,
+  sampleContactGrowthData,
+  sampleTemplateData,
+} from "@/components/analytics/data";
 
 export default function AnalyticsPage() {
   return (
-    <Body icon={BarChart} title="AI Bot">
-      <h1>AI Bot</h1>
+    <Body icon={BarChartIcon} title="Analytics">
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        {sampleMetrics.map((metric, index) => (
+          <MetricCard key={index} {...metric} />
+        ))}
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <CampaignChart />
+        <FlowChart data={sampleFlowData} />
+      </div>
+
+      {/* Bottom Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <ResponseTimeChart data={sampleResponseTimeData} />
+        <ContactGrowthChart data={sampleContactGrowthData} />
+        <TemplateChart data={sampleTemplateData} />
+      </div>
     </Body>
   );
-} 
+}
