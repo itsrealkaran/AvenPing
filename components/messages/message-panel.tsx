@@ -3,8 +3,7 @@
 import { Conversation } from "./messages-interface";
 import MessageList from "./message-list";
 import MessageInput from "./message-input";
-import { Bookmark, Search, MoreVertical, User, Users } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { Bookmark, Search, MoreVertical, User } from "lucide-react";
 
 interface MessagePanelProps {
   conversation: Conversation;
@@ -12,11 +11,11 @@ interface MessagePanelProps {
 }
 
 const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
-  const { contact, isGroup, messages } = conversation;
+  const { contact, messages } = conversation;
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-50 flex-shrink-0">
+      <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-white flex-shrink-0">
         <div className="flex items-center">
           <div className="relative">
             {contact.avatar ? (
@@ -26,16 +25,12 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
                 className="h-10 w-10 rounded-full object-cover"
               />
             ) : (
-              <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                {isGroup ? (
-                  <Users size={18} className="text-purple-500" />
-                ) : (
-                  <User size={18} className="text-purple-500" />
-                )}
+              <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                <User size={18} className="text-gray-500" />
               </div>
             )}
             {contact.isOnline && (
-              <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white"></div>
+              <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-primary border-2 border-white"></div>
             )}
           </div>
 
@@ -46,8 +41,6 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
                 ? "Online"
                 : contact.lastSeen
                 ? `Last seen ${contact.lastSeen}`
-                : isGroup
-                ? `${conversation.groupMembers?.length || 0} members`
                 : ""}
             </p>
           </div>
@@ -66,11 +59,19 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
         </div>
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto bg-[#f0f2f5]">
+      <div
+        className="flex-1 p-4 overflow-y-auto"
+        style={{
+          backgroundImage: 'url("/message-bg.png")',
+          backgroundRepeat: "repeat",
+          backgroundSize: "500px auto",
+          backgroundColor: "#f0f2f5",
+        }}
+      >
         <MessageList messages={messages} />
       </div>
 
-      <div className="p-3 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+      <div className="p-3 border-t border-gray-200 bg-white flex-shrink-0">
         <MessageInput onSendMessage={onSendMessage} />
       </div>
     </div>

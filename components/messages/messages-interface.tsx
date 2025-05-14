@@ -6,8 +6,9 @@ import MessagePanel from "./message-panel";
 import { Search, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import MessageCard from "./message-card";
+import SearchableDropdown from "@/components/ui/searchable-dropdown";
 
-// Sample data structures
+// Updated type definitions
 export type Contact = {
   id: string;
   name: string;
@@ -15,6 +16,7 @@ export type Contact = {
   phone: string;
   lastSeen?: string;
   isOnline?: boolean;
+  label?: string;
 };
 
 export type Message = {
@@ -34,9 +36,9 @@ export type Conversation = {
   messages: Message[];
   unreadCount: number;
   lastMessage?: Message;
-  isGroup?: boolean;
-  groupMembers?: Contact[];
 };
+
+type FilterType = "all" | "unread" | "label";
 
 const MessagesInterface = () => {
   const [conversations, setConversations] = useState<Conversation[]>([
@@ -48,61 +50,62 @@ const MessagesInterface = () => {
         phone: "+91 9876543210",
         lastSeen: "today at 12:30 PM",
         isOnline: true,
+        label: "Work",
       },
       messages: [
         {
           id: "m1",
           content: "Hi there! How are you doing?",
-          timestamp: "2023-07-20T10:30:00Z",
+          timestamp: "2025-05-12T10:30:00Z",
           sender: "c1",
           status: "read",
         },
         {
           id: "m2",
           content: "I'm good, thanks! How about you?",
-          timestamp: "2023-07-20T10:35:00Z",
+          timestamp: "2025-05-12T10:35:00Z",
           sender: "me",
           status: "read",
         },
         {
           id: "m3",
           content: "I'm doing well. Just checking in.",
-          timestamp: "2023-07-20T10:40:00Z",
+          timestamp: "2025-05-12T10:40:00Z",
           sender: "c1",
           status: "read",
         },
         {
           id: "m4",
           content: "Great to hear that!",
-          timestamp: "2023-07-20T10:45:00Z",
+          timestamp: "2025-05-12T10:45:00Z",
           sender: "me",
           status: "delivered",
         },
         {
           id: "m5",
           content: "Great to hear that!",
-          timestamp: "2023-07-20T10:45:00Z",
+          timestamp: "2025-05-12T10:45:00Z",
           sender: "me",
           status: "delivered",
         },
         {
           id: "m6",
           content: "Great to hear that!",
-          timestamp: "2023-07-20T10:45:00Z",
+          timestamp: "2025-05-12T10:45:00Z",
           sender: "me",
           status: "delivered",
         },
         {
           id: "m7",
           content: "Great to hear that!",
-          timestamp: "2023-07-20T10:45:00Z",
+          timestamp: "2025-05-12T10:45:00Z",
           sender: "me",
           status: "delivered",
         },
         {
           id: "m8",
           content: "Great to hear that!",
-          timestamp: "2023-07-20T10:45:00Z",
+          timestamp: "2025-05-12T10:45:00Z",
           sender: "me",
           status: "delivered",
         },
@@ -116,19 +119,20 @@ const MessagesInterface = () => {
         name: "Jane Smith",
         phone: "+91 9876543211",
         lastSeen: "yesterday at 8:45 PM",
+        label: "Family",
       },
       messages: [
         {
           id: "m5",
           content: "Hello! Are we still meeting tomorrow?",
-          timestamp: "2023-07-19T18:30:00Z",
+          timestamp: "2025-05-19T18:30:00Z",
           sender: "c2",
           status: "read",
         },
         {
           id: "m6",
           content: "Yes, at 10 AM at the coffee shop.",
-          timestamp: "2023-07-19T18:35:00Z",
+          timestamp: "2025-05-19T18:35:00Z",
           sender: "me",
           status: "read",
         },
@@ -141,30 +145,18 @@ const MessagesInterface = () => {
         id: "c3",
         name: "Marketing Team",
         phone: "Group",
+        label: "Work",
       },
       messages: [
         {
           id: "m7",
           content: "Meeting postponed to next week.",
-          timestamp: "2023-07-18T14:20:00Z",
+          timestamp: "2025-05-18T14:20:00Z",
           sender: "c4",
           status: "read",
         },
       ],
       unreadCount: 1,
-      isGroup: true,
-      groupMembers: [
-        {
-          id: "c3",
-          name: "Mike Johnson",
-          phone: "+91 9876543212",
-        },
-        {
-          id: "c4",
-          name: "Sarah Williams",
-          phone: "+91 9876543213",
-        },
-      ],
     },
     {
       id: "4",
@@ -179,7 +171,7 @@ const MessagesInterface = () => {
         {
           id: "m8",
           content: "Can you send me the project files?",
-          timestamp: "2023-07-21T09:10:00Z",
+          timestamp: "2025-05-21T09:10:00Z",
           sender: "c5",
           status: "read",
         },
@@ -198,7 +190,7 @@ const MessagesInterface = () => {
         {
           id: "m9",
           content: "Check out this photo!",
-          timestamp: "2023-07-21T11:20:00Z",
+          timestamp: "2025-05-21T11:20:00Z",
           sender: "c6",
           status: "read",
           isMedia: true,
@@ -220,7 +212,7 @@ const MessagesInterface = () => {
         {
           id: "m10",
           content: "Let's catch up soon!",
-          timestamp: "2023-07-17T16:45:00Z",
+          timestamp: "2025-05-17T16:45:00Z",
           sender: "c7",
           status: "read",
         },
@@ -238,25 +230,12 @@ const MessagesInterface = () => {
         {
           id: "m11",
           content: "Server maintenance scheduled for tonight.",
-          timestamp: "2023-07-21T08:30:00Z",
+          timestamp: "2025-05-21T08:30:00Z",
           sender: "c9",
           status: "read",
         },
       ],
       unreadCount: 2,
-      isGroup: true,
-      groupMembers: [
-        {
-          id: "c9",
-          name: "Robert Kim",
-          phone: "+91 9876543217",
-        },
-        {
-          id: "c10",
-          name: "Lisa Park",
-          phone: "+91 9876543218",
-        },
-      ],
     },
     {
       id: "8",
@@ -271,7 +250,7 @@ const MessagesInterface = () => {
         {
           id: "m12",
           content: "Did you get my email?",
-          timestamp: "2023-07-21T12:05:00Z",
+          timestamp: "2025-05-21T12:05:00Z",
           sender: "c11",
           status: "read",
         },
@@ -290,7 +269,7 @@ const MessagesInterface = () => {
         {
           id: "m13",
           content: "The presentation went well!",
-          timestamp: "2023-07-20T23:15:00Z",
+          timestamp: "2025-05-20T23:15:00Z",
           sender: "c12",
           status: "read",
         },
@@ -310,7 +289,7 @@ const MessagesInterface = () => {
         {
           id: "m14",
           content: "Happy birthday! 🎂",
-          timestamp: "2023-07-21T10:00:00Z",
+          timestamp: "2025-05-21T10:00:00Z",
           sender: "c13",
           status: "read",
         },
@@ -328,30 +307,12 @@ const MessagesInterface = () => {
         {
           id: "m15",
           content: "Who's coming to dinner on Sunday?",
-          timestamp: "2023-07-20T19:30:00Z",
+          timestamp: "2025-05-20T19:30:00Z",
           sender: "c15",
           status: "read",
         },
       ],
       unreadCount: 3,
-      isGroup: true,
-      groupMembers: [
-        {
-          id: "c15",
-          name: "Mom",
-          phone: "+91 9876543222",
-        },
-        {
-          id: "c16",
-          name: "Dad",
-          phone: "+91 9876543223",
-        },
-        {
-          id: "c17",
-          name: "Sister",
-          phone: "+91 9876543224",
-        },
-      ],
     },
     {
       id: "12",
@@ -365,7 +326,7 @@ const MessagesInterface = () => {
         {
           id: "m16",
           content: "Can I borrow your notes from yesterday's class?",
-          timestamp: "2023-07-21T11:45:00Z",
+          timestamp: "2025-05-12T11:45:00Z",
           sender: "c18",
           status: "delivered",
         },
@@ -375,32 +336,75 @@ const MessagesInterface = () => {
   ]);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedConversation, setSelectedConversation] =
-    useState<Conversation | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    string | null
+  >(null);
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+
+  // Extract unique labels from conversations
+  const labels = Array.from(
+    new Set(
+      conversations
+        .map((conv) => conv.contact.label)
+        .filter((label): label is string => !!label)
+    )
+  );
+
+  const labelItems = labels.map((label) => ({
+    id: label,
+    label: label,
+    value: label,
+  }));
+
+  const handleLabelSelect = (item: {
+    id: string;
+    label: string;
+    value: string;
+  }) => {
+    setSelectedLabel(item.value);
+    setActiveFilter("label");
+  };
 
   useEffect(() => {
     // Set the first conversation as selected by default
-    if (conversations.length > 0 && !selectedConversation) {
-      setSelectedConversation(conversations[0]);
+    if (conversations.length > 0 && !selectedConversationId) {
+      setSelectedConversationId(conversations[0].id);
     }
-  }, [conversations, selectedConversation]);
+  }, [conversations, selectedConversationId]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
-  const filteredConversations = conversations.filter(
-    (conversation) =>
+  // Filter conversations based on search and active filter
+  const filteredConversations = conversations.filter((conversation) => {
+    // First apply search filter
+    const matchesSearch =
       conversation.contact.name
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
       conversation.contact.phone
         .toLowerCase()
-        .includes(searchQuery.toLowerCase())
-  );
+        .includes(searchQuery.toLowerCase()) ||
+      conversation.contact.label
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    // Then apply type filter
+    if (activeFilter === "unread") {
+      return conversation.unreadCount > 0;
+    }
+    if (activeFilter === "label" && selectedLabel) {
+      return conversation.contact.label === selectedLabel;
+    }
+    return true;
+  });
 
   const handleSendMessage = (content: string) => {
-    if (!selectedConversation || !content.trim()) return;
+    if (!selectedConversationId || !content.trim()) return;
 
     const newMessage: Message = {
       id: `m${Date.now()}`,
@@ -412,7 +416,7 @@ const MessagesInterface = () => {
 
     // Update the selected conversation with the new message
     const updatedConversations = conversations.map((conv) => {
-      if (conv.id === selectedConversation.id) {
+      if (conv.id === selectedConversationId) {
         return {
           ...conv,
           messages: [...conv.messages, newMessage],
@@ -423,34 +427,101 @@ const MessagesInterface = () => {
     });
 
     setConversations(updatedConversations);
-    setSelectedConversation({
-      ...selectedConversation,
-      messages: [...selectedConversation.messages, newMessage],
-      lastMessage: newMessage,
-    });
+    setSelectedConversationId(updatedConversations[0].id);
   };
+
+  const handleConversationSelect = (conversation: Conversation) => {
+    setSelectedConversationId(conversation.id);
+    // Mark conversation as read when selected
+    if (conversation.unreadCount > 0) {
+      setConversations((prevConversations) =>
+        prevConversations.map((conv) =>
+          conv.id === conversation.id
+            ? {
+                ...conv,
+                unreadCount: 0,
+                messages: conv.messages.map((msg) => ({
+                  ...msg,
+                  status: msg.sender !== "me" ? ("read" as const) : msg.status,
+                })),
+              }
+            : conv
+        )
+      );
+    }
+  };
+
+  const selectedConversation = conversations.find(
+    (conv) => conv.id === selectedConversationId
+  );
 
   return (
     <MessageCard>
       {/* Sidebar */}
       <div className="w-1/3 md:w-1/3 border-r border-gray-200 flex flex-col max-w-[350px] min-w-[280px] h-[84vh]">
-        <div className="p-3 border-b border-gray-200 flex-shrink-0">
+        <div className="p-3 flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search or start a new chat"
+              placeholder="Search chats, labels or contacts"
               value={searchQuery}
               onChange={handleSearch}
               className="pl-10"
             />
           </div>
+          <div className="flex items-center space-x-2 mt-3">
+            <button
+              onClick={() => {
+                setActiveFilter("all");
+                setSelectedLabel(null);
+              }}
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
+                activeFilter === "all"
+                  ? "bg-active-filter-bg text-active-filter font-medium"
+                  : "text-gray-600 bg-gray-100"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => {
+                setActiveFilter("unread");
+                setSelectedLabel(null);
+              }}
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
+                activeFilter === "unread"
+                  ? "bg-active-filter-bg text-active-filter font-medium"
+                  : "text-gray-600 bg-gray-100"
+              }`}
+            >
+              Unread
+            </button>
+            <SearchableDropdown
+              items={labelItems}
+              placeholder="Label"
+              onSelect={handleLabelSelect}
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
+                activeFilter === "label"
+                  ? "bg-active-filter-bg text-active-filter font-medium"
+                  : "text-gray-600 bg-gray-100"
+              }`}
+              selectedLabel={selectedLabel}
+            />
+          </div>
         </div>
         <div className="overflow-y-auto ">
-          <ConversationList
-            conversations={filteredConversations}
-            selectedConversationId={selectedConversation?.id || ""}
-            onSelectConversation={setSelectedConversation}
-          />
+          {conversations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[calc(100%-5rem)] text-gray-500">
+              <MessageSquare className="h-12 w-12 mb-2 opacity-20" />
+              <p>No messages yet</p>
+            </div>
+          ) : (
+            <ConversationList
+              conversations={filteredConversations}
+              selectedConversationId={selectedConversationId || ""}
+              onSelectConversation={handleConversationSelect}
+            />
+          )}
         </div>
       </div>
 
