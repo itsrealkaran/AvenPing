@@ -12,18 +12,16 @@ import SearchableDropdown from "@/components/ui/searchable-dropdown";
 export type Contact = {
   id: string;
   name: string;
-  avatar?: string;
   phone: string;
-  lastSeen?: string;
   isOnline?: boolean;
   label?: string;
 };
 
 export type Message = {
   id: string;
-  content: string;
+  message: string;
   timestamp: string;
-  sender: string;
+  isOutbound: boolean;
   status: "sent" | "delivered" | "read";
   isMedia?: boolean;
   mediaUrl?: string;
@@ -32,7 +30,10 @@ export type Message = {
 
 export type Conversation = {
   id: string;
-  contact: Contact;
+  name: string;
+  phone: string;
+  avatar?: string;
+  label?: string;
   messages: Message[];
   unreadCount: number;
   lastMessage?: Message;
@@ -43,97 +44,90 @@ type FilterType = "all" | "unread" | "label";
 const MessagesInterface = () => {
   const [conversations, setConversations] = useState<Conversation[]>([
     {
-      id: "1",
-      contact: {
-        id: "c1",
-        name: "John Doe",
-        phone: "+91 9876543210",
-        lastSeen: "today at 12:30 PM",
-        isOnline: true,
-        label: "Work",
-      },
+      id: "c1",
+      name: "John Doe",
+      phone: "+91 9876543210",
+      avatar: "https://placehold.co/150x150",
+      label: "Work",
       messages: [
         {
           id: "m1",
-          content: "Hi there! How are you doing?",
+          message: "Hi there! How are you doing?",
           timestamp: "2025-05-12T10:30:00Z",
-          sender: "c1",
+          isOutbound: false,
           status: "read",
         },
         {
           id: "m2",
-          content: "I'm good, thanks! How about you?",
+          message: "I'm good, thanks! How about you?",
           timestamp: "2025-05-12T10:35:00Z",
-          sender: "me",
+          isOutbound: false,
           status: "read",
         },
         {
           id: "m3",
-          content: "I'm doing well. Just checking in.",
+          message: "I'm doing well. Just checking in.",
           timestamp: "2025-05-12T10:40:00Z",
-          sender: "c1",
+          isOutbound: true,
           status: "read",
         },
         {
           id: "m4",
-          content: "Great to hear that!",
+          message: "Great to hear that!",
           timestamp: "2025-05-12T10:45:00Z",
-          sender: "me",
+          isOutbound: true,
           status: "delivered",
         },
         {
           id: "m5",
-          content: "Great to hear that!",
+          message: "Great to hear that!",
           timestamp: "2025-05-12T10:45:00Z",
-          sender: "me",
+          isOutbound: true,
           status: "delivered",
         },
         {
           id: "m6",
-          content: "Great to hear that!",
+          message: "Great to hear that!",
           timestamp: "2025-05-12T10:45:00Z",
-          sender: "me",
+          isOutbound: true,
           status: "delivered",
         },
         {
           id: "m7",
-          content: "Great to hear that!",
+          message: "Great to hear that!",
           timestamp: "2025-05-12T10:45:00Z",
-          sender: "me",
+          isOutbound: true,
           status: "delivered",
         },
         {
           id: "m8",
-          content: "Great to hear that!",
+          message: "Great to hear that!",
           timestamp: "2025-05-12T10:45:00Z",
-          sender: "me",
+          isOutbound: true,
           status: "delivered",
         },
       ],
       unreadCount: 0,
     },
     {
-      id: "2",
-      contact: {
-        id: "c2",
-        name: "Jane Smith",
-        phone: "+91 9876543211",
-        lastSeen: "yesterday at 8:45 PM",
-        label: "Family",
-      },
+      id: "c2",
+      name: "Jane Smith",
+      phone: "+91 9876543211",
+      label: "Family",
+      avatar: "https://placehold.co/150x150",
       messages: [
         {
           id: "m5",
-          content: "Hello! Are we still meeting tomorrow?",
+          message: "Hello! Are we still meeting tomorrow?",
           timestamp: "2025-05-19T18:30:00Z",
-          sender: "c2",
+          isOutbound: false,
           status: "read",
         },
         {
           id: "m6",
-          content: "Yes, at 10 AM at the coffee shop.",
+          message: "Yes, at 10 AM at the coffee shop.",
           timestamp: "2025-05-19T18:35:00Z",
-          sender: "me",
+          isOutbound: true,
           status: "read",
         },
       ],
@@ -141,18 +135,16 @@ const MessagesInterface = () => {
     },
     {
       id: "3",
-      contact: {
-        id: "c3",
-        name: "Marketing Team",
-        phone: "Group",
-        label: "Work",
-      },
+      name: "Marketing Team",
+      phone: "Group",
+      label: "Work",
+      avatar: "https://placehold.co/150x150",
       messages: [
         {
           id: "m7",
-          content: "Meeting postponed to next week.",
+          message: "Meeting postponed to next week.",
           timestamp: "2025-05-18T14:20:00Z",
-          sender: "c4",
+          isOutbound: true,
           status: "read",
         },
       ],
@@ -160,38 +152,32 @@ const MessagesInterface = () => {
     },
     {
       id: "4",
-      contact: {
-        id: "c5",
-        name: "David Chen",
-        phone: "+91 9876543214",
-        lastSeen: "today at 9:15 AM",
-        isOnline: false,
-      },
+      name: "David Chen",
+      phone: "+91 9876543214",
+      label: "Work",
+      avatar: "https://placehold.co/150x150",
       messages: [
         {
           id: "m8",
-          content: "Can you send me the project files?",
+          message: "Can you send me the project files?",
           timestamp: "2025-05-21T09:10:00Z",
-          sender: "c5",
+          isOutbound: true,
           status: "read",
         },
       ],
       unreadCount: 0,
     },
     {
-      id: "5",
-      contact: {
-        id: "c6",
-        name: "Emily Rodriguez",
-        phone: "+91 9876543215",
-        isOnline: true,
-      },
+      id: "c6",
+      name: "Emily Rodriguez",
+      phone: "+91 9876543215",
+      avatar: "https://placehold.co/150x150",
       messages: [
         {
           id: "m9",
-          content: "Check out this photo!",
+          message: "Check out this photo!",
           timestamp: "2025-05-21T11:20:00Z",
-          sender: "c6",
+          isOutbound: true,
           status: "read",
           isMedia: true,
           mediaUrl: "https://source.unsplash.com/random/300x200",
@@ -202,36 +188,30 @@ const MessagesInterface = () => {
     },
     {
       id: "6",
-      contact: {
-        id: "c7",
-        name: "Alex Thompson",
-        phone: "+91 9876543216",
-        lastSeen: "3 days ago",
-      },
+      name: "Alex Thompson",
+      phone: "+91 9876543216",
+      avatar: "https://placehold.co/150x150",
       messages: [
         {
           id: "m10",
-          content: "Let's catch up soon!",
+          message: "Let's catch up soon!",
           timestamp: "2025-05-17T16:45:00Z",
-          sender: "c7",
+          isOutbound: true,
           status: "read",
         },
       ],
       unreadCount: 0,
     },
     {
-      id: "7",
-      contact: {
-        id: "c8",
-        name: "Tech Support",
-        phone: "Group",
-      },
+      id: "c8",
+      name: "Tech Support",
+      phone: "Group",
       messages: [
         {
           id: "m11",
-          content: "Server maintenance scheduled for tonight.",
+          message: "Server maintenance scheduled for tonight.",
           timestamp: "2025-05-21T08:30:00Z",
-          sender: "c9",
+          isOutbound: true,
           status: "read",
         },
       ],
@@ -239,38 +219,31 @@ const MessagesInterface = () => {
     },
     {
       id: "8",
-      contact: {
-        id: "c11",
-        name: "Sophia Martinez",
-        phone: "+91 9876543219",
-        lastSeen: "just now",
-        isOnline: true,
-      },
+      name: "Sophia Martinez",
+      phone: "+91 9876543219",
+      avatar: "https://placehold.co/150x150",
       messages: [
         {
           id: "m12",
-          content: "Did you get my email?",
+          message: "Did you get my email?",
           timestamp: "2025-05-21T12:05:00Z",
-          sender: "c11",
+          isOutbound: true,
           status: "read",
         },
       ],
       unreadCount: 0,
     },
     {
-      id: "9",
-      contact: {
-        id: "c12",
-        name: "James Wilson",
-        phone: "+91 9876543220",
-        lastSeen: "yesterday at 11:30 PM",
-      },
+      id: "c12",
+      name: "James Wilson",
+      phone: "+91 9876543220",
+      avatar: "https://placehold.co/150x150",
       messages: [
         {
           id: "m13",
-          content: "The presentation went well!",
+          message: "The presentation went well!",
           timestamp: "2025-05-20T23:15:00Z",
-          sender: "c12",
+          isOutbound: true,
           status: "read",
         },
       ],
@@ -278,19 +251,14 @@ const MessagesInterface = () => {
     },
     {
       id: "10",
-      contact: {
-        id: "c13",
-        name: "Olivia Brown",
-        phone: "+91 9876543221",
-        isOnline: false,
-        lastSeen: "2 hours ago",
-      },
+      name: "Olivia Brown",
+      phone: "+91 9876543221",
       messages: [
         {
           id: "m14",
-          content: "Happy birthday! 🎂",
+          message: "Happy birthday! 🎂",
           timestamp: "2025-05-21T10:00:00Z",
-          sender: "c13",
+          isOutbound: true,
           status: "read",
         },
       ],
@@ -298,40 +266,19 @@ const MessagesInterface = () => {
     },
     {
       id: "11",
-      contact: {
-        id: "c14",
-        name: "Family Group",
-        phone: "Group",
-      },
+      name: "Family Group",
+      phone: "Group",
+      avatar: "https://placehold.co/150x150",
       messages: [
         {
           id: "m15",
-          content: "Who's coming to dinner on Sunday?",
+          message: "Who's coming to dinner on Sunday?",
           timestamp: "2025-05-20T19:30:00Z",
-          sender: "c15",
+          isOutbound: true,
           status: "read",
         },
       ],
       unreadCount: 3,
-    },
-    {
-      id: "12",
-      contact: {
-        id: "c18",
-        name: "Daniel Lee",
-        phone: "+91 9876543225",
-        lastSeen: "5 minutes ago",
-      },
-      messages: [
-        {
-          id: "m16",
-          content: "Can I borrow your notes from yesterday's class?",
-          timestamp: "2025-05-12T11:45:00Z",
-          sender: "c18",
-          status: "delivered",
-        },
-      ],
-      unreadCount: 1,
     },
   ]);
 
@@ -346,7 +293,7 @@ const MessagesInterface = () => {
   const labels = Array.from(
     new Set(
       conversations
-        .map((conv) => conv.contact.label)
+        .map((conv) => conv.label)
         .filter((label): label is string => !!label)
     )
   );
@@ -381,13 +328,13 @@ const MessagesInterface = () => {
   const filteredConversations = conversations.filter((conversation) => {
     // First apply search filter
     const matchesSearch =
-      conversation.contact.name
+      conversation.name
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
-      conversation.contact.phone
+      conversation.phone
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
-      conversation.contact.label
+      conversation.label
         ?.toLowerCase()
         .includes(searchQuery.toLowerCase());
 
@@ -398,19 +345,19 @@ const MessagesInterface = () => {
       return conversation.unreadCount > 0;
     }
     if (activeFilter === "label" && selectedLabel) {
-      return conversation.contact.label === selectedLabel;
+      return conversation.label === selectedLabel;
     }
     return true;
   });
 
-  const handleSendMessage = (content: string) => {
-    if (!selectedConversationId || !content.trim()) return;
+  const handleSendMessage = (message: string) => {
+    if (!selectedConversationId || !message.trim()) return;
 
     const newMessage: Message = {
       id: `m${Date.now()}`,
-      content,
+      message,
       timestamp: new Date().toISOString(),
-      sender: "me",
+      isOutbound: true,
       status: "sent",
     };
 
@@ -442,7 +389,7 @@ const MessagesInterface = () => {
                 unreadCount: 0,
                 messages: conv.messages.map((msg) => ({
                   ...msg,
-                  status: msg.sender !== "me" ? ("read" as const) : msg.status,
+                  status: msg.isOutbound ? ("read" as const) : msg.status,
                 })),
               }
             : conv

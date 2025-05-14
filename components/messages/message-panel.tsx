@@ -11,17 +11,17 @@ interface MessagePanelProps {
 }
 
 const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
-  const { contact, messages } = conversation;
+  const { name, phone, avatar, messages } = conversation;
 
   return (
     <div className="flex flex-col h-full">
       <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-white flex-shrink-0">
         <div className="flex items-center">
           <div className="relative">
-            {contact.avatar ? (
+            {avatar ? (
               <img
-                src={contact.avatar}
-                alt={contact.name}
+                src={avatar}
+                alt={name}
                 className="h-10 w-10 rounded-full object-cover"
               />
             ) : (
@@ -29,20 +29,10 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
                 <User size={18} className="text-gray-500" />
               </div>
             )}
-            {contact.isOnline && (
-              <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-primary border-2 border-white"></div>
-            )}
           </div>
 
           <div className="ml-3">
-            <h3 className="font-medium text-gray-900">{contact.name}</h3>
-            <p className="text-xs text-gray-500">
-              {contact.isOnline
-                ? "Online"
-                : contact.lastSeen
-                ? `Last seen ${contact.lastSeen}`
-                : ""}
-            </p>
+            <h3 className="font-medium text-gray-900">{name}</h3>
           </div>
         </div>
 
