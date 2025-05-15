@@ -7,27 +7,43 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import bcrypt from "bcryptjs";
 
 const Page: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const router = useRouter();
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    try {
+      setIsLoading(true);
+      const salt = await bcrypt.genSalt(Number(process.env.NEXT_PUBLIC_SALT_ROUND));
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      // For now, we'll just show a toast since we don't have backend authentication yet
-      if (email && password) {
+      const passwordHash = await bcrypt.hash(password, salt);
+      
+      const response = await axios.post("/api/auth/signin", {
+        email,
+        password: passwordHash
+      });
+      
+      console.log(response);
+      if (response.status === 200) {
         toast.success("Login successful!");
+        router.push("/dashboard");
       } else {
-        toast.error("Please fill all fields");
+        toast.error("Invalid credentials");
       }
-    }, 1500);
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

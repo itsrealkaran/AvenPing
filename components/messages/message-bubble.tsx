@@ -9,7 +9,7 @@ interface MessageBubbleProps {
 }
 
 const MessageBubble = ({ message }: MessageBubbleProps) => {
-  const isMe = message.sender === "me";
+  const isMe = message.isOutbound;
   const time = format(new Date(message.timestamp), "h:mm a");
 
   const renderStatus = () => {
@@ -59,7 +59,7 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
           </div>
         )}
 
-        <div className="text-sm">{message.content}</div>
+        <div className="text-sm">{message.message}</div>
 
         <div className="flex items-center justify-end gap-1 mt-1">
           <span className="text-[10px] text-gray-500">{time}</span>

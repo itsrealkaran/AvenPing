@@ -27,7 +27,13 @@ const ConversationList = ({
     <div className="flex flex-col h-full border-t border-gray-100">
       <div className="overflow-y-auto flex-1">
         {conversations.map((conversation) => {
-          const { contact, lastMessage, unreadCount } = conversation;
+          const { name, phone, avatar, lastMessage, unreadCount } = conversation;
+          const contact = {
+            name,
+            phone,
+            avatar: avatar || "https://placehold.co/150x150",
+            isOnline: true,
+          };
           const lastMsg =
             lastMessage ||
             conversation.messages[conversation.messages.length - 1];
@@ -83,8 +89,8 @@ const ConversationList = ({
 
                 <div className="flex justify-between items-center">
                   <p className="text-sm text-gray-500 truncate">
-                    {lastMsg?.sender === "me" ? "You: " : ""}
-                    {lastMsg?.content || "No messages yet"}
+                    {lastMsg?.isOutbound ? "You: " : ""}
+                    {lastMsg?.message || "No messages yet"}
                   </p>
 
                   {unreadCount > 0 && (

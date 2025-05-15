@@ -17,7 +17,10 @@ export async function POST(request: Request) {
 
     // Find user
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      include: {
+        WhatsAppAccount: true,
+      },
     });
 
     if (!user) {
@@ -41,7 +44,8 @@ export async function POST(request: Request) {
     const token = await createToken({
       userId: user.id,
       email: user.email,
-      name: user.name
+      name: user.name,
+      accessToken: user.WhatsAppAccount[0].accessToken,
     });
 
     // Set cookie

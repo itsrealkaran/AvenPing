@@ -1,8 +1,10 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
+import axios from "axios";
+import { toast } from "sonner";
 
 interface Step2Props {
   onNext: () => void;
@@ -16,20 +18,47 @@ const Step2WhatsAppConnect: React.FC<Step2Props> = ({
   isLoading,
 }) => {
   const [connecting, setConnecting] = useState(false);
+  const [whatsAppCode, setWhatsAppCode] = useState()
   const [connected, setConnected] = useState(false);
 
   const handleConnect = () => {
-    setConnecting(true);
-    // Simulate connection process
-    setTimeout(() => {
-      setConnecting(false);
-      setConnected(true);
-      // Automatically proceed to the next step after a successful connection
-      setTimeout(() => {
-        onNext();
-      }, 1000);
-    }, 2000);
+      //@ts-ignore
+    FB.login(
+      (response: any) => {
+        if (response.authResponse) {
+          console.log('Logged in as:', response.authResponse);
+          //@ts-ignore
+          FB.api('/me', { fields: 'name, email' }, (userInfo) => {
+            console.log('Logged in as:', userInfo.name, 'Email:', userInfo.email);
+            setWhatsAppCode(response.authResponse.code);
+          });
+        } else {
+          console.log('User cancelled login or did not fully authorize.');
+        }
+      },
+      {
+        config_id: '1931062140756222',
+        response_type: 'code',
+        override_default_response_type: true,
+        scope: 'whatsapp_business_management,whatsapp_business_messaging,business_management',
+      }
+    );
   };
+
+  useEffect(() => {
+    if (whatsAppCode) {
+      setConnecting(true);
+      axios.post('/api/whatsapp', { code: whatsAppCode }).then((res) => {
+        console.log(res);
+        onNext();
+      }).catch((err) => {
+        console.log(err);
+        toast.error('Failed to connect WhatsApp');
+      }).finally(() => {
+        setConnecting(false);
+      });
+    }
+  }, [whatsAppCode]);
 
   return (
     <div className="space-y-6 animate-fadeIn">
