@@ -1,3 +1,4 @@
+"use client"
 import Card from "@/components/ui/card";
 import { cx } from "@/lib/utils"
 import { AreaChart, TooltipProps } from "@/components/ui/areachart";
@@ -197,9 +198,9 @@ const valueFormatter = (number: number) => {
 };
 
 const status = {
-    "completed": "bg-blue-500",
-    "in progress": "bg-cyan-500",
-    "on hold": "bg-violet-500",
+    "completed": "bg-blue-500 dark:bg-blue-500",
+    "in progress": "bg-cyan-500 dark:bg-cyan-500",
+    "on hold": "bg-violet-500 dark:bg-violet-500",
 };
 
 const Tooltip = ({ payload, active, label }: TooltipProps) => {
@@ -219,15 +220,15 @@ const Tooltip = ({ payload, active, label }: TooltipProps) => {
 
     return (
         <>
-            <div className="w-60 rounded-md border border-gray-500/10  bg-blue-500 px-4 py-1.5 text-sm shadow-md">
+            <div className="w-60 rounded-md border border-gray-500/10  bg-blue-500 px-4 py-1.5 text-sm shadow-md dark:border-gray-400/20 dark:bg-gray-900">
                 <p className="flex items-center justify-between">
-                    <span className="text-gray-50">
+                    <span className="text-gray-50 dark:text-gray-50">
                         Date
                     </span>
-                    <span className="font-medium text-gray-50">{label}</span>
+                    <span className="font-medium text-gray-50 dark:text-gray-50">{label}</span>
                 </p>
             </div>
-            <div className="mt-1 w-60 space-y-1 rounded-md border border-gray-500/10  bg-white px-4 py-2 text-sm shadow-md">
+            <div className="mt-1 w-60 space-y-1 rounded-md border border-gray-500/10  bg-white px-4 py-2 text-sm shadow-md dark:border-gray-400/20 dark:bg-gray-900">
                 {data.map((item, index) => (
                     <div key={index} className="flex items-center space-x-2.5">
                         <span
@@ -238,14 +239,14 @@ const Tooltip = ({ payload, active, label }: TooltipProps) => {
                             aria-hidden={true}
                         />
                         <div className="flex w-full justify-between">
-                            <span className=" text-gray-700">
+                            <span className=" text-gray-700 dark:text-gray-300">
                                 {item.status}
                             </span>
                             <div className="flex items-center space-x-1">
-                                <span className="font-medium text-gray-900">
+                                <span className="font-medium text-gray-900 dark:text-gray-50">
                                     {item.value}
                                 </span>
-                                <span className="text-gray-500">
+                                <span className="text-gray-500 dark:text-gray-500">
                                     ({item.percentage}&#37;)
                                 </span>
                             </div>
@@ -293,6 +294,7 @@ export default function CampaignChart() {
   return (
     <Card title="Campaign Performance">
       <div className="p-4">
+        {/* <AreaChartCallbackExample /> */}
         <AreaChartCustomTooltipExample />
       </div>
     </Card>
