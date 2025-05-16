@@ -106,7 +106,12 @@ export default function ProfilePage() {
       <Card className="flex flex-row ">
         {/* Edit Form */}
         <div className="p-6 flex-1">
-          <h2 className="text-xl font-semibold mb-6">Edit Your Profile</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold">Edit Your Profile</h2>
+            <Button type="submit" className="text-white">
+              Save Changes
+            </Button>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Section 1: Basic Info */}
@@ -146,56 +151,48 @@ export default function ProfilePage() {
               </div>
 
               {/* Right Column: Business Name */}
-              <div className="flex justify-end">
-                <Button type="submit" className="text-white">
-                  Save Changes
-                </Button>
-              </div>
-            </div>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label
+                    htmlFor="displayName"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Business Name
+                  </label>
+                  <Input
+                    id="displayName"
+                    name="displayName"
+                    value={profile.displayName}
+                    onChange={handleChange}
+                    className="w-full"
+                    required
+                  />
+                </div>
 
-            {/* Section 2: Phone and Category */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Left Column: Phone Number */}
-              <div>
-                <label
-                  htmlFor="displayName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Business Name
-                </label>
-                <Input
-                  id="displayName"
-                  name="displayName"
-                  value={profile.displayName}
-                  onChange={handleChange}
-                  className="w-full"
-                  required
-                />
-              </div>
-
-              {/* Right Column: Category */}
-              <div>
-                <label
-                  htmlFor="category"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Business Category
-                </label>
-                <Select
-                  id="category"
-                  name="category"
-                  value={profile.category}
-                  onChange={handleChange}
-                  className="w-full"
-                  required
-                >
-                  <option value="">Select a category</option>
-                  {BUSINESS_CATEGORIES.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </Select>
+                {/* Right Column: Category */}
+                <div>
+                  <label
+                    htmlFor="category"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Business Category
+                  </label>
+                  <Select
+                    id="category"
+                    name="category"
+                    value={profile.category}
+                    onChange={handleChange}
+                    className="w-full"
+                    required
+                  >
+                    <option value="">Select a category</option>
+                    {BUSINESS_CATEGORIES.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
               </div>
             </div>
 
