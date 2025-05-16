@@ -18,7 +18,19 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { ArrowLeft, Save, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  X,
+  Image,
+  FileVideo,
+  FileText,
+  FileAudio,
+  FileEdit,
+  MessageSquare,
+  GitMerge,
+  Play,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,29 +40,97 @@ import { Textarea } from "@/components/ui/textarea";
 const CustomNode = ({ data, selected, id }: any) => {
   const isStartNode = id === "1" || data.isStartNode;
 
+  // Debug log to see why some nodes are not getting colored correctly
+  console.log(`Node ${id}:`, {
+    nodeType: data.nodeType,
+    category: data.category,
+    isStartNode,
+  });
+
+  // Determine node style based on category and nodeType
+  let nodeStyle = "bg-white";
+  let borderStyle = selected ? "border-blue-500" : "border-gray-300";
+  let handleColor = "!bg-blue-400";
+  let textColor = "text-gray-700";
+
+  // First check for specific node types that might be ambiguous
+  if (data.nodeType === "ChatAction") {
+    // Special case for ChatAction (previously MessageAction)
+    nodeStyle = "bg-green-50";
+    borderStyle = selected ? "border-green-500" : "border-green-200";
+    handleColor = "!bg-green-400";
+    textColor = "text-green-700";
+  }
+  // Then check for general patterns
+  else if (data.nodeType && data.nodeType.includes("Message")) {
+    nodeStyle = "bg-blue-50";
+    borderStyle = selected ? "border-blue-500" : "border-blue-200";
+    handleColor = "!bg-blue-400";
+    textColor = "text-blue-700";
+  } else if (data.nodeType && data.nodeType.includes("Action")) {
+    nodeStyle = "bg-green-50";
+    borderStyle = selected ? "border-green-500" : "border-green-200";
+    handleColor = "!bg-green-400";
+    textColor = "text-green-700";
+  } else if (isStartNode) {
+    nodeStyle = "bg-purple-50";
+    borderStyle = selected ? "border-purple-500" : "border-purple-200";
+    handleColor = "!bg-purple-400";
+    textColor = "text-purple-700";
+  }
+
+  // Determine node icon based on type
+  const getNodeIcon = () => {
+    if (isStartNode) return <Play size={14} className="text-purple-500" />;
+
+    switch (data.nodeType) {
+      case "ImageMessage":
+        return <Image size={14} className="text-blue-500" />;
+      case "VideoMessage":
+        return <FileVideo size={14} className="text-blue-500" />;
+      case "DocumentMessage":
+        return <FileText size={14} className="text-blue-500" />;
+      case "AudioMessage":
+        return <FileAudio size={14} className="text-blue-500" />;
+      case "TemplateMessage":
+        return <FileEdit size={14} className="text-blue-500" />;
+      case "ChatAction":
+        return <MessageSquare size={14} className="text-green-500" />;
+      case "ConnectFlowAction":
+        return <GitMerge size={14} className="text-green-500" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div
-      className={`bg-white border ${
-        selected ? "border-blue-500" : "border-gray-300"
-      } rounded shadow p-2 text-xs min-w-[100px] text-center relative`}
+      className={`${nodeStyle} border ${borderStyle} rounded shadow p-3 text-xs min-w-[120px] text-center relative`}
     >
       {/* Left handle (target) - Not shown for start nodes */}
       {!isStartNode && (
         <Handle
           type="target"
           position={Position.Left}
-          className="!bg-blue-400"
+          className={handleColor}
         />
       )}
 
-      {data.label || "Node"}
+      <div
+        className={`font-medium flex items-center justify-center gap-1.5 ${textColor}`}
+      >
+        {getNodeIcon()}
+        {data.label || "Node"}
+      </div>
+
+      {data.description && (
+        <div className="text-xs text-gray-500 mt-1 truncate max-w-[200px]">
+          {data.description}
+        </div>
+      )}
 
       {/* Right handle (source) */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="!bg-blue-400"
-      />
+      <Handle type="source" position={Position.Right} className={handleColor} />
     </div>
   );
 };
@@ -66,11 +146,35 @@ export interface FlowBuilderProps {
   initialEdges?: Edge[];
 }
 
-const initialSidebarNodes = [
-  { type: "Message", label: "Image" },
-  { type: "Action", label: "Block" },
-  // Add more node types here if needed
-];
+const initialSidebarNodes = {
+  message: [
+    { type: "ImageMessage", label: "Image", icon: <Image size={18} /> },
+    { type: "VideoMessage", label: "Video", icon: <FileVideo size={18} /> },
+    {
+      type: "DocumentMessage",
+      label: "Document",
+      icon: <FileText size={18} />,
+    },
+    { type: "AudioMessage", label: "Audio", icon: <FileAudio size={18} /> },
+    {
+      type: "TemplateMessage",
+      label: "Template",
+      icon: <FileEdit size={18} />,
+    },
+  ],
+  action: [
+    {
+      type: "ChatAction",
+      label: "Message",
+      icon: <MessageSquare size={18} />,
+    },
+    {
+      type: "ConnectFlowAction",
+      label: "Connect Flow",
+      icon: <GitMerge size={18} />,
+    },
+  ],
+};
 
 export default function FlowBuilder({
   onBack,
@@ -112,21 +216,44 @@ export default function FlowBuilder({
       const reactFlowBounds = (
         event.target as HTMLElement
       ).getBoundingClientRect();
-      const type = event.dataTransfer.getData("application/reactflow");
+      const nodeType = event.dataTransfer.getData("application/reactflow");
       const position = {
         x: event.clientX - reactFlowBounds.left,
         y: event.clientY - reactFlowBounds.top,
       };
+
+      // Get appropriate label and node type based on the dragged component
+      let label = nodeType.replace(/([A-Z])/g, " $1").trim(); // Convert camelCase to spaces
+
+      // Determine category based on node type naming pattern
+      let category = "";
+
+      // Special case for ChatAction
+      if (nodeType === "ChatAction") {
+        category = "action";
+      }
+      // General patterns
+      else if (nodeType.includes("Message")) {
+        category = "message";
+      } else if (nodeType.includes("Action")) {
+        category = "action";
+      }
+
+      // Log for debugging
+      console.log(`Creating node: ${nodeType} with category: ${category}`);
+
       const newNode: Node = {
         id: `${+new Date()}`,
         type: "custom",
         position,
         data: {
-          label: type.charAt(0).toUpperCase() + type.slice(1),
+          label,
           description: "",
-          nodeType: type,
+          nodeType,
+          category,
         },
       };
+
       setNodes((nds) => nds.concat(newNode));
       setDraggedNode(null);
     },
@@ -193,24 +320,51 @@ export default function FlowBuilder({
           <Save size={16} /> Save
         </Button>
       </div>
-      {/* Left Sidebar: Components */}
+
+      {/* Left Sidebar: Components with categories */}
       <div
-        className="absolute z-30 top-16 left-4 flex flex-col gap-4 bg-white border border-gray-200 rounded-xl shadow-lg p-4"
+        className="absolute z-30 top-16 left-4 flex flex-col gap-6 bg-white border border-gray-200 rounded-xl shadow-lg p-4 overflow-auto max-h-[calc(100%-5rem)]"
         style={{ minWidth: 240 }}
       >
-        <div className="text-sm font-semibold text-gray-500 mb-2 pl-1">
-          Components
-        </div>
-        {initialSidebarNodes.map((node) => (
-          <div
-            key={node.type}
-            className="cursor-move bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-center text-xs hover:bg-gray-200 transition shadow"
-            draggable
-            onDragStart={(e) => onDragStart(e, node.type)}
-          >
-            {node.label}
+        {/* Message Blocks */}
+        <div>
+          <div className="text-sm font-semibold text-gray-700 mb-3 pl-1 border-l-2 border-blue-500 pl-2">
+            Message Blocks
           </div>
-        ))}
+          <div className="grid grid-cols-1 gap-2">
+            {initialSidebarNodes.message.map((node) => (
+              <div
+                key={node.type}
+                className="cursor-move bg-white border border-gray-200 rounded-lg px-3 py-3 text-sm hover:border-blue-300 hover:bg-blue-50 transition shadow-sm flex items-center gap-2"
+                draggable
+                onDragStart={(e) => onDragStart(e, node.type)}
+              >
+                <span className="text-blue-500">{node.icon}</span>
+                <span>{node.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Action Blocks */}
+        <div>
+          <div className="text-sm font-semibold text-gray-700 mb-3 pl-1 border-l-2 border-green-500 pl-2">
+            Action Blocks
+          </div>
+          <div className="grid grid-cols-1 gap-2">
+            {initialSidebarNodes.action.map((node) => (
+              <div
+                key={node.type}
+                className="cursor-move bg-white border border-gray-200 rounded-lg px-3 py-3 text-sm hover:border-green-300 hover:bg-green-50 transition shadow-sm flex items-center gap-2"
+                draggable
+                onDragStart={(e) => onDragStart(e, node.type)}
+              >
+                <span className="text-green-500">{node.icon}</span>
+                <span>{node.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Right Sidebar: Node Details */}
@@ -290,7 +444,7 @@ export default function FlowBuilder({
           >
             <Background color="#e5e7eb" gap={16} />
             <MiniMap />
-            <Controls />
+            {/* <Controls /> */}
           </ReactFlow>
         </div>
       </div>
