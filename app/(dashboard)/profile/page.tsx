@@ -5,14 +5,12 @@ import Body from "@/components/ui/body";
 import {
   User,
   Camera,
-  MapPin,
-  Mail,
-  Globe,
-  Building,
   ArrowLeft,
   MoreVertical,
-  Share2,
   X,
+  Edit3,
+  Check,
+  CheckCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,6 +46,7 @@ export default function ProfilePage() {
     website2: "https://duck.com/",
     profilePicture: "",
   });
+  const [isEditing, setIsEditing] = useState(false);
 
   // Reference for the hidden file input
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -108,8 +107,18 @@ export default function ProfilePage() {
         <div className="p-6 flex-1">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold">Edit Your Profile</h2>
-            <Button type="submit" className="text-white">
-              Save Changes
+            <Button
+              type="submit"
+              size="sm"
+              className="text-sm"
+              onClick={() => setIsEditing(!isEditing)}
+            >
+              {isEditing ? (
+                <CheckCircle className="size-4" />
+              ) : (
+                <Edit3 className="size-4" />
+              )}
+              {isEditing ? "Save Updates" : "Edit Profile"}
             </Button>
           </div>
 
@@ -119,7 +128,7 @@ export default function ProfilePage() {
               {/* Left Column: Profile Picture */}
               <div className="flex flex-col items-center justify-center">
                 <div
-                  className="relative w-20 h-20 rounded-full bg-gray-100 cursor-pointer flex items-center justify-center mb-2 border-2 border-green-500 hover:border-green-600 transition-all"
+                  className="relative w-20 h-20 rounded-full bg-gray-100 cursor-pointer flex items-center justify-center mb-2 border-2 border-primary hover:border-primary/80 transition-all"
                   onClick={handleProfilePictureClick}
                 >
                   {profile.profilePicture ? (
