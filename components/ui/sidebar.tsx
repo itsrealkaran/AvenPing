@@ -138,15 +138,17 @@ export default function Sidebar({
       <div className="flex">
         <div
           className={cn(
-            "flex flex-1 flex-col h-screen border-r border-gray-200 sticky top-0 overflow-y-auto transition-all duration-300",
-            isCollapsed ? "w-[70px]" : "w-[250px]"
+            "flex flex-1 flex-col h-screen bg-white border-r border-gray-200 sticky top-0 overflow-y-auto transition-all duration-300",
+            isCollapsed ? "w-[76px] px-0" : "w-[254px] px-2"
           )}
         >
           {/* Header */}
           <div
             className={cn(
               "flex items-center p-4 ${is}",
-              isCollapsed ? "justify-center pb-2 border-b border-gray-200" : "justify-between"
+              isCollapsed
+                ? "justify-center pb-2 border-b border-gray-200"
+                : "justify-between"
             )}
           >
             {!isCollapsed && (
@@ -175,19 +177,25 @@ export default function Sidebar({
               </Tooltip>
             )}
             {!isCollapsed && (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button aria-label="Documentation" className="hover:bg-gray-100 rounded-md">
+                    <button
+                      aria-label="Documentation"
+                      className="hover:bg-gray-100 rounded-md"
+                    >
                       <Book size={20} />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>Documentation</TooltipContent>
                 </Tooltip>
-                
+
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button aria-label="Notifications" className="hover:bg-gray-100 rounded-md">
+                    <button
+                      aria-label="Notifications"
+                      className="hover:bg-gray-100 rounded-md"
+                    >
                       <Bell size={20} />
                     </button>
                   </TooltipTrigger>
@@ -212,7 +220,7 @@ export default function Sidebar({
                   <TooltipContent side="right">Documentation</TooltipContent>
                 </Tooltip>
               </li>
-              
+
               <li>
                 <Tooltip>
                   <TooltipTrigger asChild>
