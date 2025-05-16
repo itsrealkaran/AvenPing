@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import Body from "@/components/ui/body";
+import Body from "@/components/layout/body";
 import {
   User,
   Camera,

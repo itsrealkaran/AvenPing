@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/ui/sidebar";
+import Sidebar from "@/components/layout/sidebar";
 import Script from "next/script";
 import { Toaster } from "sonner";
-
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,18 +25,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable}`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <Script
-          strategy='lazyOnload'
-          id='facebook-jssdk'
-          src='https://connect.facebook.net/en_US/sdk.js'
+          strategy="lazyOnload"
+          id="facebook-jssdk"
+          src="https://connect.facebook.net/en_US/sdk.js"
         />
-        <Script id='facebook-init'>
+        <Script id="facebook-init">
           {`
             window.fbAsyncInit = function() {
               FB.init({

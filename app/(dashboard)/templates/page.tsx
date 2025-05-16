@@ -1,6 +1,6 @@
 "use client";
 
-import Body from "@/components/ui/body";
+import Body from "@/components/layout/body";
 import { FileText, Edit, Trash, Copy, Plus } from "lucide-react";
 import React, { useState } from "react";
 import Table, { ActionMenuItem } from "@/components/ui/table";

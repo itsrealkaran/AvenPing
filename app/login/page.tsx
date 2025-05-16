@@ -1,10 +1,9 @@
-'use client'
+"use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -17,20 +16,22 @@ const Page: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setIsLoading(true);
-      const salt = await bcrypt.genSalt(Number(process.env.NEXT_PUBLIC_SALT_ROUND));
+      const salt = await bcrypt.genSalt(
+        Number(process.env.NEXT_PUBLIC_SALT_ROUND)
+      );
 
       const passwordHash = await bcrypt.hash(password, salt);
-      
+
       const response = await axios.post("/api/auth/signin", {
         email,
-        password: passwordHash
+        password: passwordHash,
       });
-      
+
       console.log(response);
       if (response.status === 200) {
         toast.success("Login successful!");
@@ -52,19 +53,25 @@ const Page: React.FC = () => {
       <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-whatsapp/20 to-transparent" />
       <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-whatsapp/10 blur-3xl" />
       <div className="absolute -bottom-10 -right-10 w-40 h-40 rounded-full bg-whatsapp/10 blur-3xl" />
-      
+
       <div className="w-full max-w-md relative">
         <div className="mb-8 flex flex-col items-center">
-          <div className="text-4xl font-bold text-whatsapp-dark mb-2 animate-fadeIn">AvenPing</div>
-          <div className="text-gray-600 text-sm">Your Business Communication Hub</div>
+          <div className="text-4xl font-bold text-whatsapp-dark mb-2 animate-fadeIn">
+            AvenPing
+          </div>
+          <div className="text-gray-600 text-sm">
+            Your Business Communication Hub
+          </div>
         </div>
-        
-        <Card className="border shadow-2xl backdrop-blur-sm bg-white/90 animate-slideUp">
-          <CardHeader className="space-y-1 pb-2">
-            <CardTitle className="text-2xl font-bold text-center">Welcome Back</CardTitle>
-            <p className="text-sm text-center text-gray-600">Sign in to your account</p>
-          </CardHeader>
-          <CardContent>
+
+        <div className="border shadow-2xl backdrop-blur-sm bg-white/90 animate-slideUp rounded-lg overflow-hidden">
+          <div className="p-6 pb-4 space-y-1">
+            <h2 className="text-2xl font-bold text-center">Welcome Back</h2>
+            <p className="text-sm text-center text-gray-600">
+              Sign in to your account
+            </p>
+          </div>
+          <div className="p-6 pt-2">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <div className="relative group">
@@ -125,12 +132,15 @@ const Page: React.FC = () => {
 
             <div className="mt-6 text-center text-sm">
               <span className="text-gray-600">Don't have an account? </span>
-              <Link href="/signup" className="text-whatsapp hover:underline font-medium transition-colors">
+              <Link
+                href="/signup"
+                className="text-whatsapp hover:underline font-medium transition-colors"
+              >
                 Sign up
               </Link>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

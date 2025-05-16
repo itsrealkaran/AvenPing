@@ -1,6 +1,5 @@
-'use client'
+"use client";
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import Link from "next/link";
 import Step1BasicInfo from "@/components/signup/Step1BasicInfo";
@@ -10,7 +9,7 @@ import Step3ProfileSetup from "@/components/signup/Step3ProfileSetup";
 const Page: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     // Step 1
     name: "",
@@ -19,7 +18,7 @@ const Page: React.FC = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    
+
     // Step 3
     displayName: "",
     description: "",
@@ -56,7 +55,7 @@ const Page: React.FC = () => {
     setTimeout(() => {
       setIsLoading(false);
       toast.success("Account created successfully!");
-      
+
       // For demo purposes, we'll just reset the form
       // In a real app, you would redirect to the dashboard
       setCurrentStep(1);
@@ -93,7 +92,7 @@ const Page: React.FC = () => {
                 {step}
               </div>
               {step < 3 && (
-                <div 
+                <div
                   className={`w-12 h-1 ${
                     step < currentStep ? "bg-whatsapp-light" : "bg-gray-200"
                   }`}
@@ -141,18 +140,17 @@ const Page: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="w-full max-w-md">
-        
-        <Card className="border shadow-lg">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">
+        <div className="border shadow-lg rounded-lg overflow-hidden bg-white">
+          <div className="p-6 pb-3 space-y-1">
+            <h2 className="text-2xl font-bold text-center">
               Create your account
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </h2>
+          </div>
+          <div className="p-6 pt-3">
             {renderStepIndicator()}
             {renderStep()}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {currentStep === 1 && (
           <div className="mt-4 text-center text-sm">

@@ -1,6 +1,6 @@
 "use client";
 
-import SidebarContainer from "@/components/ui/sidebar-container";
+import SidebarContainer from "@/components/layout/sidebar-container";
 
 export default function RootLayout({
   children,

@@ -1,6 +1,6 @@
 "use client";
 
-import Body from "@/components/ui/body";
+import Body from "@/components/layout/body";
 import { Send, Edit, Trash, Pause, Play, Plus, BarChart } from "lucide-react";
 import React, { useState } from "react";
 import Table, { ActionMenuItem } from "@/components/ui/table";

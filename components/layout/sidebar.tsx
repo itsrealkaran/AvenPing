@@ -34,7 +34,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "./tooltip";
+} from "../ui/tooltip";
 import { cn } from "@/lib/utils";
 
 // Types for icon identifiers

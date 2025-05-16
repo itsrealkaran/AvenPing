@@ -9,7 +9,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import Body from "@/components/ui/body";
+import Body from "@/components/layout/body";
 import Card from "@/components/ui/card";
 import QRCodeModal from "@/components/dashboard/qr-code-modal";
 import RegisterNumberModal from "@/components/dashboard/register-number-modal";
@@ -48,27 +48,33 @@ export default function DashboardPage() {
 
   const handleConnectAccount = () => {
     //@ts-ignore
-  FB.login(
-    (response: any) => {
-      if (response.authResponse) {
-        console.log('Logged in as:', response.authResponse);
-        //@ts-ignore
-        FB.api('/me', { fields: 'name, email' }, (userInfo) => {
-          console.log('Logged in as:', userInfo.name, 'Email:', userInfo.email);
-          setWhatsAppCode(response.authResponse.code);
-        });
-      } else {
-        console.log('User cancelled login or did not fully authorize.');
+    FB.login(
+      (response: any) => {
+        if (response.authResponse) {
+          console.log("Logged in as:", response.authResponse);
+          //@ts-ignore
+          FB.api("/me", { fields: "name, email" }, (userInfo) => {
+            console.log(
+              "Logged in as:",
+              userInfo.name,
+              "Email:",
+              userInfo.email
+            );
+            setWhatsAppCode(response.authResponse.code);
+          });
+        } else {
+          console.log("User cancelled login or did not fully authorize.");
+        }
+      },
+      {
+        config_id: "1931062140756222",
+        response_type: "code",
+        override_default_response_type: true,
+        scope:
+          "whatsapp_business_management,whatsapp_business_messaging,business_management",
       }
-    },
-    {
-      config_id: '1931062140756222',
-      response_type: 'code',
-      override_default_response_type: true,
-      scope: 'whatsapp_business_management,whatsapp_business_messaging,business_management',
-    }
-  );
-};
+    );
+  };
 
   return (
     <Body icon={LayoutDashboard} title="Dashboard">

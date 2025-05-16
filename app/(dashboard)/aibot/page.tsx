@@ -1,4 +1,4 @@
-import Body from "@/components/ui/body";
+import Body from "@/components/layout/body";
 import { Bot } from "lucide-react";
 
 export default function AIBotPage() {
@@ -7,4 +7,4 @@ export default function AIBotPage() {
       <h1>AI Bot</h1>
     </Body>
   );
-} 
+}

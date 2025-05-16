@@ -1,4 +1,4 @@
-import Body from "@/components/ui/body";
+import Body from "@/components/layout/body";
 import { Settings } from "lucide-react";
 
 export default function SettingsPage() {
@@ -7,4 +7,4 @@ export default function SettingsPage() {
       <h1>Settings</h1>
     </Body>
   );
-} 
+}
