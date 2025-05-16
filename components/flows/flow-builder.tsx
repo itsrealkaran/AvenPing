@@ -25,15 +25,35 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 // Minimal custom node with handles for connection
-const CustomNode = ({ data, selected }: any) => (
-  <div className={`bg-white border ${selected ? "border-blue-500" : "border-gray-300"} rounded shadow p-2 text-xs min-w-[100px] text-center relative`}>
-    {/* Top handle (target) */}
-    <Handle type="target" position={Position.Top} className="!bg-blue-400" />
-    {data.label || "Node"}
-    {/* Bottom handle (source) */}
-    <Handle type="source" position={Position.Bottom} className="!bg-blue-400" />
-  </div>
-);
+const CustomNode = ({ data, selected, id }: any) => {
+  const isStartNode = id === "1" || data.isStartNode;
+
+  return (
+    <div
+      className={`bg-white border ${
+        selected ? "border-blue-500" : "border-gray-300"
+      } rounded shadow p-2 text-xs min-w-[100px] text-center relative`}
+    >
+      {/* Left handle (target) - Not shown for start nodes */}
+      {!isStartNode && (
+        <Handle
+          type="target"
+          position={Position.Left}
+          className="!bg-blue-400"
+        />
+      )}
+
+      {data.label || "Node"}
+
+      {/* Right handle (source) */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!bg-blue-400"
+      />
+    </div>
+  );
+};
 
 const nodeTypes: NodeTypes = {
   custom: CustomNode,
@@ -60,7 +80,11 @@ export default function FlowBuilder({
       id: "1",
       type: "custom",
       position: { x: 250, y: 100 },
-      data: { label: "Start" },
+      data: {
+        label: "Start",
+        isStartNode: true,
+        nodeType: "Start",
+      },
     },
   ],
   initialEdges = [],
@@ -97,10 +121,10 @@ export default function FlowBuilder({
         id: `${+new Date()}`,
         type: "custom",
         position,
-        data: { 
+        data: {
           label: type.charAt(0).toUpperCase() + type.slice(1),
-          description: "", 
-          nodeType: type
+          description: "",
+          nodeType: type,
         },
       };
       setNodes((nds) => nds.concat(newNode));
@@ -122,7 +146,7 @@ export default function FlowBuilder({
   // Function to update node data
   const updateNodeData = (key: string, value: string) => {
     if (!selectedNode) return;
-    
+
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === selectedNode.id) {
@@ -137,15 +161,17 @@ export default function FlowBuilder({
         return node;
       })
     );
-    
-    setSelectedNode((prev) => 
-      prev ? {
-        ...prev,
-        data: {
-          ...prev.data,
-          [key]: value,
-        },
-      } : null
+
+    setSelectedNode((prev) =>
+      prev
+        ? {
+            ...prev,
+            data: {
+              ...prev.data,
+              [key]: value,
+            },
+          }
+        : null
     );
   };
 
@@ -163,10 +189,7 @@ export default function FlowBuilder({
         >
           <ArrowLeft size={16} /> Back
         </button>
-        <Button
-          onClick={() => onSave(nodes, edges)}
-          size="sm"
-        >
+        <Button onClick={() => onSave(nodes, edges)} size="sm">
           <Save size={16} /> Save
         </Button>
       </div>
@@ -189,7 +212,7 @@ export default function FlowBuilder({
           </div>
         ))}
       </div>
-      
+
       {/* Right Sidebar: Node Details */}
       {selectedNode && (
         <div
@@ -200,43 +223,43 @@ export default function FlowBuilder({
             <div className="text-sm font-semibold text-gray-500 pl-1">
               Node Details
             </div>
-            <button 
+            <button
               onClick={closeRightSidebar}
               className="text-gray-500 hover:text-gray-700"
             >
               <X size={16} />
             </button>
           </div>
-          
+
           <div className="space-y-4">
             <div>
               <Label htmlFor="nodeLabel">Label</Label>
               <Input
                 id="nodeLabel"
-                value={selectedNode.data.label as string  || ""}
+                value={(selectedNode.data.label as string) || ""}
                 onChange={(e) => updateNodeData("label", e.target.value)}
                 className="mt-1"
               />
             </div>
-            
+
             <div className="flex flex-col gap-2">
               <Label htmlFor="nodeDescription">Description</Label>
               <Textarea
                 id="nodeDescription"
-                value={selectedNode.data.description as string || ""}
+                value={(selectedNode.data.description as string) || ""}
                 onChange={(e) => updateNodeData("description", e.target.value)}
                 className="mt-1"
                 rows={3}
               />
             </div>
-            
+
             <div>
               <Label>Node Type</Label>
               <div className="text-sm text-gray-700 mt-1 px-3 py-2 bg-gray-50 rounded border border-gray-200">
-                {selectedNode.data.nodeType as string || "Custom"}
+                {(selectedNode.data.nodeType as string) || "Custom"}
               </div>
             </div>
-            
+
             <div>
               <Label>Node ID</Label>
               <div className="text-xs text-gray-500 mt-1 px-3 py-2 bg-gray-50 rounded border border-gray-200 overflow-x-auto">
@@ -246,7 +269,7 @@ export default function FlowBuilder({
           </div>
         </div>
       )}
-      
+
       {/* Main Flow Area */}
       <div className="flex-1 relative h-full">
         {/* Header */}
