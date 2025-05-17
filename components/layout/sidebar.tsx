@@ -145,7 +145,7 @@ export default function Sidebar({
           {/* Header */}
           <div
             className={cn(
-              "flex items-center p-4 ${is}",
+              "flex items-center p-4 pb-2 ${is}",
               isCollapsed
                 ? "justify-center pb-2 border-b border-gray-200"
                 : "justify-between"
@@ -211,13 +211,13 @@ export default function Sidebar({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link
-                      href="/docs"
+                      href="/documentations"
                       className="flex items-center px-2 py-2 text-sm rounded-md justify-center text-gray-700 hover:bg-gray-100"
                     >
                       <Book size={20} />
                     </Link>
                   </TooltipTrigger>
-                  <TooltipContent side="right">Documentation</TooltipContent>
+                  <TooltipContent side="right">Documentations</TooltipContent>
                 </Tooltip>
               </li>
 

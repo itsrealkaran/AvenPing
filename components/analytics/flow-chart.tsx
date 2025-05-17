@@ -1,6 +1,6 @@
 import Card from "@/components/ui/card";
 import { FlowData } from "./data";
-import { BarChart } from "@/components/ui/barchart";
+import { BarChart } from "@/components/ui/bar-chart";
 
 const chartdata = [
   {

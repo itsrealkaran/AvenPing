@@ -1,7 +1,7 @@
 "use client";
 import Card from "@/components/ui/card";
 import { cx } from "@/lib/utils";
-import { AreaChart, TooltipProps } from "@/components/ui/areachart";
+import { AreaChart, TooltipProps } from "@/components/ui/area-chart";
 
 interface Issue {
   status: "completed" | "in progress" | "on hold";
