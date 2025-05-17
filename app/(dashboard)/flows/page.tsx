@@ -8,7 +8,7 @@ import { MRT_ColumnDef } from "material-react-table";
 import dynamic from "next/dynamic";
 
 // Dynamically import FlowBuilder to avoid SSR issues
-const FlowBuilder = dynamic(() => import("@/components/flow/FlowBuilder"), {
+const FlowBuilder = dynamic(() => import("@/components/flows/flow-builder"), {
   ssr: false,
 });
 

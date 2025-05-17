@@ -468,7 +468,7 @@ export default function FlowBuilder({
             className="bg-gray-50"
             attributionPosition={undefined}
           >
-            <Background color="#e5e7eb" gap={16} />
+            <Background color="#999" gap={16} />
             <MiniMap />
             {/* <Controls /> */}
           </ReactFlow>

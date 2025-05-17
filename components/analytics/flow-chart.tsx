@@ -67,7 +67,7 @@ const chartdata = [
 
 export const BarChartHero = () => (
   <BarChart
-    className="h-80"
+    className="h-80 p-4"
     data={chartdata}
     index="date"
     categories={["SolarPanels", "Inverters"]}
