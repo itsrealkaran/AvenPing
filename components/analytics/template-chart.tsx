@@ -121,7 +121,7 @@ const valueFormatter = (number: number) => {
 };
 
 const status = {
-  "completed": "bg-blue-500 dark:bg-blue-500",
+  completed: "bg-blue-500 dark:bg-blue-500",
   "in progress": "bg-cyan-500 dark:bg-cyan-500",
   "on hold": "bg-violet-500 dark:bg-violet-500",
 };
