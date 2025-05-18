@@ -10,11 +10,6 @@ import ContactGrowthChart from "@/components/analytics/contact-growth-chart";
 import TemplateChart from "@/components/analytics/template-chart";
 import {
   sampleMetrics,
-  sampleCampaignData,
-  sampleFlowData,
-  sampleResponseTimeData,
-  sampleContactGrowthData,
-  sampleTemplateData,
 } from "@/components/analytics/data";
 
 export default function AnalyticsPage() {
@@ -30,14 +25,14 @@ export default function AnalyticsPage() {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <CampaignChart />
-        <FlowChart data={sampleFlowData} />
+        <FlowChart />
       </div>
 
       {/* Bottom Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <ResponseTimeChart data={sampleResponseTimeData} />
-        <ContactGrowthChart data={sampleContactGrowthData} />
-        <TemplateChart data={sampleTemplateData} />
+        <ResponseTimeChart />
+        <ContactGrowthChart />
+        <TemplateChart />
       </div>
     </Body>
   );

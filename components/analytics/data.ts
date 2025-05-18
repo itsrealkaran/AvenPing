@@ -7,7 +7,7 @@ export type MetricData = {
 };
 
 export type CampaignData = {
-  name: string;
+  date: string;
   sent: number;
   delivered: number;
   opened: number;
@@ -64,12 +64,68 @@ export const sampleMetrics: MetricData[] = [
   },
 ];
 
-export const sampleCampaignData: CampaignData[] = [
-  { name: "Week 1", sent: 1200, delivered: 1180, opened: 850 },
-  { name: "Week 2", sent: 1500, delivered: 1470, opened: 1050 },
-  { name: "Week 3", sent: 1800, delivered: 1750, opened: 1200 },
-  { name: "Week 4", sent: 2200, delivered: 2150, opened: 1600 },
-];
+// --- Campaign Data Generator ---
+function formatDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+export function generateCampaignData({
+  days,
+  checkpoint = "daily",
+  startDate = new Date(),
+}: {
+  days: number;
+  checkpoint?: "daily" | "semiweekly" | "monthly";
+  startDate?: Date;
+}): CampaignData[] {
+  const data: CampaignData[] = [];
+  let checkpoints: number;
+  let labelFn: (i: number, d: Date) => string;
+
+  switch (checkpoint) {
+    case "monthly":
+      checkpoints = Math.ceil(days / 30);
+      labelFn = (i, d) => d.toLocaleString("default", { month: "short", year: "numeric" });
+      break;
+    case "semiweekly":
+      checkpoints = Math.ceil(days / 3);
+      labelFn = (i, d) => formatDate(d);
+      break;
+    default:
+      checkpoints = days;
+      labelFn = (i, d) => formatDate(d);
+  }
+
+  for (let i = 0; i < checkpoints; i++) {
+    // Simulate some data
+    const sent = 1000 + Math.floor(Math.random() * 1000) + i * 100;
+    const delivered = sent - Math.floor(Math.random() * 50);
+    const opened = delivered - Math.floor(Math.random() * 200);
+
+    // Calculate date for label
+    let date = new Date(startDate);
+    if (checkpoint === "monthly") date.setMonth(date.getMonth() - (checkpoints - 1 - i));
+    else if (checkpoint === "semiweekly") date.setDate(date.getDate() - (checkpoints - 1 - i) * 3);
+    else date.setDate(date.getDate() - (checkpoints - 1 - i));
+
+    data.push({
+      date: labelFn(i, date),
+      sent,
+      delivered,
+      opened,
+    });
+  }
+  return data;
+}
+
+// Pre-generated datasets for filters
+export const campaignDataLast7Days = generateCampaignData({ days: 7, checkpoint: "daily" });
+export const campaignDataLast15Days = generateCampaignData({ days: 15, checkpoint: "daily" });
+export const campaignDataLast30Days = generateCampaignData({ days: 30, checkpoint: "semiweekly" });
+export const campaignDataLast90Days = generateCampaignData({ days: 90, checkpoint: "semiweekly" });
+export const campaignDataLast360Days = generateCampaignData({ days: 360, checkpoint: "monthly" });
+
+export const sampleCampaignData: CampaignData[] = campaignDataLast30Days;
 
 export const sampleFlowData: FlowData[] = [
   { name: "Flow 1", completed: 85, dropped: 15 },
@@ -99,4 +155,27 @@ export const sampleTemplateData: TemplateData[] = [
   { name: "Promo", success: 78 },
   { name: "Support", success: 85 },
   { name: "Follow-up", success: 88 },
-]; 
+];
+
+// --- Campaign Chart Filter Options and Data Map ---
+import type { DropdownOption } from "@/components/ui/dropdown-button";
+
+export const FILTER_OPTIONS: DropdownOption[] = [
+  { label: "Last 7 Days", value: "7" },
+  { label: "Last 15 Days", value: "15" },
+  { label: "Last 30 Days", value: "30" },
+  { label: "Last 90 Days", value: "90" },
+  { label: "Last 360 Days", value: "360" },
+];
+
+export const FILTER_DATA_MAP: Record<string, CampaignData[]> = {
+  "7": campaignDataLast7Days,
+  "15": campaignDataLast15Days,
+  "30": campaignDataLast30Days,
+  "90": campaignDataLast90Days,
+  "360": campaignDataLast360Days,
+};
+
+export function getFilterLabel(value: string): string {
+  return FILTER_OPTIONS.find((opt) => opt.value === value)?.label || "Last 30 Days";
+} 

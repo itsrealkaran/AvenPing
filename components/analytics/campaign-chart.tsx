@@ -1,203 +1,30 @@
 "use client";
+import React from "react";
 import Card from "@/components/ui/card";
 import { cx } from "@/lib/utils";
 import { AreaChart, TooltipProps } from "@/components/ui/area-chart";
+import {
+  CampaignData,
+  FILTER_OPTIONS,
+  FILTER_DATA_MAP,
+  getFilterLabel,
+} from "./data";
+import { DropdownButton } from "@/components/ui/dropdown-button";
 
 interface Issue {
-  status: "completed" | "in progress" | "on hold";
+  status: "sent" | "delivered" | "opened";
   value: number;
   percentage: number;
 }
-
-interface DataEntry {
-  date: string;
-  issues: Issue[];
-}
-
-const data: DataEntry[] = [
-  //array-start
-  {
-    date: "Jun 1, 24",
-    issues: [
-      {
-        status: "completed",
-        value: 47,
-        percentage: 24.2,
-      },
-      {
-        status: "in progress",
-        value: 83,
-        percentage: 41.9,
-      },
-      {
-        status: "on hold",
-        value: 67,
-        percentage: 33.9,
-      },
-    ],
-  },
-  {
-    date: "Jun 2, 24",
-    issues: [
-      {
-        status: "completed",
-        value: 20,
-        percentage: 20.6,
-      },
-      {
-        status: "in progress",
-        value: 97,
-        percentage: 77.3,
-      },
-      {
-        status: "on hold",
-        value: 12,
-        percentage: 2.1,
-      },
-    ],
-  },
-  {
-    date: "Jun 3, 24",
-    issues: [
-      {
-        status: "completed",
-        value: 30,
-        percentage: 29.4,
-      },
-      {
-        status: "in progress",
-        value: 45,
-        percentage: 43.1,
-      },
-      {
-        status: "on hold",
-        value: 66,
-        percentage: 27.5,
-      },
-    ],
-  },
-  {
-    date: "Jun 4, 24",
-    issues: [
-      {
-        status: "completed",
-        value: 41,
-        percentage: 28.1,
-      },
-      {
-        status: "in progress",
-        value: 18,
-        percentage: 17.9,
-      },
-      {
-        status: "on hold",
-        value: 70,
-        percentage: 54.0,
-      },
-    ],
-  },
-  {
-    date: "Jun 5, 24",
-    issues: [
-      {
-        status: "completed",
-        value: 55,
-        percentage: 28.8,
-      },
-      {
-        status: "in progress",
-        value: 14,
-        percentage: 25.0,
-      },
-      {
-        status: "on hold",
-        value: 60,
-        percentage: 46.2,
-      },
-    ],
-  },
-  {
-    date: "Jun 6, 24",
-    issues: [
-      {
-        status: "completed",
-        value: 35,
-        percentage: 28.8,
-      },
-      {
-        status: "in progress",
-        value: 14,
-        percentage: 19.2,
-      },
-      {
-        status: "on hold",
-        value: 80,
-        percentage: 51.9,
-      },
-    ],
-  },
-  {
-    date: "Jun 7, 24",
-    issues: [
-      {
-        status: "completed",
-        value: 15,
-        percentage: 20.0,
-      },
-      {
-        status: "in progress",
-        value: 55,
-        percentage: 35.2,
-      },
-      {
-        status: "on hold",
-        value: 72,
-        percentage: 44.8,
-      },
-    ],
-  },
-  {
-    date: "Jun 8, 24",
-    issues: [
-      {
-        status: "completed",
-        value: 15,
-        percentage: 21.7,
-      },
-      {
-        status: "in progress",
-        value: 69,
-        percentage: 48.2,
-      },
-      {
-        status: "on hold",
-        value: 45,
-        percentage: 30.1,
-      },
-    ],
-  },
-  //array-end
-];
-
-// Transform data into a format suitable for AreaChart
-const formattedArray = data.map((entry) => {
-  return {
-    date: entry.date,
-    ...entry.issues.reduce((acc, issue) => {
-      acc[issue.status] = issue.value;
-      return acc;
-    }, {} as { [key in Issue["status"]]?: number }),
-  };
-});
 
 const valueFormatter = (number: number) => {
   return Intl.NumberFormat("us").format(number).toString();
 };
 
 const status = {
-  completed: "bg-blue-500 dark:bg-blue-500",
-  "in progress": "bg-cyan-500 dark:bg-cyan-500",
-  "on hold": "bg-violet-500 dark:bg-violet-500",
+  sent: "bg-blue-500 dark:bg-blue-500",
+  delivered: "bg-cyan-500 dark:bg-cyan-500",
+  opened: "bg-violet-500 dark:bg-violet-500",
 };
 
 const Tooltip = ({ payload, active, label }: TooltipProps) => {
@@ -208,9 +35,9 @@ const Tooltip = ({ payload, active, label }: TooltipProps) => {
     value: item.value,
     percentage: (
       (item.value /
-        (item.payload.completed +
-          item.payload["in progress"] +
-          item.payload["on hold"])) *
+        (item.payload.sent +
+          item.payload["delivered"] +
+          item.payload["opened"])) *
       100
     ).toFixed(2),
   }));
@@ -255,19 +82,19 @@ const Tooltip = ({ payload, active, label }: TooltipProps) => {
   );
 };
 
-function AreaChartCustomTooltipExample() {
+function AreaChartCustomTooltipExample({ data }: { data: CampaignData[] }) {
   return (
     <div>
       <AreaChart
         className="hidden h-72 sm:block"
-        data={formattedArray}
+        data={data}
         index="date"
-        categories={["completed", "in progress", "on hold"]}
+        categories={["sent", "delivered", "opened"]}
         type="stacked"
         colors={["blue", "cyan", "violet"]}
         valueFormatter={valueFormatter}
         yAxisWidth={35}
-        showLegend={false}
+        showLegend={true}
         customTooltip={Tooltip}
         showGridLines={true}
         showYAxis={true}
@@ -275,14 +102,14 @@ function AreaChartCustomTooltipExample() {
       />
       <AreaChart
         className="h-80 sm:hidden"
-        data={formattedArray}
+        data={data}
         index="date"
-        categories={["completed", "in progress", "on hold"]}
+        categories={["sent", "delivered", "opened"]}
         type="stacked"
         colors={["blue", "cyan", "violet"]}
         valueFormatter={valueFormatter}
         showYAxis={false}
-        showLegend={false}
+        showLegend={true}
         startEndOnly={true}
         customTooltip={Tooltip}
         showGridLines={true}
@@ -293,10 +120,27 @@ function AreaChartCustomTooltipExample() {
 }
 
 export default function CampaignChart() {
+  const [selected, setSelected] = React.useState("30");
+  const chartData = FILTER_DATA_MAP[selected];
+  const selectedLabel = getFilterLabel(selected);
+
   return (
-    <Card title="Campaign Performance">
+    <Card
+      title="Campaign Performance"
+      headerButton={
+        <DropdownButton
+          options={FILTER_OPTIONS}
+          onChange={setSelected}
+          selected={selected}
+          size="xs"
+          variant="outline"
+        >
+          {selectedLabel}
+        </DropdownButton>
+      }
+    >
       <div className="p-4">
-        <AreaChartCustomTooltipExample />
+        <AreaChartCustomTooltipExample data={chartData} />
       </div>
     </Card>
   );

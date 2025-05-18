@@ -74,7 +74,7 @@ export const BarChartHero = () => (
     valueFormatter={(number: number) =>
       `$${Intl.NumberFormat("us").format(number).toString()}`
     }
-    onValueChange={(v) => console.log(v)}
+    onValueChange={(v: any) => console.log(v)}
   />
 );
 
