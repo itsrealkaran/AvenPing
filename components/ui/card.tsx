@@ -7,6 +7,7 @@ interface CardProps {
   className?: string;
   viewAllLink?: string;
   variant?: "default" | "header" | "darkHeader";
+  headerButton?: ReactNode;
 }
 
 export default function Card({
@@ -15,6 +16,7 @@ export default function Card({
   className = "",
   viewAllLink,
   variant = "default",
+  headerButton,
 }: CardProps) {
   const renderHeader = () => {
     if (!title && variant === "default") return null;
@@ -28,14 +30,17 @@ export default function Card({
         <div className="text-sm font-medium text-gray-600 flex items-center gap-2">
           {title}
         </div>
-        {viewAllLink && (
-          <Link
-            href={viewAllLink}
-            className="text-xs text-gray-600 flex items-center hover:text-gray-900"
-          >
-            All {title} <span className="ml-1">→</span>
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          {viewAllLink && (
+            <Link
+              href={viewAllLink}
+              className="text-xs text-gray-600 flex items-center hover:text-gray-900"
+            >
+              All {title} <span className="ml-1">→</span>
+            </Link>
+          )}
+          {headerButton}
+        </div>
       </div>
     );
   };
