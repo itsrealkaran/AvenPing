@@ -118,6 +118,40 @@ export function generateCampaignData({
   return data;
 }
 
+// --- Generic Sample Data Generators ---
+export function generateFlowData(count: number): FlowData[] {
+  return Array.from({ length: count }).map((_, i) => ({
+    name: `Flow ${i + 1}`,
+    completed: 50 + Math.floor(Math.random() * 50),
+    dropped: 10 + Math.floor(Math.random() * 20),
+  }));
+}
+
+export function generateResponseTimeData(): ResponseTimeData[] {
+  const buckets = ["< 5 min", "5-15 min", "15-30 min", "30+ min"];
+  return buckets.map((name) => ({
+    name,
+    value: 10 + Math.floor(Math.random() * 40),
+  }));
+}
+
+export function generateContactGrowthData(): ContactGrowthData[] {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+  let base = 5000;
+  return months.map((name, i) => {
+    base += 1000 + Math.floor(Math.random() * 1000);
+    return { name, contacts: base };
+  });
+}
+
+export function generateTemplateData(): TemplateData[] {
+  const names = ["Welcome", "Promo", "Support", "Follow-up"];
+  return names.map((name) => ({
+    name,
+    success: 70 + Math.floor(Math.random() * 30),
+  }));
+}
+
 // Pre-generated datasets for filters
 export const campaignDataLast7Days = generateCampaignData({ days: 7, checkpoint: "daily" });
 export const campaignDataLast15Days = generateCampaignData({ days: 15, checkpoint: "daily" });
@@ -126,38 +160,11 @@ export const campaignDataLast90Days = generateCampaignData({ days: 90, checkpoin
 export const campaignDataLast360Days = generateCampaignData({ days: 360, checkpoint: "monthly" });
 
 export const sampleCampaignData: CampaignData[] = campaignDataLast30Days;
+export const sampleFlowData: FlowData[] = generateFlowData(4);
+export const sampleResponseTimeData: ResponseTimeData[] = generateResponseTimeData();
+export const sampleContactGrowthData: ContactGrowthData[] = generateContactGrowthData();
+export const sampleTemplateData: TemplateData[] = generateTemplateData();
 
-export const sampleFlowData: FlowData[] = [
-  { name: "Flow 1", completed: 85, dropped: 15 },
-  { name: "Flow 2", completed: 75, dropped: 25 },
-  { name: "Flow 3", completed: 90, dropped: 10 },
-  { name: "Flow 4", completed: 70, dropped: 30 },
-];
-
-export const sampleResponseTimeData: ResponseTimeData[] = [
-  { name: "< 5 min", value: 30 },
-  { name: "5-15 min", value: 40 },
-  { name: "15-30 min", value: 20 },
-  { name: "30+ min", value: 10 },
-];
-
-export const sampleContactGrowthData: ContactGrowthData[] = [
-  { name: "Jan", contacts: 5000 },
-  { name: "Feb", contacts: 6200 },
-  { name: "Mar", contacts: 7800 },
-  { name: "Apr", contacts: 8600 },
-  { name: "May", contacts: 9400 },
-  { name: "Jun", contacts: 10500 },
-];
-
-export const sampleTemplateData: TemplateData[] = [
-  { name: "Welcome", success: 92 },
-  { name: "Promo", success: 78 },
-  { name: "Support", success: 85 },
-  { name: "Follow-up", success: 88 },
-];
-
-// --- Campaign Chart Filter Options and Data Map ---
 import type { DropdownOption } from "@/components/ui/dropdown-button";
 
 export const FILTER_OPTIONS: DropdownOption[] = [
@@ -178,4 +185,104 @@ export const FILTER_DATA_MAP: Record<string, CampaignData[]> = {
 
 export function getFilterLabel(value: string): string {
   return FILTER_OPTIONS.find((opt) => opt.value === value)?.label || "Last 30 Days";
+}
+
+// --- Filtered Data for FlowData ---
+export const flowDataLast7 = generateFlowData(4);
+export const flowDataLast15 = generateFlowData(6);
+export const flowDataLast30 = generateFlowData(10);
+export const flowDataLast90 = generateFlowData(20);
+export const flowDataLast360 = generateFlowData(40);
+
+export const FLOW_FILTER_OPTIONS: DropdownOption[] = [
+  { label: "Last 7 Flows", value: "7" },
+  { label: "Last 15 Flows", value: "15" },
+  { label: "Last 30 Flows", value: "30" },
+  { label: "Last 90 Flows", value: "90" },
+  { label: "Last 360 Flows", value: "360" },
+];
+export const FLOW_FILTER_DATA_MAP: Record<string, FlowData[]> = {
+  "7": flowDataLast7,
+  "15": flowDataLast15,
+  "30": flowDataLast30,
+  "90": flowDataLast90,
+  "360": flowDataLast360,
+};
+export function getFlowFilterLabel(value: string): string {
+  return FLOW_FILTER_OPTIONS.find((opt) => opt.value === value)?.label || "Last 30 Flows";
+}
+
+// --- Filtered Data for ResponseTimeData ---
+export const responseTimeDataLast7 = generateResponseTimeData();
+export const responseTimeDataLast15 = generateResponseTimeData();
+export const responseTimeDataLast30 = generateResponseTimeData();
+export const responseTimeDataLast90 = generateResponseTimeData();
+export const responseTimeDataLast360 = generateResponseTimeData();
+
+export const RESPONSE_FILTER_OPTIONS: DropdownOption[] = [
+  { label: "Last 7 Buckets", value: "7" },
+  { label: "Last 15 Buckets", value: "15" },
+  { label: "Last 30 Buckets", value: "30" },
+  { label: "Last 90 Buckets", value: "90" },
+  { label: "Last 360 Buckets", value: "360" },
+];
+export const RESPONSE_FILTER_DATA_MAP: Record<string, ResponseTimeData[]> = {
+  "7": responseTimeDataLast7,
+  "15": responseTimeDataLast15,
+  "30": responseTimeDataLast30,
+  "90": responseTimeDataLast90,
+  "360": responseTimeDataLast360,
+};
+export function getResponseFilterLabel(value: string): string {
+  return RESPONSE_FILTER_OPTIONS.find((opt) => opt.value === value)?.label || "Last 30 Buckets";
+}
+
+// --- Filtered Data for ContactGrowthData ---
+export const contactGrowthDataLast7 = generateContactGrowthData();
+export const contactGrowthDataLast15 = generateContactGrowthData();
+export const contactGrowthDataLast30 = generateContactGrowthData();
+export const contactGrowthDataLast90 = generateContactGrowthData();
+export const contactGrowthDataLast360 = generateContactGrowthData();
+
+export const CONTACT_FILTER_OPTIONS: DropdownOption[] = [
+  { label: "Last 7 Months", value: "7" },
+  { label: "Last 15 Months", value: "15" },
+  { label: "Last 30 Months", value: "30" },
+  { label: "Last 90 Months", value: "90" },
+  { label: "Last 360 Months", value: "360" },
+];
+export const CONTACT_FILTER_DATA_MAP: Record<string, ContactGrowthData[]> = {
+  "7": contactGrowthDataLast7,
+  "15": contactGrowthDataLast15,
+  "30": contactGrowthDataLast30,
+  "90": contactGrowthDataLast90,
+  "360": contactGrowthDataLast360,
+};
+export function getContactFilterLabel(value: string): string {
+  return CONTACT_FILTER_OPTIONS.find((opt) => opt.value === value)?.label || "Last 30 Months";
+}
+
+// --- Filtered Data for TemplateData ---
+export const templateDataLast7 = generateTemplateData();
+export const templateDataLast15 = generateTemplateData();
+export const templateDataLast30 = generateTemplateData();
+export const templateDataLast90 = generateTemplateData();
+export const templateDataLast360 = generateTemplateData();
+
+export const TEMPLATE_FILTER_OPTIONS: DropdownOption[] = [
+  { label: "Last 7 Templates", value: "7" },
+  { label: "Last 15 Templates", value: "15" },
+  { label: "Last 30 Templates", value: "30" },
+  { label: "Last 90 Templates", value: "90" },
+  { label: "Last 360 Templates", value: "360" },
+];
+export const TEMPLATE_FILTER_DATA_MAP: Record<string, TemplateData[]> = {
+  "7": templateDataLast7,
+  "15": templateDataLast15,
+  "30": templateDataLast30,
+  "90": templateDataLast90,
+  "360": templateDataLast360,
+};
+export function getTemplateFilterLabel(value: string): string {
+  return TEMPLATE_FILTER_OPTIONS.find((opt) => opt.value === value)?.label || "Last 30 Templates";
 } 
