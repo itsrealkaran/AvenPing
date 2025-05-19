@@ -19,7 +19,7 @@ const colors: ("blue" | "violet" | "cyan" | "emerald")[] = [
 ];
 
 export const DonutChartHero = ({ data }: { data: ResponseTimeData[] }) => (
-  <div className="flex flex-1 flex-col items-center justify-center p-2">
+  <div className="flex flex-1 flex-col items-center justify-center p-10">
     <DonutChart
       data={data}
       variant="pie"
@@ -30,14 +30,11 @@ export const DonutChartHero = ({ data }: { data: ResponseTimeData[] }) => (
         `${Intl.NumberFormat("us").format(number).toString()}`
       }
     />
-    <div className="mt-4 flex flex-wrap justify-center gap-2">
+    <div className="mt-6 flex flex-wrap justify-center gap-3">
       {data?.map((item, index) => (
-        <div key={item.name} className="flex items-center gap-1">
-          <div className={`h-2 w-2 rounded-sm bg-${colors[index]}-500`} />
-          <span className="text-xs text-gray-600">{item.name}:</span>
-          <span className="text-xs font-medium">
-            {Intl.NumberFormat("us").format(item.value)}
-          </span>
+        <div key={item.name} className="flex items-center gap-4">
+          <div className={`h-2.5 w-2.5 rounded-sm bg-${colors[index]}-500`} />
+          <span className="text-xs text-gray-600">{item.name}</span>
         </div>
       ))}
     </div>
