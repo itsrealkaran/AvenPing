@@ -56,7 +56,7 @@ export default function TemplateChart() {
 
   return (
     <Card
-      title="Top 5 Follow-ups Success Rate"
+      title="Template Performance"
       headerButton={
         <DropdownButton
           options={TEMPLATE_FILTER_OPTIONS}
