@@ -8,9 +8,7 @@ import FlowChart from "@/components/analytics/flow-chart";
 import ResponseTimeChart from "@/components/analytics/response-time-chart";
 import ContactGrowthChart from "@/components/analytics/contact-growth-chart";
 import TemplateChart from "@/components/analytics/template-chart";
-import {
-  sampleMetrics,
-} from "@/components/analytics/data";
+import { sampleMetrics } from "@/components/analytics/data";
 
 export default function AnalyticsPage() {
   return (
@@ -25,14 +23,18 @@ export default function AnalyticsPage() {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <CampaignChart />
-        <FlowChart />
+        <TemplateChart />
       </div>
 
       {/* Bottom Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="col-span-2">
+          <FlowChart />
+        </div>
         <ResponseTimeChart />
-        <ContactGrowthChart />
-        <TemplateChart />
+        <div className="col-span-3">
+          <ContactGrowthChart />
+        </div>
       </div>
     </Body>
   );

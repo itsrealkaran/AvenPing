@@ -30,7 +30,7 @@ const Tooltip = ({ payload, active, label }: TooltipProps) => {
       <div className="mt-1 w-60 space-y-1 rounded-md border border-gray-500/10 bg-white px-4 py-2 text-sm shadow-md dark:border-gray-400/20 dark:bg-gray-900">
         <div className="flex items-center space-x-2.5">
           <span
-            className="size-2.5 shrink-0 rounded-xs bg-blue-500 dark:bg-blue-500"
+            className="size-2.5 shrink-0 rounded-xs bg-emerald-500 dark:bg-emerald-500"
             aria-hidden={true}
           />
           <div className="flex w-full justify-between">
@@ -76,7 +76,7 @@ export default function TemplateChart() {
             data={chartData}
             index="name"
             categories={["success"]}
-            colors={["blue"]}
+            colors={["emerald"]}
             valueFormatter={valueFormatter}
             yAxisWidth={35}
             showLegend={false}
@@ -93,7 +93,7 @@ export default function TemplateChart() {
             data={chartData}
             index="name"
             categories={["success"]}
-            colors={["blue"]}
+            colors={["emerald"]}
             valueFormatter={valueFormatter}
             showYAxis={false}
             showLegend={false}

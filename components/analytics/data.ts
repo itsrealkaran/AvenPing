@@ -292,21 +292,18 @@ export function getResponseFilterLabel(value: string): string {
 }
 
 // --- Filtered Data for ContactGrowthData ---
-export const contactGrowthDataLast7 = generateContactGrowthData({ days: 7, checkpoint: "daily" });
 export const contactGrowthDataLast15 = generateContactGrowthData({ days: 15, checkpoint: "daily" });
 export const contactGrowthDataLast30 = generateContactGrowthData({ days: 30, checkpoint: "semiweekly" });
 export const contactGrowthDataLast90 = generateContactGrowthData({ days: 90, checkpoint: "semiweekly" });
 export const contactGrowthDataLast360 = generateContactGrowthData({ days: 360, checkpoint: "monthly" });
 
 export const CONTACT_FILTER_OPTIONS: DropdownOption[] = [
-  { label: "Last 7 Days", value: "7" },
   { label: "Last 15 Days", value: "15" },
   { label: "Last 30 Days", value: "30" },
   { label: "Last 90 Days", value: "90" },
   { label: "Last 360 Days", value: "360" },
 ];
 export const CONTACT_FILTER_DATA_MAP: Record<string, ContactGrowthData[]> = {
-  "7": contactGrowthDataLast7,
   "15": contactGrowthDataLast15,
   "30": contactGrowthDataLast30,
   "90": contactGrowthDataLast90,
