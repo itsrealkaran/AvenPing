@@ -1,8 +1,15 @@
 "use client";
 
+import React from "react";
 import Card from "@/components/ui/card";
 import { DonutChart } from "@/components/ui/donut-chart";
-import { ResponseTimeData } from "./data";
+import {
+  RESPONSE_FILTER_OPTIONS,
+  RESPONSE_FILTER_DATA_MAP,
+  getResponseFilterLabel,
+  ResponseTimeData,
+} from "./data";
+import { DropdownButton } from "@/components/ui/dropdown-button";
 
 const colors: ("blue" | "violet" | "cyan" | "emerald")[] = [
   "blue",
@@ -37,14 +44,27 @@ export const DonutChartHero = ({ data }: { data: ResponseTimeData[] }) => (
   </div>
 );
 
-type Props = {
-  data: ResponseTimeData[];
-};
+export default function ResponseTimeChart() {
+  const [selected, setSelected] = React.useState("30");
+  const chartData = RESPONSE_FILTER_DATA_MAP[selected];
+  const selectedLabel = getResponseFilterLabel(selected);
 
-export default function ResponseTimeChart({ data }: Props) {
   return (
-    <Card title="Response Time Distribution">
-      <DonutChartHero data={data} />
+    <Card
+      title="Response Time Distribution"
+      headerButton={
+        <DropdownButton
+          options={RESPONSE_FILTER_OPTIONS}
+          onChange={setSelected}
+          selected={selected}
+          size="xs"
+          variant="outline"
+        >
+          {selectedLabel}
+        </DropdownButton>
+      }
+    >
+      <DonutChartHero data={chartData} />
     </Card>
   );
 }
