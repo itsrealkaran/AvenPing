@@ -11,6 +11,7 @@ import {
   Package,
   Search,
   Settings,
+  Contact2 as Contact,
   TrendingUp,
   User,
   Users,
@@ -52,6 +53,7 @@ export type IconName =
   | "MessageSquare"
   | "GitBranch"
   | "Bot"
+  | "Contact"
   | "BarChart"
   | "User";
 
@@ -64,6 +66,7 @@ const iconMap: Record<IconName, LucideIcon> = {
   Settings,
   Users,
   CreditCard,
+  Contact,
   HelpCircle,
   FileText,
   Send,
