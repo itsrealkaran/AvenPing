@@ -7,6 +7,8 @@ import { Search, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import MessageCard from "./message-card";
 import SearchableDropdown from "@/components/ui/searchable-dropdown";
+import useGetUser from "@/hooks/get-userdata";
+import axios from "axios";
 
 // Updated type definitions
 export type Contact = {
@@ -42,6 +44,9 @@ export type Conversation = {
 type FilterType = "all" | "unread" | "label";
 
 const MessagesInterface = () => {
+  const user = useGetUser();
+  console.log(user);
+
   const [conversations, setConversations] = useState<Conversation[]>([
     {
       id: "c1",
@@ -289,6 +294,21 @@ const MessagesInterface = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
 
+  console.log(user?.whatsappAccount?.phoneNumbers[0].id) 
+  useEffect(() => {
+    const fetchConversations = async () => {
+      const response = await axios.get(
+        `/api/whatsapp/messages?phoneNumberId=${user?.whatsappAccount?.phoneNumbers[0].id}`
+      );
+      console.log(response.data);
+
+      const response2 = await axios.get(
+        `/api/whatsapp/messages/conversation?conversationId=asdasd`
+      );
+      console.log(response2.data);
+    };
+    fetchConversations();
+  }, [user]);
   // Extract unique labels from conversations
   const labels = Array.from(
     new Set(
@@ -385,13 +405,13 @@ const MessagesInterface = () => {
         prevConversations.map((conv) =>
           conv.id === conversation.id
             ? {
-                ...conv,
-                unreadCount: 0,
-                messages: conv.messages.map((msg) => ({
-                  ...msg,
-                  status: msg.isOutbound ? ("read" as const) : msg.status,
-                })),
-              }
+              ...conv,
+              unreadCount: 0,
+              messages: conv.messages.map((msg) => ({
+                ...msg,
+                status: msg.isOutbound ? ("read" as const) : msg.status,
+              })),
+            }
             : conv
         )
       );
@@ -422,11 +442,10 @@ const MessagesInterface = () => {
                 setActiveFilter("all");
                 setSelectedLabel(null);
               }}
-              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
-                activeFilter === "all"
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${activeFilter === "all"
                   ? "bg-active-filter-bg text-active-filter font-medium"
                   : "text-gray-600 bg-gray-100"
-              }`}
+                }`}
             >
               All
             </button>
@@ -435,11 +454,10 @@ const MessagesInterface = () => {
                 setActiveFilter("unread");
                 setSelectedLabel(null);
               }}
-              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
-                activeFilter === "unread"
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${activeFilter === "unread"
                   ? "bg-active-filter-bg text-active-filter font-medium"
                   : "text-gray-600 bg-gray-100"
-              }`}
+                }`}
             >
               Unread
             </button>
@@ -447,11 +465,10 @@ const MessagesInterface = () => {
               items={labelItems}
               placeholder="Label"
               onSelect={handleLabelSelect}
-              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
-                activeFilter === "label"
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${activeFilter === "label"
                   ? "bg-active-filter-bg text-active-filter font-medium"
                   : "text-gray-600 bg-gray-100"
-              }`}
+                }`}
               selectedLabel={selectedLabel}
             />
           </div>

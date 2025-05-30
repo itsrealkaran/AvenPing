@@ -8,7 +8,6 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import bcrypt from "bcryptjs";
 
 const Page: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -21,18 +20,12 @@ const Page: React.FC = () => {
     e.preventDefault();
     try {
       setIsLoading(true);
-      const salt = await bcrypt.genSalt(
-        Number(process.env.NEXT_PUBLIC_SALT_ROUND)
-      );
-
-      const passwordHash = await bcrypt.hash(password, salt);
 
       const response = await axios.post("/api/auth/signin", {
         email,
-        password: passwordHash,
+        password,
       });
 
-      console.log(response);
       if (response.status === 200) {
         toast.success("Login successful!");
         router.push("/dashboard");
@@ -129,6 +122,13 @@ const Page: React.FC = () => {
                 )}
               </Button>
             </form>
+            <div className="mt-6 text-center text-sm">
+              <span className="text-gray-600">dummy credentials</span>
+              <div>
+                <span>email: pushkarkamble23@gmail.com</span>
+                <span>password: 12345678</span>
+              </div>
+            </div>
 
             <div className="mt-6 text-center text-sm">
               <span className="text-gray-600">Don't have an account? </span>

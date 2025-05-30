@@ -28,9 +28,11 @@ model User {
   size        String?
   industry    String?
 
+  whatsAppAccount WhatsAppAccount? @relation("UserWhatsAppAccount", fields: [whatsAppAccountId], references: [id])
+  whatsAppAccountId String? @unique
+
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
-  WhatsAppAccount WhatsAppAccount[]
 
   @@index([email])
 }
@@ -38,21 +40,21 @@ model User {
 // Store WhatsApp Business API credentials per user
 model WhatsAppAccount {
   id              String                @id @default(cuid())
-  userId          String
-  user            User                  @relation(fields: [userId], references: [id])
-  wabaid          String // WhatsApp Business Account ID  
+  wabaid          String // WhatsApp Business Account ID
   accessToken     String // Encrypted access token
-  phoneNumberIds  String[]              @default([]) // [phoneNumberId]
+
   displayName     String
   verified        Boolean               @default(false)
   status          String                @default("ACTIVE") // ACTIVE, SUSPENDED, DELETED
+
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
+
+  user            User?                 @relation("UserWhatsAppAccount")
+
   audiences       WhatsAppAudience[]
   campaigns       WhatsAppCampaign[]
   phoneNumbers    WhatsAppPhoneNumber[]
-
-  @@unique([userId])
 }
 
 model WhatsAppPhoneNumber {

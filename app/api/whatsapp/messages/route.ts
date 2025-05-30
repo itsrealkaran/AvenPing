@@ -5,32 +5,30 @@ import type { Prisma } from '@prisma/client';
 
 // Get all messages for an account with pagination
 export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  request: Request
 ) {
   try {
     const session = await getSession();
     if (!session?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const { id } = await params;
-    const { phoneNumberId } = await request.json()
-    ;
+    
+    
     // Get pagination parameters from URL
     const { searchParams } = new URL(request.url);
     const cursor = searchParams.get('cursor');
     const limit = parseInt(searchParams.get('limit') || '20');
     const take = Math.min(limit, 100); // Maximum 100 messages per request
+    const phoneNumberId = searchParams.get('phoneNumberId');
 
     // Build the query
     const query: Prisma.WhatsAppRecipientFindManyArgs = {
       where: {
         whatsAppPhoneNumber: {
-          id: phoneNumberId,
+          id: phoneNumberId as string,
           account: {
-            id: id,
             user: {
-              email: session.email
+              email: session?.email
             }
           }
         }
@@ -99,16 +97,17 @@ export async function GET(
 // Create a new message
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
     if (!session?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const { id } = await params;
     const body = await request.json();
-    const { phoneNumberId, recipientId, message, templateId, templateParams } = body;
+    const { recipientId, message, templateId, templateParams } = body;
+
+    const { searchParams } = new URL(request.url);
+    const phoneNumberId = searchParams.get('phoneNumberId');
 
     if (!phoneNumberId || !recipientId || (!message && !templateId)) {
       return NextResponse.json(
@@ -118,9 +117,8 @@ export async function POST(
     }
 
     // Get account details for WhatsApp API
-    const account = await prisma.whatsAppAccount.findUnique({
+    const account = await prisma.whatsAppAccount.findFirst({
       where: {
-        id: id,
         user: {
           email: session.email
         }

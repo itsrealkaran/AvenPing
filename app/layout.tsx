@@ -37,10 +37,10 @@ export default function RootLayout({
           {`
             window.fbAsyncInit = function() {
               FB.init({
-                appId: '2340954516269174',
+                appId: '641045902102378',
                 xfbml: true,
                 version: 'v22.0',
-                config_id: '608691068704818'
+                config_id: '2721341521400507'
               });
             };
           `}
