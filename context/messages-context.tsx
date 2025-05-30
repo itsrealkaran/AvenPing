@@ -7,17 +7,24 @@ import useGetUser from '@/hooks/get-userdata';
 
 interface Message {
   id: string;
-  content: string;
-  timestamp: string;
-  sender: string;
-  // Add other message properties as needed
+  message: string;
+  createdAt: string;
+  status: "SENT" | "DELIVERED" | "READ";
+  isOutbound: boolean;
+}
+
+interface Conversation {
+  id: string;
+  phoneNumber: string;
+  name: string;
+  messages: Message[];
 }
 
 interface MessagesContextType {
-  conversations: Message[] | undefined;
+  conversations: Conversation[] | undefined;
   isLoading: boolean;
   error: Error | null;
-  sendMessage: (message: Omit<Message, 'id' | 'timestamp'>) => Promise<void>;
+  sendMessage: (message: Omit<Message, 'id' | 'createdAt'>) => Promise<void>;
   deleteMessage: (messageId: string) => Promise<void>;
 }
 
@@ -40,14 +47,14 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     queryKey: ['messages', phoneNumberId],
     queryFn: async () => {
       const response = await axios.get(`/api/whatsapp/messages?phoneNumberId=${phoneNumberId}`);
-      return response.data;
+      return response.data.items;
     },
     enabled: !!phoneNumberId, // Only fetch when phoneNumberId is available
   });
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (newMessage: Omit<Message, 'id' | 'timestamp'>) => {
+    mutationFn: async (newMessage: Omit<Message, 'id' | 'createdAt'>) => {
       const response = await axios.post('/api/messages', newMessage);
       return response.data;
     },
@@ -70,7 +77,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     conversations,
     isLoading,
     error: error as Error | null,
-    sendMessage: async (message: Omit<Message, 'id' | 'timestamp'>) => {
+    sendMessage: async (message: Omit<Message, 'id' | 'createdAt'>) => {
       await sendMessageMutation.mutateAsync(message);
     },
     deleteMessage: async (messageId: string) => {

@@ -19,7 +19,7 @@ const MessageList = ({ messages }: MessageListProps) => {
   const groupedMessages: { [key: string]: Message[] } = {};
 
   messages.forEach((message) => {
-    const date = new Date(message.timestamp).toLocaleDateString();
+    const date = new Date(message.createdAt).toLocaleDateString();
     if (!groupedMessages[date]) {
       groupedMessages[date] = [];
     }

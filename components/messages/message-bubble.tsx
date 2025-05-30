@@ -10,15 +10,15 @@ interface MessageBubbleProps {
 
 const MessageBubble = ({ message }: MessageBubbleProps) => {
   const isMe = message.isOutbound;
-  const time = format(new Date(message.timestamp), "h:mm a");
+  const time = format(new Date(message.createdAt), "h:mm a");
 
   const renderStatus = () => {
     switch (message.status) {
-      case "sent":
+      case "SENT":
         return <Check size={14} className="text-gray-400" />;
-      case "delivered":
+      case "DELIVERED":
         return <CheckCheck size={14} className="text-gray-400" />;
-      case "read":
+      case "READ":
         return <CheckCheck size={14} className="text-blue-500" />;
       default:
         return null;
@@ -34,7 +34,7 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
             : "bg-white text-gray-800 rounded-tl-none shadow-[0_2px_4px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-shadow"
         }`}
       >
-        {message.isMedia && message.mediaUrl && (
+        {/* {message.isMedia && message.mediaUrl && (
           <div className="mb-1">
             {message.mediaType === "image" && (
               <img
@@ -57,7 +57,7 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
               </div>
             )}
           </div>
-        )}
+        )} */}
 
         <div className="text-sm">{message.message}</div>
 
