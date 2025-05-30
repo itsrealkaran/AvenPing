@@ -4,6 +4,7 @@ import "./globals.css";
 import Sidebar from "@/components/layout/sidebar";
 import Script from "next/script";
 import { Toaster } from "sonner";
+import { AppProvider } from "@/context/app-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,7 +46,9 @@ export default function RootLayout({
             };
           `}
         </Script>
-        {children}
+        <AppProvider>
+          {children}
+        </AppProvider>
         <Toaster richColors position="bottom-right" />
       </body>
     </html>
