@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import ConversationList from "./conversation-list";
 import MessagePanel from "./message-panel";
 import { Search, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import MessageCard from "./message-card";
 import SearchableDropdown from "@/components/ui/searchable-dropdown";
+import { useMessages } from "@/context/messages-context";
 
 // Updated type definitions
 export type Contact = {
@@ -20,267 +21,262 @@ export type Contact = {
 export type Message = {
   id: string;
   message: string;
-  timestamp: string;
+  createdAt: string;
+  status: "SENT" | "DELIVERED" | "READ";
   isOutbound: boolean;
-  status: "sent" | "delivered" | "read";
-  isMedia?: boolean;
-  mediaUrl?: string;
-  mediaType?: "image" | "video" | "document";
 };
 
 export type Conversation = {
   id: string;
+  phoneNumber: string;
   name: string;
-  phone: string;
-  avatar?: string;
-  label?: string;
   messages: Message[];
-  unreadCount: number;
-  lastMessage?: Message;
 };
 
 type FilterType = "all" | "unread" | "label";
 
 const MessagesInterface = () => {
-  const [conversations, setConversations] = useState<Conversation[]>([
-    {
-      id: "c1",
-      name: "John Doe",
-      phone: "+91 9876543210",
-      avatar: "https://placehold.co/150x150",
-      label: "Work",
-      messages: [
-        {
-          id: "m1",
-          message: "Hi there! How are you doing?",
-          timestamp: "2025-05-12T10:30:00Z",
-          isOutbound: false,
-          status: "read",
-        },
-        {
-          id: "m2",
-          message: "I'm good, thanks! How about you?",
-          timestamp: "2025-05-12T10:35:00Z",
-          isOutbound: false,
-          status: "read",
-        },
-        {
-          id: "m3",
-          message: "I'm doing well. Just checking in.",
-          timestamp: "2025-05-12T10:40:00Z",
-          isOutbound: true,
-          status: "read",
-        },
-        {
-          id: "m4",
-          message: "Great to hear that!",
-          timestamp: "2025-05-12T10:45:00Z",
-          isOutbound: true,
-          status: "delivered",
-        },
-        {
-          id: "m5",
-          message: "Great to hear that!",
-          timestamp: "2025-05-12T10:45:00Z",
-          isOutbound: true,
-          status: "delivered",
-        },
-        {
-          id: "m6",
-          message: "Great to hear that!",
-          timestamp: "2025-05-12T10:45:00Z",
-          isOutbound: true,
-          status: "delivered",
-        },
-        {
-          id: "m7",
-          message: "Great to hear that!",
-          timestamp: "2025-05-12T10:45:00Z",
-          isOutbound: true,
-          status: "delivered",
-        },
-        {
-          id: "m8",
-          message: "Great to hear that!",
-          timestamp: "2025-05-12T10:45:00Z",
-          isOutbound: true,
-          status: "delivered",
-        },
-      ],
-      unreadCount: 0,
-    },
-    {
-      id: "c2",
-      name: "Jane Smith",
-      phone: "+91 9876543211",
-      label: "Family",
-      avatar: "https://placehold.co/150x150",
-      messages: [
-        {
-          id: "m5",
-          message: "Hello! Are we still meeting tomorrow?",
-          timestamp: "2025-05-19T18:30:00Z",
-          isOutbound: false,
-          status: "read",
-        },
-        {
-          id: "m6",
-          message: "Yes, at 10 AM at the coffee shop.",
-          timestamp: "2025-05-19T18:35:00Z",
-          isOutbound: true,
-          status: "read",
-        },
-      ],
-      unreadCount: 0,
-    },
-    {
-      id: "3",
-      name: "Marketing Team",
-      phone: "Group",
-      label: "Work",
-      avatar: "https://placehold.co/150x150",
-      messages: [
-        {
-          id: "m7",
-          message: "Meeting postponed to next week.",
-          timestamp: "2025-05-18T14:20:00Z",
-          isOutbound: true,
-          status: "read",
-        },
-      ],
-      unreadCount: 1,
-    },
-    {
-      id: "4",
-      name: "David Chen",
-      phone: "+91 9876543214",
-      label: "Work",
-      avatar: "https://placehold.co/150x150",
-      messages: [
-        {
-          id: "m8",
-          message: "Can you send me the project files?",
-          timestamp: "2025-05-21T09:10:00Z",
-          isOutbound: true,
-          status: "read",
-        },
-      ],
-      unreadCount: 0,
-    },
-    {
-      id: "c6",
-      name: "Emily Rodriguez",
-      phone: "+91 9876543215",
-      avatar: "https://placehold.co/150x150",
-      messages: [
-        {
-          id: "m9",
-          message: "Check out this photo!",
-          timestamp: "2025-05-21T11:20:00Z",
-          isOutbound: true,
-          status: "read",
-          isMedia: true,
-          mediaUrl: "https://source.unsplash.com/random/300x200",
-          mediaType: "image",
-        },
-      ],
-      unreadCount: 1,
-    },
-    {
-      id: "6",
-      name: "Alex Thompson",
-      phone: "+91 9876543216",
-      avatar: "https://placehold.co/150x150",
-      messages: [
-        {
-          id: "m10",
-          message: "Let's catch up soon!",
-          timestamp: "2025-05-17T16:45:00Z",
-          isOutbound: true,
-          status: "read",
-        },
-      ],
-      unreadCount: 0,
-    },
-    {
-      id: "c8",
-      name: "Tech Support",
-      phone: "Group",
-      messages: [
-        {
-          id: "m11",
-          message: "Server maintenance scheduled for tonight.",
-          timestamp: "2025-05-21T08:30:00Z",
-          isOutbound: true,
-          status: "read",
-        },
-      ],
-      unreadCount: 2,
-    },
-    {
-      id: "8",
-      name: "Sophia Martinez",
-      phone: "+91 9876543219",
-      avatar: "https://placehold.co/150x150",
-      messages: [
-        {
-          id: "m12",
-          message: "Did you get my email?",
-          timestamp: "2025-05-21T12:05:00Z",
-          isOutbound: true,
-          status: "read",
-        },
-      ],
-      unreadCount: 0,
-    },
-    {
-      id: "c12",
-      name: "James Wilson",
-      phone: "+91 9876543220",
-      avatar: "https://placehold.co/150x150",
-      messages: [
-        {
-          id: "m13",
-          message: "The presentation went well!",
-          timestamp: "2025-05-20T23:15:00Z",
-          isOutbound: true,
-          status: "read",
-        },
-      ],
-      unreadCount: 0,
-    },
-    {
-      id: "10",
-      name: "Olivia Brown",
-      phone: "+91 9876543221",
-      messages: [
-        {
-          id: "m14",
-          message: "Happy birthday! 🎂",
-          timestamp: "2025-05-21T10:00:00Z",
-          isOutbound: true,
-          status: "read",
-        },
-      ],
-      unreadCount: 0,
-    },
-    {
-      id: "11",
-      name: "Family Group",
-      phone: "Group",
-      avatar: "https://placehold.co/150x150",
-      messages: [
-        {
-          id: "m15",
-          message: "Who's coming to dinner on Sunday?",
-          timestamp: "2025-05-20T19:30:00Z",
-          isOutbound: true,
-          status: "read",
-        },
-      ],
-      unreadCount: 3,
-    },
-  ]);
+  const { conversations } = useMessages();
+
+  // const [conversations, setConversations] = useState<Conversation[]>([
+  //   {
+  //     id: "c1",
+  //     name: "John Doe",
+  //     phone: "+91 9876543210",
+  //     avatar: "https://placehold.co/150x150",
+  //     label: "Work",
+  //     messages: [
+  //       {
+  //         id: "m1",
+  //         message: "Hi there! How are you doing?",
+  //         timestamp: "2025-05-12T10:30:00Z",
+  //         isOutbound: false,
+  //         status: "read",
+  //       },
+  //       {
+  //         id: "m2",
+  //         message: "I'm good, thanks! How about you?",
+  //         timestamp: "2025-05-12T10:35:00Z",
+  //         isOutbound: false,
+  //         status: "read",
+  //       },
+  //       {
+  //         id: "m3",
+  //         message: "I'm doing well. Just checking in.",
+  //         timestamp: "2025-05-12T10:40:00Z",
+  //         isOutbound: true,
+  //         status: "read",
+  //       },
+  //       {
+  //         id: "m4",
+  //         message: "Great to hear that!",
+  //         timestamp: "2025-05-12T10:45:00Z",
+  //         isOutbound: true,
+  //         status: "delivered",
+  //       },
+  //       {
+  //         id: "m5",
+  //         message: "Great to hear that!",
+  //         timestamp: "2025-05-12T10:45:00Z",
+  //         isOutbound: true,
+  //         status: "delivered",
+  //       },
+  //       {
+  //         id: "m6",
+  //         message: "Great to hear that!",
+  //         timestamp: "2025-05-12T10:45:00Z",
+  //         isOutbound: true,
+  //         status: "delivered",
+  //       },
+  //       {
+  //         id: "m7",
+  //         message: "Great to hear that!",
+  //         timestamp: "2025-05-12T10:45:00Z",
+  //         isOutbound: true,
+  //         status: "delivered",
+  //       },
+  //       {
+  //         id: "m8",
+  //         message: "Great to hear that!",
+  //         timestamp: "2025-05-12T10:45:00Z",
+  //         isOutbound: true,
+  //         status: "delivered",
+  //       },
+  //     ],
+  //     unreadCount: 0,
+  //   },
+  //   {
+  //     id: "c2",
+  //     name: "Jane Smith",
+  //     phone: "+91 9876543211",
+  //     label: "Family",
+  //     avatar: "https://placehold.co/150x150",
+  //     messages: [
+  //       {
+  //         id: "m5",
+  //         message: "Hello! Are we still meeting tomorrow?",
+  //         timestamp: "2025-05-19T18:30:00Z",
+  //         isOutbound: false,
+  //         status: "read",
+  //       },
+  //       {
+  //         id: "m6",
+  //         message: "Yes, at 10 AM at the coffee shop.",
+  //         timestamp: "2025-05-19T18:35:00Z",
+  //         isOutbound: true,
+  //         status: "read",
+  //       },
+  //     ],
+  //     unreadCount: 0,
+  //   },
+  //   {
+  //     id: "3",
+  //     name: "Marketing Team",
+  //     phone: "Group",
+  //     label: "Work",
+  //     avatar: "https://placehold.co/150x150",
+  //     messages: [
+  //       {
+  //         id: "m7",
+  //         message: "Meeting postponed to next week.",
+  //         timestamp: "2025-05-18T14:20:00Z",
+  //         isOutbound: true,
+  //         status: "read",
+  //       },
+  //     ],
+  //     unreadCount: 1,
+  //   },
+  //   {
+  //     id: "4",
+  //     name: "David Chen",
+  //     phone: "+91 9876543214",
+  //     label: "Work",
+  //     avatar: "https://placehold.co/150x150",
+  //     messages: [
+  //       {
+  //         id: "m8",
+  //         message: "Can you send me the project files?",
+  //         timestamp: "2025-05-21T09:10:00Z",
+  //         isOutbound: true,
+  //         status: "read",
+  //       },
+  //     ],
+  //     unreadCount: 0,
+  //   },
+  //   {
+  //     id: "c6",
+  //     name: "Emily Rodriguez",
+  //     phone: "+91 9876543215",
+  //     avatar: "https://placehold.co/150x150",
+  //     messages: [
+  //       {
+  //         id: "m9",
+  //         message: "Check out this photo!",
+  //         timestamp: "2025-05-21T11:20:00Z",
+  //         isOutbound: true,
+  //         status: "read",
+  //         isMedia: true,
+  //         mediaUrl: "https://source.unsplash.com/random/300x200",
+  //         mediaType: "image",
+  //       },
+  //     ],
+  //     unreadCount: 1,
+  //   },
+  //   {
+  //     id: "6",
+  //     name: "Alex Thompson",
+  //     phone: "+91 9876543216",
+  //     avatar: "https://placehold.co/150x150",
+  //     messages: [
+  //       {
+  //         id: "m10",
+  //         message: "Let's catch up soon!",
+  //         timestamp: "2025-05-17T16:45:00Z",
+  //         isOutbound: true,
+  //         status: "read",
+  //       },
+  //     ],
+  //     unreadCount: 0,
+  //   },
+  //   {
+  //     id: "c8",
+  //     name: "Tech Support",
+  //     phone: "Group",
+  //     messages: [
+  //       {
+  //         id: "m11",
+  //         message: "Server maintenance scheduled for tonight.",
+  //         timestamp: "2025-05-21T08:30:00Z",
+  //         isOutbound: true,
+  //         status: "read",
+  //       },
+  //     ],
+  //     unreadCount: 2,
+  //   },
+  //   {
+  //     id: "8",
+  //     name: "Sophia Martinez",
+  //     phone: "+91 9876543219",
+  //     avatar: "https://placehold.co/150x150",
+  //     messages: [
+  //       {
+  //         id: "m12",
+  //         message: "Did you get my email?",
+  //         timestamp: "2025-05-21T12:05:00Z",
+  //         isOutbound: true,
+  //         status: "read",
+  //       },
+  //     ],
+  //     unreadCount: 0,
+  //   },
+  //   {
+  //     id: "c12",
+  //     name: "James Wilson",
+  //     phone: "+91 9876543220",
+  //     avatar: "https://placehold.co/150x150",
+  //     messages: [
+  //       {
+  //         id: "m13",
+  //         message: "The presentation went well!",
+  //         timestamp: "2025-05-20T23:15:00Z",
+  //         isOutbound: true,
+  //         status: "read",
+  //       },
+  //     ],
+  //     unreadCount: 0,
+  //   },
+  //   {
+  //     id: "10",
+  //     name: "Olivia Brown",
+  //     phone: "+91 9876543221",
+  //     messages: [
+  //       {
+  //         id: "m14",
+  //         message: "Happy birthday! 🎂",
+  //         timestamp: "2025-05-21T10:00:00Z",
+  //         isOutbound: true,
+  //         status: "read",
+  //       },
+  //     ],
+  //     unreadCount: 0,
+  //   },
+  //   {
+  //     id: "11",
+  //     name: "Family Group",
+  //     phone: "Group",
+  //     avatar: "https://placehold.co/150x150",
+  //     messages: [
+  //       {
+  //         id: "m15",
+  //         message: "Who's coming to dinner on Sunday?",
+  //         timestamp: "2025-05-20T19:30:00Z",
+  //         isOutbound: true,
+  //         status: "read",
+  //       },
+  //     ],
+  //     unreadCount: 3,
+  //   },
+  // ]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedConversationId, setSelectedConversationId] = useState<
@@ -290,19 +286,19 @@ const MessagesInterface = () => {
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
 
   // Extract unique labels from conversations
-  const labels = Array.from(
-    new Set(
-      conversations
-        .map((conv) => conv.label)
-        .filter((label): label is string => !!label)
-    )
-  );
+  // const labels = Array.from(
+  //   new Set(
+  //     conversations
+  //       .map((conv) => conv.label)
+  //       .filter((label): label is string => !!label)
+  //   )
+  // );
 
-  const labelItems = labels.map((label) => ({
-    id: label,
-    label: label,
-    value: label,
-  }));
+  // const labelItems = labels.map((label) => ({
+  //   id: label,
+  //   label: label,
+  //   value: label,
+  // }));
 
   const handleLabelSelect = (item: {
     id: string;
@@ -315,6 +311,7 @@ const MessagesInterface = () => {
 
   useEffect(() => {
     // Set the first conversation as selected by default
+    if (!conversations) return;
     if (conversations.length > 0 && !selectedConversationId) {
       setSelectedConversationId(conversations[0].id);
     }
@@ -324,6 +321,9 @@ const MessagesInterface = () => {
     setSearchQuery(e.target.value);
   };
 
+  if (!conversations) {
+    return <div>Loading...</div>;
+  }
   // Filter conversations based on search and active filter
   const filteredConversations = conversations.filter((conversation) => {
     // First apply search filter
@@ -331,22 +331,22 @@ const MessagesInterface = () => {
       conversation.name
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
-      conversation.phone
+      conversation.phoneNumber
         .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      conversation.label
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase());
+        .includes(searchQuery.toLowerCase()) 
+    //   conversation.label
+    //     ?.toLowerCase()
+    //     .includes(searchQuery.toLowerCase());
 
     if (!matchesSearch) return false;
 
     // Then apply type filter
     if (activeFilter === "unread") {
-      return conversation.unreadCount > 0;
+      return conversation.messages.length > 0;
     }
-    if (activeFilter === "label" && selectedLabel) {
-      return conversation.label === selectedLabel;
-    }
+    // if (activeFilter === "label" && selectedLabel) {
+    //   return conversation.label === selectedLabel;
+    // }
     return true;
   });
 
@@ -356,9 +356,9 @@ const MessagesInterface = () => {
     const newMessage: Message = {
       id: `m${Date.now()}`,
       message,
-      timestamp: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       isOutbound: true,
-      status: "sent",
+      status: "SENT",
     };
 
     // Update the selected conversation with the new message
@@ -367,35 +367,16 @@ const MessagesInterface = () => {
         return {
           ...conv,
           messages: [...conv.messages, newMessage],
-          lastMessage: newMessage,
         };
       }
       return conv;
     });
 
-    setConversations(updatedConversations);
     setSelectedConversationId(updatedConversations[0].id);
   };
 
   const handleConversationSelect = (conversation: Conversation) => {
     setSelectedConversationId(conversation.id);
-    // Mark conversation as read when selected
-    if (conversation.unreadCount > 0) {
-      setConversations((prevConversations) =>
-        prevConversations.map((conv) =>
-          conv.id === conversation.id
-            ? {
-                ...conv,
-                unreadCount: 0,
-                messages: conv.messages.map((msg) => ({
-                  ...msg,
-                  status: msg.isOutbound ? ("read" as const) : msg.status,
-                })),
-              }
-            : conv
-        )
-      );
-    }
   };
 
   const selectedConversation = conversations.find(
@@ -422,11 +403,10 @@ const MessagesInterface = () => {
                 setActiveFilter("all");
                 setSelectedLabel(null);
               }}
-              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
-                activeFilter === "all"
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${activeFilter === "all"
                   ? "bg-active-filter-bg text-active-filter font-medium"
                   : "text-gray-600 bg-gray-100"
-              }`}
+                }`}
             >
               All
             </button>
@@ -435,23 +415,21 @@ const MessagesInterface = () => {
                 setActiveFilter("unread");
                 setSelectedLabel(null);
               }}
-              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
-                activeFilter === "unread"
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${activeFilter === "unread"
                   ? "bg-active-filter-bg text-active-filter font-medium"
                   : "text-gray-600 bg-gray-100"
-              }`}
+                }`}
             >
               Unread
             </button>
             <SearchableDropdown
-              items={labelItems}
+              items={[]}
               placeholder="Label"
               onSelect={handleLabelSelect}
-              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
-                activeFilter === "label"
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${activeFilter === "label"
                   ? "bg-active-filter-bg text-active-filter font-medium"
                   : "text-gray-600 bg-gray-100"
-              }`}
+                }`}
               selectedLabel={selectedLabel}
             />
           </div>

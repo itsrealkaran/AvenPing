@@ -27,18 +27,16 @@ const ConversationList = ({
     <div className="flex flex-col h-full border-t border-gray-100">
       <div className="overflow-y-auto flex-1">
         {conversations.map((conversation) => {
-          const { name, phone, avatar, lastMessage, unreadCount } = conversation;
+          const { name, phoneNumber, messages } = conversation;
           const contact = {
             name,
-            phone,
-            avatar: avatar || "https://placehold.co/150x150",
+            phoneNumber,
+            avatar:  "https://placehold.co/150x150",
             isOnline: true,
           };
-          const lastMsg =
-            lastMessage ||
-            conversation.messages[conversation.messages.length - 1];
+          const lastMsg = messages[messages.length - 1];
           const timeAgo = lastMsg
-            ? formatDistanceToNow(new Date(lastMsg.timestamp), {
+            ? formatDistanceToNow(new Date(lastMsg.createdAt), {
                 addSuffix: true,
               })
             : "";
@@ -78,7 +76,7 @@ const ConversationList = ({
                   </div>
                   <span
                     className={`text-xs ${
-                      unreadCount > 0
+                      conversation.messages.length > 0
                         ? "font-semibold text-unread-timestamp"
                         : "text-gray-500"
                     } flex-shrink-0`}
@@ -93,9 +91,9 @@ const ConversationList = ({
                     {lastMsg?.message || "No messages yet"}
                   </p>
 
-                  {unreadCount > 0 && (
+                  {conversation.messages.length > 0 && (
                     <div className="ml-2 bg-primary text-white rounded-full h-5 w-5 flex items-center justify-center text-xs flex-shrink-0">
-                      {unreadCount}
+                      {conversation.messages.length}
                     </div>
                   )}
                 </div>

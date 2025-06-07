@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createToken } from '@/lib/jwt';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
@@ -16,26 +17,31 @@ export async function POST(request: Request) {
     }
 
     // Find user
-    const user = await prisma.user.findUnique({
-      where: { email },
+    const user = await prisma.user.findFirst({
+      where: { 
+        email: {
+          equals: email,
+          mode: 'insensitive'
+        }
+       },
       include: {
-        WhatsAppAccount: true,
-      },
+        whatsAppAccount: true,
+      }
     });
 
     if (!user) {
       return NextResponse.json(
-        { status: 'error', error: 'Invalid credentials' },
+        { status: 'error', error: 'Invalid credentials, user not found' },
         { status: 404 }
       );
     }
 
-    // Verify password
-    const isValidPassword = password === user.password;
+    // Verify password using bcrypt
+    const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
       return NextResponse.json(
-        { status: 'error', error: 'Invalid credentials' },
+        { status: 'error', error: 'Invalid credentials, password not matched' },
         { status: 404 }
       );
     }
@@ -45,7 +51,7 @@ export async function POST(request: Request) {
       userId: user.id,
       email: user.email,
       name: user.name,
-      accessToken: user.WhatsAppAccount[0].accessToken,
+      accessToken: user.whatsAppAccount?.accessToken,
     });
 
     // Set cookie

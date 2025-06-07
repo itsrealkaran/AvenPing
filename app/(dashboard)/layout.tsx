@@ -1,6 +1,10 @@
 "use client";
 
 import SidebarContainer from "@/components/layout/sidebar-container";
+import { UserProvider } from "@/context/user-context";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { useCallback } from "react";
 
 export default function RootLayout({
   children,
@@ -30,22 +34,24 @@ export default function RootLayout({
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#fcfcfd]">
-      <SidebarContainer
-        brand={{
-          name: "AvenPing",
-          logo: "/logo-black.svg",
-        }}
-        navigationItems={navigationItems}
-        accountInfo={{
-          name: ["+91 9876543210", "+91 9876543217"],
-        }}
-        userProfile={{
-          name: "Karan Singh",
-          email: "karansingh@duck.com",
-        }}
-      />
-      <main className="flex-1 overflow-auto bg-[#fcfcfd]">{children}</main>
-    </div>
+    <UserProvider>
+      <div className="flex h-screen overflow-hidden bg-[#fcfcfd]">
+        <SidebarContainer
+          brand={{
+            name: "AvenPing",
+            logo: "/logo-black.svg",
+          }}
+          navigationItems={navigationItems}
+          accountInfo={{
+            name: ["+91 9876543210", "+91 9876543217"],
+          }}
+          userProfile={{
+            name: "Karan Singh",
+            email: "karansingh@duck.com",
+          }}
+        />
+        <main className="flex-1 overflow-auto bg-[#fcfcfd]">{children}</main>
+      </div>
+    </UserProvider>
   );
 }
