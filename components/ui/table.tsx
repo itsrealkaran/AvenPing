@@ -1,16 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   MaterialReactTable,
   MRT_ToggleFiltersButton,
   useMaterialReactTable,
   MRT_ColumnDef,
 } from "material-react-table";
-import { Box, ListItemIcon, MenuItem } from "@mui/material";
+import { ListItemIcon, MenuItem } from "@mui/material";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Plus } from "lucide-react";
+import { calculateTableHeight } from "@/lib/utils";
 
 export type ActionMenuItem = {
   key: string | number;
@@ -57,10 +58,30 @@ export default function Table<T extends Record<string, any>>({
   onAddItem,
   addButtonLabel = "Add Item",
   searchPlaceholder = "Search...",
-  tableHeight = "340px",
+  tableHeight: propTableHeight,
   primaryColor = "#7c3aed",
   density = "compact",
 }: TableProps<T>) {
+  const [tableHeight, setTableHeight] = useState(propTableHeight || "500px");
+
+  useEffect(() => {
+    if (!propTableHeight) {
+      const updateHeight = () => {
+        const height = calculateTableHeight();
+        setTableHeight(`${height}px`);
+      };
+
+      // Calculate initial height
+      updateHeight();
+
+      // Recalculate on window resize
+      window.addEventListener("resize", updateHeight);
+
+      // Cleanup
+      return () => window.removeEventListener("resize", updateHeight);
+    }
+  }, [propTableHeight]);
+
   const table = useMaterialReactTable({
     columns,
     data,
@@ -100,7 +121,10 @@ export default function Table<T extends Record<string, any>>({
         "--mui-palette-primary-dark": primaryColor,
         height: tableHeight,
         border: "1px solid rgb(201, 201, 201)",
-        borderRadius: "8px",
+        borderBottom: "none",
+        borderTopLeftRadius: "8px",
+        borderTopRightRadius: "8px",
+        backgroundColor: "white",
       },
     },
     muiTableHeadCellProps: {

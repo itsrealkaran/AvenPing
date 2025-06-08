@@ -209,7 +209,6 @@ export default function CampaignsPage() {
         onAddItem={handleAddCampaign}
         addButtonLabel="Create Campaign"
         searchPlaceholder="Search campaigns..."
-        tableHeight="340px"
       />
     </Body>
   );
