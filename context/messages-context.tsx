@@ -26,6 +26,7 @@ interface MessagesContextType {
   error: Error | null;
   sendMessage: (message: Omit<Message, 'id' | 'createdAt'>) => Promise<void>;
   deleteMessage: (messageId: string) => Promise<void>;
+  getConversation: (conversationId: string) => Promise<Conversation | undefined>;
 }
 
 const MessagesContext = createContext<MessagesContextType | undefined>(undefined);
@@ -35,7 +36,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const user = useGetUser();
 
   const [phoneNumberId, setPhoneNumberId] = useState<string | null>(null);
-
+  const [conversationId, setConversationId] = useState<string | null>(null);
   useEffect(() => {
     if (user?.whatsappAccount?.phoneNumbers[0].id) {
       setPhoneNumberId(user?.whatsappAccount?.phoneNumbers[0].id);
@@ -50,6 +51,14 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       return response.data.items;
     },
     enabled: !!phoneNumberId, // Only fetch when phoneNumberId is available
+  });
+
+  const { data: conversation, isLoading: isConversationLoading, error: conversationError } = useQuery({
+    queryKey: ['conversation', conversationId],
+    queryFn: async () => {
+      const response = await axios.get(`/api/whatsapp/messages/conversation/${conversationId}`);
+      return response.data;
+    },
   });
 
   // Send message mutation
@@ -82,6 +91,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     },
     deleteMessage: async (messageId: string) => {
       await deleteMessageMutation.mutateAsync(messageId);
+    },
+    getConversation: async (conversationId: string) => {
+      setConversationId(conversationId);
+      return conversation;
     },
   };
 

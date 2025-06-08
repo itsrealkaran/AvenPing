@@ -38,11 +38,7 @@ export async function GET(
         phoneNumber: true,
         name: true,
         messages: {
-          where: {
-            createdAt: {
-              gt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4) // 4 days ago
-            }
-          },
+          take: 10,
           select: {
             id: true,
             message: true,

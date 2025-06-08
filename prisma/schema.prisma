@@ -52,9 +52,9 @@ model WhatsAppAccount {
 
   user            User?                 @relation("UserWhatsAppAccount")
 
-  audiences       WhatsAppAudience[]
   campaigns       WhatsAppCampaign[]
   phoneNumbers    WhatsAppPhoneNumber[]
+  labels          Label[]
 }
 
 model WhatsAppPhoneNumber {
@@ -78,34 +78,23 @@ model WhatsAppPhoneNumber {
   updatedAt DateTime @updatedAt
 }
 
-// Store audience groups
-model WhatsAppAudience {
-  id         String              @id @default(cuid())
-  name       String
-  accountId  String
-  account    WhatsAppAccount     @relation(fields: [accountId], references: [id])
-  createdAt  DateTime            @default(now())
-  updatedAt  DateTime            @updatedAt
-  recipients WhatsAppRecipient[]
-  campaigns  WhatsAppCampaign[]
-}
-
 // Store individual recipients
 model WhatsAppRecipient {
   id          String            @id @default(cuid())
   phoneNumber String
   name        String?
-  audienceId  String?
-  audience    WhatsAppAudience? @relation(fields: [audienceId], references: [id])
 
   whatsAppPhoneNumberId String?
   whatsAppPhoneNumber   WhatsAppPhoneNumber? @relation(fields: [whatsAppPhoneNumberId], references: [id])
 
+  hasConversation Boolean @default(false)
+
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
   messages  WhatsAppMessage[]
-
-  @@unique([audienceId, phoneNumber])
+  labels    Label[]
+  
+  @@unique([whatsAppPhoneNumberId, phoneNumber])
 }
 
 // Store campaign data
@@ -119,8 +108,6 @@ model WhatsAppCampaign {
   templateParams Json? // Stored as JSON object
   accountId      String
   account        WhatsAppAccount  @relation(fields: [accountId], references: [id])
-  audienceId     String
-  audience       WhatsAppAudience @relation(fields: [audienceId], references: [id])
   status         String           @default("COMPLETED") // DRAFT, SCHEDULED, ACTIVE, PAUSED, COMPLETED, FAILED
   scheduledAt    DateTime?
   completedAt    DateTime?
@@ -159,6 +146,19 @@ model WhatsAppAutomation {
   recipientArray Json[] // { [recipientNumber: string, automationTime: string] }
 
   status String @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Label {
+  id String @id @default(cuid())
+  name String
+
+  accountId String
+  account   WhatsAppAccount @relation(fields: [accountId], references: [id])
+
+  recipients WhatsAppRecipient[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

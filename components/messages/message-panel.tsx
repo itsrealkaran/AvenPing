@@ -4,6 +4,8 @@ import { Conversation } from "./messages-interface";
 import MessageList from "./message-list";
 import MessageInput from "./message-input";
 import { Bookmark, Search, MoreVertical, User } from "lucide-react";
+import { useMessages } from "@/context/messages-context";
+import { useEffect } from "react";
 
 interface MessagePanelProps {
   conversation: Conversation;
@@ -11,7 +13,21 @@ interface MessagePanelProps {
 }
 
 const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
-  const { name, phoneNumber, messages } = conversation;
+  let { name, phoneNumber, messages } = conversation;
+  const { getConversation } = useMessages();
+
+  useEffect(() => {
+    if (conversation.id) {
+      getConversation(conversation.id).then((conversation) => {
+        if (conversation) {
+          name = conversation.name;
+          phoneNumber = conversation.phoneNumber;
+          messages = conversation.messages;
+        }
+      });
+    }
+    
+  }, [conversation.id]);
 
   return (
     <div className="flex flex-col h-full">
