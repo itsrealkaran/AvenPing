@@ -167,7 +167,6 @@ export default function ContactsPage() {
         onAddItem={handleAddContact}
         addButtonLabel="Add Contact"
         searchPlaceholder="Search contacts..."
-        tableHeight="340px"
       />
     </Body>
   );

@@ -19,7 +19,7 @@ export default function RootLayout({
       href: "/dashboard",
     },
     { iconName: "User" as const, label: "Profile", href: "/profile" },
-    { iconName: "Users" as const, label: "Contacts", href: "/contacts" },
+    { iconName: "Contact" as const, label: "Contacts", href: "/contacts" },
     { iconName: "FileText" as const, label: "Templates", href: "/templates" },
     { iconName: "Send" as const, label: "Campaigns", href: "/campaigns" },
     {

@@ -180,7 +180,6 @@ export default function FlowPage() {
           onAddItem={handleAddFlow}
           addButtonLabel="Add Flow"
           searchPlaceholder="Search flows..."
-          tableHeight="340px"
         />
       )}
     </Body>

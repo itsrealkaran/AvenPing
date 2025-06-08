@@ -11,6 +11,7 @@ import {
   Package,
   Search,
   Settings,
+  Contact2 as Contact,
   TrendingUp,
   User,
   Users,
@@ -52,6 +53,7 @@ export type IconName =
   | "MessageSquare"
   | "GitBranch"
   | "Bot"
+  | "Contact"
   | "BarChart"
   | "User";
 
@@ -64,6 +66,7 @@ const iconMap: Record<IconName, LucideIcon> = {
   Settings,
   Users,
   CreditCard,
+  Contact,
   HelpCircle,
   FileText,
   Send,
@@ -138,8 +141,7 @@ export default function Sidebar({
       <div className="flex">
         <div
           className={cn(
-            "flex flex-1 flex-col h-screen bg-white border-r border-gray-200 sticky top-0 overflow-y-auto transition-all duration-300",
-            isCollapsed ? "w-[76px] px-0" : "w-[254px] px-2"
+            "flex flex-1 flex-col h-screen bg-white border-r border-gray-200 sticky top-0 overflow-y-auto transition-all duration-300"
           )}
         >
           {/* Header */}
@@ -304,8 +306,8 @@ export default function Sidebar({
                         <Link
                           href={item.href}
                           className={cn(
-                            "flex items-center px-2 py-2 text-sm rounded-md",
-                            isCollapsed ? "justify-center" : "gap-3",
+                            "flex items-center py-2 text-md rounded-md",
+                            isCollapsed ? "justify-center px-2" : "gap-3 px-3",
                             isActive
                               ? "bg-sky-100 text-sky-400"
                               : "text-gray-700 hover:bg-gray-100"

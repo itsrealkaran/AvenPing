@@ -183,7 +183,6 @@ export default function TemplatesPage() {
         onAddItem={handleAddTemplate}
         addButtonLabel="Create Template"
         searchPlaceholder="Search templates..."
-        tableHeight="340px"
       />
     </Body>
   );

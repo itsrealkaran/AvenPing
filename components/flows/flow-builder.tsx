@@ -56,7 +56,7 @@ const CustomNode = ({ data, selected, id }: any) => {
   let textColor = "text-gray-700";
 
   // First check for specific node types that might be ambiguous
-  if (data.nodeType === "ChatAction") {
+  if (data.nodeType === "MessageAction") {
     // Special case for ChatAction (previously MessageAction)
     nodeStyle = "bg-green-50";
     borderStyle = selected ? "border-green-500" : "border-green-200";
@@ -96,7 +96,7 @@ const CustomNode = ({ data, selected, id }: any) => {
         return <FileAudio size={14} className="text-blue-500" />;
       case "TemplateMessage":
         return <FileEdit size={14} className="text-blue-500" />;
-      case "ChatAction":
+      case "MessageAction":
         return <MessageSquare size={14} className="text-green-500" />;
       case "ConnectFlowAction":
         return <GitMerge size={14} className="text-green-500" />;
@@ -166,7 +166,7 @@ const initialSidebarNodes = {
   ],
   action: [
     {
-      type: "ChatAction",
+      type: "MessageAction",
       label: "Message",
       icon: <MessageSquare size={18} />,
     },
@@ -232,7 +232,7 @@ export default function FlowBuilder({
       let category = "";
 
       // Special case for ChatAction
-      if (nodeType === "ChatAction") {
+      if (nodeType === "MessageAction") {
         category = "action";
       }
       // General patterns
