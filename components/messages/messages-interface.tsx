@@ -82,7 +82,26 @@ const MessagesInterface = () => {
   };
 
   if (!conversations) {
-    return <div>Loading...</div>;
+    // make a proper loading state
+    return (
+      <div className="flex h-[84vh]">
+        <div className="w-1/3 border-r border-gray-200 bg-white">
+          <div className="h-full flex flex-col items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-600"></div>
+            <p className="text-sm text-gray-500 mt-4">Loading conversations...</p>
+          </div>
+        </div>
+        <div className="w-2/3 bg-gray-50 flex flex-col items-center justify-center">
+          <div className="animate-pulse space-y-4 w-full max-w-lg px-8">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          </div>
+          <p className="text-sm text-gray-500 mt-8">Loading messages...</p>
+        </div>
+      </div>
+    )
   }
   // Filter conversations based on search and active filter
   const filteredConversations = conversations.filter((conversation) => {
