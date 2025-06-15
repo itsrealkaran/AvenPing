@@ -26,7 +26,7 @@ export async function GET(
                 messages: {
                     take: take + 1,
                     orderBy: {
-                        createdAt: 'desc'
+                        createdAt: 'asc'
                     },
                     ...(cursor ? {
                         cursor: {

@@ -121,7 +121,7 @@ const MessagesInterface = () => {
       status: "SENT",
     };
 
-    await sendMessage(newMessage);
+    await sendMessage(newMessage, selectedConversationId);
 
     // Update the selected conversation with the new message
     const updatedConversations = conversations.map((conv) => {

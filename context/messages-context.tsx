@@ -11,6 +11,8 @@ interface Message {
   createdAt: string;
   status: "SENT" | "DELIVERED" | "READ";
   isOutbound: boolean;
+  templateId?: string;
+  templateParams?: Record<string, string>;
 }
 
 interface Conversation {
@@ -24,7 +26,7 @@ interface MessagesContextType {
   conversations: Conversation[] | undefined;
   isLoading: boolean;
   error: Error | null;
-  sendMessage: (message: Omit<Message, 'id' | 'createdAt'>) => Promise<void>;
+  sendMessage: (message: Omit<Message, 'id' | 'createdAt'>, recipientId: string) => Promise<void>;
   deleteMessage: (messageId: string) => Promise<void>;
   getConversation: (conversationId: string) => Promise<Conversation | undefined>;
 }
@@ -63,8 +65,13 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (newMessage: Omit<Message, 'id' | 'createdAt'>) => {
-      const response = await axios.post('/api/messages', newMessage);
+    mutationFn: async ({ newMessage, recipientId }: { newMessage: Omit<Message, 'id' | 'createdAt'>, recipientId: string }) => {
+      const response = await axios.post(`/api/whatsapp/messages?phoneNumberId=${phoneNumberId}`, {
+        message: newMessage.message,
+        templateId: newMessage.templateId,
+        templateParams: newMessage.templateParams,
+        recipientId,
+      });
       return response.data;
     },
     onSuccess: () => {
@@ -86,8 +93,8 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     conversations,
     isLoading,
     error: error as Error | null,
-    sendMessage: async (message: Omit<Message, 'id' | 'createdAt'>) => {
-      await sendMessageMutation.mutateAsync(message);
+    sendMessage: async (message: Omit<Message, 'id' | 'createdAt'>, recipientId: string) => {
+      await sendMessageMutation.mutateAsync({ newMessage: message, recipientId });
     },
     deleteMessage: async (messageId: string) => {
       await deleteMessageMutation.mutateAsync(messageId);

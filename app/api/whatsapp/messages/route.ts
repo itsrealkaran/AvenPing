@@ -47,12 +47,12 @@ export async function GET(
             isOutbound: true,
           },
           orderBy: {
-            createdAt: 'desc'
+            createdAt: 'asc'
           },
         },
       },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'asc'
       },
       take: take + 1 // Take one extra to check if there are more results
     };
@@ -107,7 +107,13 @@ export async function POST(
 
     if (!phoneNumberId || !recipientId || (!message && !templateId)) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields',
+          "message": message,
+          "templateId": templateId,
+          "templateParams": templateParams,
+          "recipientId": recipientId,
+          "phoneNumberId": phoneNumberId
+        },
         { status: 400 }
       );
     }
