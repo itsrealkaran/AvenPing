@@ -2,12 +2,17 @@
 
 import { useState, useEffect } from "react";
 import Sidebar from "./sidebar";
-import { Brand, NavItem, AccountInfo, UserProfile } from "./sidebar";
+import { Brand, NavItem, UserProfile } from "./sidebar";
+
+interface AccountInfoItem {
+  name: string;
+  number: string;
+}
 
 interface SidebarContainerProps {
   brand: Brand;
   navigationItems: NavItem[];
-  accountInfo: AccountInfo;
+  accountInfo: AccountInfoItem[];
   userProfile: UserProfile;
 }
 
@@ -31,8 +36,8 @@ export default function SidebarContainer({
 
   return (
     <div
-      className={`transition-all duration-300 ease-in-out flex-shrink-0 z-100 ${
-        isSidebarCollapsed ? "w-[76px]" : "w-[290px]"
+      className={`transition-all duration-200 ease-in-out flex-shrink-0 z-100 ${
+        isSidebarCollapsed ? "w-[76px]" : "w-[260px]"
       }`}
     >
       <Sidebar

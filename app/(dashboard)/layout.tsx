@@ -35,14 +35,23 @@ export default function RootLayout({
 
   return (
     <UserProvider>
-      <div className="flex h-screen overflow-hidden relative">
-        <div className="absolute inset-0 bg-[#EDEDED] bg-opacity-90 backdrop-blur-sm" />
+      <div className="flex h-screen overflow-hidden relative py-2">
+        <div className="absolute inset-0 bg-[#EDEDED]bg-gradient.svg backdrop-blur-sm" />
         <div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0"
           style={{
             backgroundImage: "url('/bg-gradient.svg')",
             backgroundSize: "cover",
             backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "url('/bg-bottom.svg')",
+            backgroundSize: "contain",
+            backgroundPosition: "bottom",
             backgroundRepeat: "no-repeat",
           }}
         />
@@ -52,15 +61,18 @@ export default function RootLayout({
             logo: "/logo-black.svg",
           }}
           navigationItems={navigationItems}
-          accountInfo={{
-            name: ["+91 9876543210", "+91 9876543217"],
-          }}
+          accountInfo={[
+            { name: "Karan Singh", number: "+91 9876543210" },
+            { name: "Rahul Kumar", number: "+91 9876543217" },
+          ]}
           userProfile={{
             name: "Karan Singh",
             email: "karansingh@duck.com",
           }}
         />
-        <main className="flex-1 overflow-auto relative">{children}</main>
+        <main className="flex-1 overflow-auto relative bg-white rounded-xl mr-2 border-[#E0DADA] border-5">
+          {children}
+        </main>
       </div>
     </UserProvider>
   );

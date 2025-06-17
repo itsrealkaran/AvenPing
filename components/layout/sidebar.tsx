@@ -1,15 +1,12 @@
 "use client";
 
 import {
-  Bell,
-  Book,
   ChevronDown,
   ChevronRight,
   FolderClosed,
   LayoutDashboard,
   MoreVertical,
   Package,
-  Search,
   Settings,
   Contact2 as Contact,
   TrendingUp,
@@ -25,11 +22,13 @@ import {
   Bot,
   BarChart,
   ChevronLeft,
-  Menu,
+  SidebarClose,
+  SidebarOpen,
+  LogOut,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -86,8 +85,9 @@ export interface NavItem {
 }
 
 // Types for account information
-export interface AccountInfo {
-  name: string[];
+export interface AccountInfoItem {
+  name: string;
+  number: string;
 }
 
 // Types for user profile
@@ -105,7 +105,7 @@ export interface Brand {
 // Main sidebar props interface
 interface SidebarProps {
   navigationItems?: NavItem[];
-  accountInfo?: AccountInfo;
+  accountInfo?: AccountInfoItem[];
   userProfile?: UserProfile;
   brand?: Brand;
   isCollapsed?: boolean;
@@ -115,9 +115,7 @@ interface SidebarProps {
 export default function Sidebar({
   brand,
   navigationItems = [],
-  accountInfo = {
-    name: [],
-  },
+  accountInfo = [],
   userProfile = { name: "apectory", email: "apectory@duck.com" },
   isCollapsed = false,
   onCollapsedChange,
@@ -138,32 +136,31 @@ export default function Sidebar({
 
   return (
     <TooltipProvider>
-      <div className="flex">
+      <div className="flex flex-col h-screen w-full sticky top-0 overflow-y-auto transition-all duration-300">
+        {/* Header */}
         <div
           className={cn(
-            "flex flex-1 flex-col h-screen bg-white border-r border-gray-200 sticky top-0 overflow-y-auto transition-all duration-300"
+            "flex flex-col items-center px-6 pt-4 pb-2",
+            isCollapsed
+              ? "p-0 pt-4 pb-2 border-b border-gray-200"
+              : "justify-between"
           )}
         >
-          {/* Header */}
           <div
             className={cn(
-              "flex items-center p-4 pb-2 ${is}",
-              isCollapsed
-                ? "justify-center pb-2 border-b border-gray-200"
-                : "justify-between"
+              "flex items-center",
+              !isCollapsed && "justify-between w-full"
             )}
           >
             {!isCollapsed && (
               <Link
                 href="/"
-                className="flex items-center gap-1 font-bold text-xl"
+                className="flex items-center gap-2 font-bold text-xl"
               >
-                <img
-                  src={brand?.logo}
-                  alt={brand?.name}
-                  className="w-6 h-6 rounded-full"
-                />
-                <span>{brand?.name}</span>
+                <img src={brand?.logo} alt={brand?.name} className="w-7 h-7" />
+                <span className="tracking-tight text-gray-800">
+                  {brand?.name}
+                </span>
               </Link>
             )}
             {isCollapsed && (
@@ -172,174 +169,152 @@ export default function Sidebar({
                   <img
                     src={brand?.logo}
                     alt={brand?.name}
-                    className="w-6 h-6 rounded-full"
+                    className="w-8 h-8"
                   />
                 </TooltipTrigger>
                 <TooltipContent side="right">{brand?.name}</TooltipContent>
               </Tooltip>
             )}
             {!isCollapsed && (
-              <div className="flex items-center gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      aria-label="Documentation"
-                      className="hover:bg-gray-100 rounded-md"
-                    >
-                      <Book size={20} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>Documentation</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      aria-label="Notifications"
-                      className="hover:bg-gray-100 rounded-md"
-                    >
-                      <Bell size={20} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>Notifications</TooltipContent>
-                </Tooltip>
-              </div>
+              <button
+                className="p-1 rounded-full hover:bg-gray-100"
+                onClick={() => onCollapsedChange?.(!isCollapsed)}
+              >
+                <SidebarClose size={20} className="text-gray-400" />
+              </button>
             )}
           </div>
-
           {isCollapsed && (
-            <ul className="space-y-1 p-2">
-              <li>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link
-                      href="/documentations"
-                      className="flex items-center px-2 py-2 text-sm rounded-md justify-center text-gray-700 hover:bg-gray-100"
-                    >
-                      <Book size={20} />
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">Documentations</TooltipContent>
-                </Tooltip>
-              </li>
-
-              <li>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link
-                      href="/notifications"
-                      className="flex items-center px-2 py-2 text-sm rounded-md justify-center text-gray-700 hover:bg-gray-100"
-                    >
-                      <Bell size={20} />
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">Notifications</TooltipContent>
-                </Tooltip>
-              </li>
-            </ul>
+            <button
+              className="mt-2 p-1 rounded-full hover:bg-gray-100"
+              onClick={() => onCollapsedChange?.(!isCollapsed)}
+            >
+              <SidebarOpen size={20} className="text-gray-400" />
+            </button>
           )}
+        </div>
 
-          {/* Account */}
-          {!isCollapsed && (
-            <>
-              {" "}
-              <div className="px-4 py-2">
-                <p className="text-sm text-gray-500">Phone Number</p>
-              </div>
-              <div className="mx-4 mb-2 relative">
+        {/* Account */}
+        {!isCollapsed && accountInfo.length > 0 && (
+          <div className="px-4 pt-2 pb-2">
+            <div className="bg-white rounded-xl shadow flex flex-col items-start px-4 py-3 mb-2 border border-gray-100">
+              <p className="text-xs text-gray-400 mb-1">Choose Number</p>
+              <div className="flex items-center w-full justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="bg-gray-100 rounded-md p-1">
+                    <User size={18} className="text-gray-400" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-700">
+                      {accountInfo[0].name}
+                    </span>
+                    <p className="text-xs text-gray-400">
+                      {accountInfo[0].number}
+                    </p>
+                  </div>
+                </div>
                 <button
-                  className="w-full flex items-center justify-between p-2 border border-gray-200 rounded-md hover:bg-gray-50"
+                  className="ml-2 p-1 rounded hover:bg-gray-50"
                   onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
                 >
-                  <div className="flex items-center gap-2">
-                    <span>
-                      {accountInfo.name[0]?.split(",")[0] || "Account"}
-                    </span>
-                  </div>
                   <ChevronDown
-                    size={20}
+                    size={18}
                     className={`text-gray-400 transition-transform ${
                       accountDropdownOpen ? "rotate-180" : ""
                     }`}
                   />
                 </button>
-
-                {accountDropdownOpen && (
-                  <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10">
-                    <ul className="py-1">
-                      {accountInfo.name.length > 0 ? (
-                        accountInfo.name.map((name, index) => (
-                          <li
-                            key={index}
-                            className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm"
-                            onClick={() => {
-                              handleChangeAccount();
-                              setAccountDropdownOpen(false);
-                            }}
-                          >
-                            {name}
-                          </li>
-                        ))
-                      ) : (
-                        <li className="px-4 py-2 text-sm text-gray-500">
-                          No accounts available
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                )}
               </div>
-            </>
-          )}
-
-          {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto border-t border-gray-200">
-            <ul className="space-y-1 p-2">
-              {items.map((item, index) => {
-                const Icon = iconMap[item.iconName];
-                const isActive = pathname === item.href;
-
-                return (
-                  <li key={index}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href={item.href}
-                          className={cn(
-                            "flex items-center py-2 text-md rounded-md",
-                            isCollapsed ? "justify-center px-2" : "gap-3 px-3",
-                            isActive
-                              ? "bg-sky-100 text-sky-400"
-                              : "text-gray-700 hover:bg-gray-100"
-                          )}
+              {accountDropdownOpen && (
+                <div className="absolute left-8 right-8 mt-2 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                  <ul className="py-1">
+                    {accountInfo.length > 0 ? (
+                      accountInfo.map((acc, index) => (
+                        <li
+                          key={index}
+                          className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm"
+                          onClick={() => {
+                            handleChangeAccount();
+                            setAccountDropdownOpen(false);
+                          }}
                         >
-                          <Icon size={20} />
-                          {!isCollapsed && <span>{item.label}</span>}
-                        </Link>
-                      </TooltipTrigger>
-                      {isCollapsed && (
-                        <TooltipContent side="right">
-                          {item.label}
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-
-          {/* User Profile */}
-          <div className="mt-auto border-t border-gray-200 p-4 relative">
-            <div
-              className={cn(
-                "flex items-center",
-                isCollapsed ? "justify-center" : "justify-between"
+                          <div className="font-medium">{acc.name}</div>
+                          <div className="text-xs text-gray-400">
+                            {acc.number}
+                          </div>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="px-4 py-2 text-sm text-gray-500">
+                        No accounts available
+                      </li>
+                    )}
+                  </ul>
+                </div>
               )}
-            >
+            </div>
+          </div>
+        )}
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto flex flex-col">
+          <ul className="space-y-1 px-6 pt-2 flex-1">
+            {items.map((item, index) => {
+              const Icon = iconMap[item.iconName];
+              const isActive = pathname === item.href;
+
+              return (
+                <li key={index}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          "flex items-center py-1.5 text-[14px] rounded-md font-normal transition-all",
+                          isCollapsed ? "justify-center px-2" : "gap-2 px-2",
+                          isActive
+                            ? "bg-[#FDFDFD] shadow-sm border border-[#DBDBDB]"
+                            : "text-gray-700 hover:bg-gray-100 hover:shadow-sm"
+                        )}
+                      >
+                        <Icon size={18} />
+                        {!isCollapsed && <span>{item.label}</span>}
+                      </Link>
+                    </TooltipTrigger>
+                    {isCollapsed && (
+                      <TooltipContent side="right">{item.label}</TooltipContent>
+                    )}
+                  </Tooltip>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        {/* User Profile Card at Bottom */}
+        {isCollapsed ? (
+          <div className="mt-auto flex flex-col items-center pb-6">
+            {/* Logout button */}
+            <div className="flex flex-col items-center p-2 pt-4 gap-3 justify-center bg-white rounded-xl shadow-lg border-2 border-gray-100 group">
               <Tooltip>
-                <TooltipTrigger>
-                  <div className="flex items-center gap-3">
+                <TooltipTrigger asChild>
+                  <button
+                    className="flex items-center justify-center transition-all"
+                    onClick={() => {
+                      handleLogout();
+                    }}
+                  >
+                    <LogOut
+                      size={16}
+                      className="text-red-500 group-hover:text-red-600"
+                    />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">Sign Out</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="h-10 w-10 rounded-full flex items-center justify-center bg-white shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all duration-200">
                     {userProfile.avatar ? (
                       <img
                         src={userProfile.avatar}
@@ -347,71 +322,70 @@ export default function Sidebar({
                         className="h-8 w-8 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                        <User size={16} className="text-gray-500" />
+                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                        <User size={16} className="text-gray-600" />
                       </div>
                     )}
-                    {!isCollapsed && (
-                      <div>
-                        <p className="text-sm font-medium text-left">
-                          {userProfile.name}
-                        </p>
-                        <p className="text-xs text-gray-500 text-left">
-                          {userProfile.email}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  </button>
                 </TooltipTrigger>
-                {isCollapsed && (
-                  <TooltipContent side="right">
-                    <div>
-                      <p className="font-medium">{userProfile.name}</p>
-                      <p className="text-xs opacity-80">{userProfile.email}</p>
-                    </div>
-                  </TooltipContent>
-                )}
+                <TooltipContent side="right">
+                  <div className="space-y-1">
+                    <p className="font-medium text-gray-200">
+                      {userProfile.name}
+                    </p>
+                    <p className="text-xs text-gray-400">{userProfile.email}</p>
+                  </div>
+                </TooltipContent>
               </Tooltip>
-              {!isCollapsed && (
-                <button
-                  aria-label="More options"
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="p-1 rounded-full hover:bg-gray-100"
-                >
-                  <MoreVertical size={20} className="text-gray-400" />
-                </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-auto flex flex-col items-center pb-6">
+            <div className="w-[90%] bg-white rounded-xl shadow-lg flex items-center gap-3 px-4 py-3 border border-gray-100">
+              {userProfile.avatar ? (
+                <img
+                  src={userProfile.avatar}
+                  alt={userProfile.name}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                  <User size={16} className="text-gray-500" />
+                </div>
+              )}
+              <div className="flex flex-col">
+                <p className="text-sm font-medium text-gray-800 leading-tight">
+                  {userProfile.name}
+                </p>
+                <p className="text-xs text-gray-400 leading-tight">
+                  {userProfile.email}
+                </p>
+              </div>
+              <button
+                aria-label="More options"
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="ml-auto p-1 rounded-full hover:bg-gray-100"
+              >
+                <MoreVertical size={20} className="text-gray-400" />
+              </button>
+              {userMenuOpen && (
+                <div className="absolute bottom-14 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-10 w-48">
+                  <ul className="py-1">
+                    <li
+                      className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-red-500 flex items-center gap-2"
+                      onClick={() => {
+                        handleLogout();
+                        setUserMenuOpen(false);
+                      }}
+                    >
+                      <span>Sign Out</span>
+                    </li>
+                  </ul>
+                </div>
               )}
             </div>
-
-            {userMenuOpen && !isCollapsed && (
-              <div className="absolute bottom-16 right-4 bg-white border border-gray-200 rounded-md shadow-lg z-10 w-48">
-                <ul className="py-1">
-                  <li
-                    className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-red-500 flex items-center gap-2"
-                    onClick={() => {
-                      handleLogout();
-                      setUserMenuOpen(false);
-                    }}
-                  >
-                    <span>Sign Out</span>
-                  </li>
-                </ul>
-              </div>
-            )}
           </div>
-        </div>
-        <div className="flex-shrink-0 flex flex-col justify-center items-center border-t border-gray-200">
-          <button
-            onClick={() => onCollapsedChange?.(!isCollapsed)}
-            className="hover:bg-gray-100 rounded-r-md py-4 border border-gray-200 border-l-0"
-          >
-            {isCollapsed ? (
-              <ChevronRight size={20} />
-            ) : (
-              <ChevronLeft size={20} />
-            )}
-          </button>
-        </div>
+        )}
       </div>
     </TooltipProvider>
   );
