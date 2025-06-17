@@ -2,9 +2,7 @@
 
 import SidebarContainer from "@/components/layout/sidebar-container";
 import { UserProvider } from "@/context/user-context";
-import axios from "axios";
-import { useEffect, useState } from "react";
-import { useCallback } from "react";
+import Header from "@/components/layout/header";
 
 export default function RootLayout({
   children,
@@ -70,9 +68,10 @@ export default function RootLayout({
             email: "karansingh@duck.com",
           }}
         />
-        <main className="flex-1 overflow-auto relative bg-white rounded-xl mr-2 border-[#E0DADA] border-5">
-          {children}
-        </main>
+        <div className="flex flex-col relative flex-1 bg-white rounded-xl mr-2 border-[#E0DADA] border-5">
+          <Header />
+          <main className="overflow-auto relative flex-1">{children}</main>
+        </div>
       </div>
     </UserProvider>
   );
