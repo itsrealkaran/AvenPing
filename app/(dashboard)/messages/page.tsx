@@ -6,7 +6,7 @@ import MessagesInterface from "@/components/messages/messages-interface";
 
 export default function MessagesPage() {
   return (
-    <Body icon={MessageSquare} title="Messages">
+    <Body title="Messages">
       <MessagesInterface />
     </Body>
   );

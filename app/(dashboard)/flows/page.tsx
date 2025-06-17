@@ -164,7 +164,7 @@ export default function FlowPage() {
   ];
 
   return (
-    <Body icon={GitBranch} title="Flows">
+    <Body title="Flows">
       {showBuilder ? (
         <FlowBuilder
           onBack={handleBack}

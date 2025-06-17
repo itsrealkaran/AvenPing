@@ -77,7 +77,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <Body icon={LayoutDashboard} title="Dashboard">
+    <Body title="Dashboard">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* QR Generator Card */}
         <Card title="QR Generator" className="md:col-span-1 md:row-span-2 !p-0">

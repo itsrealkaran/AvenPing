@@ -200,7 +200,7 @@ export default function CampaignsPage() {
   ];
 
   return (
-    <Body icon={Send} title="Campaigns">
+    <Body title="Campaigns">
       <Table
         data={campaigns}
         columns={columns}

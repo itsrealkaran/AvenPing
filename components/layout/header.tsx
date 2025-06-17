@@ -21,7 +21,7 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="w-full flex items-center px-6 py-2 bg-white border-b border-gray-200 rounded-t-xl">
+    <header className="w-full flex items-center px-6 py-2 bg-white shadow-xs border-b border-gray-200 rounded-t-xl">
       {/* Search Bar */}
       <div className="flex items-center border border-gray-300 rounded-md px-3 py-1.5 bg-white min-w-[260px] max-w-xs">
         <Search size={18} className="text-gray-400 mr-2" />

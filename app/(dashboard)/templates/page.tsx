@@ -174,7 +174,7 @@ export default function TemplatesPage() {
   ];
 
   return (
-    <Body icon={FileText} title="Templates">
+    <Body title="Templates">
       <Table
         data={templates}
         columns={columns}

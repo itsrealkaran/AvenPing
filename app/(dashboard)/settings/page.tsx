@@ -3,7 +3,7 @@ import { Settings } from "lucide-react";
 
 export default function SettingsPage() {
   return (
-    <Body icon={Settings} title="Settings">
+    <Body title="Settings">
       <h1>Settings</h1>
     </Body>
   );

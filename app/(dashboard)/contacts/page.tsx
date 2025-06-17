@@ -158,7 +158,7 @@ export default function ContactsPage() {
   ];
 
   return (
-    <Body icon={Users} title="Contacts">
+    <Body title="Contacts">
       <Table
         data={contacts}
         columns={columns}

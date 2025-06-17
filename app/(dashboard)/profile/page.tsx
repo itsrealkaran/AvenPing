@@ -101,7 +101,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <Body icon={User} title="Business Profile">
+    <Body title="Business Profile">
       <Card className="flex flex-row ">
         {/* Edit Form */}
         <div className="p-6 flex-1">
