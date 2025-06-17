@@ -6,8 +6,9 @@ interface CardProps {
   children: ReactNode;
   className?: string;
   viewAllLink?: string;
-  variant?: "default" | "header" | "darkHeader";
   headerButton?: ReactNode;
+  headerIcon?: ReactNode;
+  headerInfoButton?: ReactNode;
 }
 
 export default function Card({
@@ -15,20 +16,22 @@ export default function Card({
   children,
   className = "",
   viewAllLink,
-  variant = "default",
   headerButton,
+  headerIcon,
+  headerInfoButton,
 }: CardProps) {
   const renderHeader = () => {
-    if (!title && variant === "default") return null;
-
-    const headerBgClass = variant === "darkHeader" ? "bg-gray-100" : "";
+    if (!title && !headerIcon && !headerInfoButton && !headerButton)
+      return null;
 
     return (
-      <div
-        className={`py-2 px-4 flex items-center justify-between border-b border-gray-300 ${headerBgClass}`}
-      >
-        <div className="text-sm font-medium text-gray-600 flex items-center gap-2">
-          {title}
+      <div className="flex items-center justify-between px-6 pt-5 pb-2 bg-white rounded-t-2xl">
+        <div className="flex items-center gap-2">
+          {headerIcon && <span className="text-xl">{headerIcon}</span>}
+          {title && (
+            <span className="font-400 text-lg text-gray-800">{title}</span>
+          )}
+          {headerInfoButton && <span className="ml-1">{headerInfoButton}</span>}
         </div>
         <div className="flex items-center gap-2">
           {viewAllLink && (
@@ -47,56 +50,10 @@ export default function Card({
 
   return (
     <div
-      className={`border rounded-lg border-gray-300 bg-white overflow-hidden shadow-xs ${className}`}
+      className={`border-3 border-[#E0E0E0] rounded-2xl bg-white ${className}`}
     >
       {renderHeader()}
-      <div>{children}</div>
+      <div className="px-6 pb-6 pt-2">{children}</div>
     </div>
   );
 }
-
-
-import * as React from 'react';
-
-import { cn } from '@/lib/utils';
-
-const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('flex flex-col space-y-1.5 p-6', className)} {...props} />
-  )
-);
-CardHeader.displayName = 'CardHeader';
-
-const CardTitle = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn('font-semibold leading-none tracking-tight', className)}
-      {...props}
-    />
-  )
-);
-CardTitle.displayName = 'CardTitle';
-
-const CardDescription = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('text-sm text-muted-foreground', className)} {...props} />
-  )
-);
-CardDescription.displayName = 'CardDescription';
-
-const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
-  )
-);
-CardContent.displayName = 'CardContent';
-
-const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('flex items-center p-6 pt-0', className)} {...props} />
-  )
-);
-CardFooter.displayName = 'CardFooter';
-
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
