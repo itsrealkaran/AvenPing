@@ -10,7 +10,7 @@ import {
 import { ListItemIcon, MenuItem } from "@mui/material";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Plus } from "lucide-react";
+import { Search, LucideIcon } from "lucide-react";
 import { calculateTableHeight } from "@/lib/utils";
 
 export type ActionMenuItem = {
@@ -40,6 +40,7 @@ export type TableProps<T extends Record<string, any>> = {
   tableHeight?: string;
   primaryColor?: string;
   density?: "compact" | "comfortable" | "spacious";
+  Add?: LucideIcon;
 };
 
 export default function Table<T extends Record<string, any>>({
@@ -61,8 +62,9 @@ export default function Table<T extends Record<string, any>>({
   tableHeight: propTableHeight,
   primaryColor = "#7c3aed",
   density = "compact",
+  Add,
 }: TableProps<T>) {
-  const [tableHeight, setTableHeight] = useState(propTableHeight || "500px");
+  const [tableHeight, setTableHeight] = useState(propTableHeight || "450px");
 
   useEffect(() => {
     if (!propTableHeight) {
@@ -168,11 +170,10 @@ export default function Table<T extends Record<string, any>>({
           <div className="flex gap-2">
             <Button
               onClick={onAddItem}
-              variant={"outline"}
               disabled={isLoading}
               className="flex items-center gap-1"
             >
-              <Plus className="h-4 w-4" />
+              {Add && <Add className="h-4 w-4" />}
               {addButtonLabel}
             </Button>
           </div>
