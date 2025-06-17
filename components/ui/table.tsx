@@ -145,6 +145,11 @@ export default function Table<T extends Record<string, any>>({
         py: "12px",
       },
     },
+    muiPaginationProps: {
+      sx: {
+        borderBottom: "1px solid #e5e7eb",
+      },
+    },
     renderTopToolbar: ({ table }) => (
       <div className="flex justify-between items-center pb-3 bg-transparent">
         <div className="flex items-center gap-2">

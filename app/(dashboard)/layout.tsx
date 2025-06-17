@@ -35,7 +35,17 @@ export default function RootLayout({
 
   return (
     <UserProvider>
-      <div className="flex h-screen overflow-hidden bg-[#fcfcfd]">
+      <div className="flex h-screen overflow-hidden relative">
+        <div className="absolute inset-0 bg-[#EDEDED] bg-opacity-90 backdrop-blur-sm" />
+        <div
+          className="absolute inset-0 opacity-30"
+          style={{
+            backgroundImage: "url('/bg-gradient.svg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        />
         <SidebarContainer
           brand={{
             name: "AvenPing",
@@ -50,7 +60,7 @@ export default function RootLayout({
             email: "karansingh@duck.com",
           }}
         />
-        <main className="flex-1 overflow-auto bg-[#fcfcfd]">{children}</main>
+        <main className="flex-1 overflow-auto relative">{children}</main>
       </div>
     </UserProvider>
   );
