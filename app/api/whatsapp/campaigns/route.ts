@@ -23,9 +23,6 @@ export async function GET(
           }
         }
       },
-      include: {
-        audience: true
-      }
     });
 
     return NextResponse.json(campaigns);
@@ -80,19 +77,6 @@ export async function POST(
       );
     }
 
-    // Get audience details
-    const audience = await prisma.whatsAppAudience.findUnique({
-      where: { id: audienceId },
-      include: { recipients: true }
-    });
-
-    if (!audience) {
-      return NextResponse.json(
-        { error: 'Audience not found' },
-        { status: 404 }
-      );
-    }
-
     // Create campaign in database
     const campaign = await prisma.whatsAppCampaign.create({
       data: {
@@ -103,7 +87,6 @@ export async function POST(
         templateId,
         templateParams,
         accountId: id,
-        audienceId,
         status: scheduledAt ? 'SCHEDULED' : 'DRAFT',
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null
       }
@@ -111,7 +94,7 @@ export async function POST(
 
     // If campaign is not scheduled, send messages immediately
     if (!scheduledAt) {
-      await sendCampaignMessages(account, audience.recipients, campaign);
+      await sendCampaignMessages(account, campaign);
     }
 
     return NextResponse.json(campaign, { status: 201 });
@@ -127,7 +110,6 @@ export async function POST(
 // Helper function to send campaign messages
 async function sendCampaignMessages(
   account: any,
-  recipients: any[],
   campaign: any
 ) {
   const accessToken = account.accessToken;
@@ -144,12 +126,11 @@ async function sendCampaignMessages(
   });
 
   // Send messages to each recipient
-  for (const recipient of recipients) {
     try {
       const messageData = {
         messaging_product: 'whatsapp',
         recipient_type: 'individual',
-        to: recipient.phoneNumber,
+        to: account.phoneNumbers[0]?.phoneNumber,
         type: 'template',
         template: {
           name: campaign.templateId,
@@ -187,14 +168,13 @@ async function sendCampaignMessages(
           status: 'SENT',
           message: campaign.message,
           isOutbound: true,
-          recipientId: recipient.id,
+          recipientId: account.phoneNumbers[0]?.id,
           whatsAppPhoneNumberId: account.phoneNumbers[0]?.id
         }
       });
     } catch (error) {
-      console.error(`Error sending message to ${recipient.phoneNumber}:`, error);
+      console.error(`Error sending message to ${account.phoneNumbers[0]?.phoneNumber}:`, error);
     }
-  }
 
   // Update campaign status to COMPLETED
   await prisma.whatsAppCampaign.update({
@@ -204,4 +184,4 @@ async function sendCampaignMessages(
       completedAt: new Date()
     }
   });
-} 
+}

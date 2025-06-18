@@ -22,7 +22,6 @@ export async function GET(
       },
       include: {
         phoneNumbers: true,
-        audiences: true,
         campaigns: true,
       }
     });
