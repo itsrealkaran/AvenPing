@@ -73,7 +73,11 @@ export default function DashboardPage() {
     <Body title="Dashboard">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* QR Generator Card */}
-        <Card title="QR Generator" className="md:col-span-1 md:row-span-2 !p-0">
+        <Card
+          title="QR Generator"
+          className="md:col-span-1 md:row-span-2 !p-0"
+          headerInfo="This is a QR code generator for WhatsApp. It allows you to generate a QR code that can be scanned by a WhatsApp user to start a conversation with your business."
+        >
           <div className="flex flex-col gap-4 p-5">
             <label
               htmlFor="qrText"

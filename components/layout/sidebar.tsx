@@ -258,7 +258,12 @@ export default function Sidebar({
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto flex flex-col">
-          <ul className="space-y-1 px-6 pt-2 flex-1">
+          <ul
+            className={cn(
+              "space-y-1 px-6 pt-2 flex-1",
+              isCollapsed ? "px-4" : "px-6"
+            )}
+          >
             {items.map((item, index) => {
               const Icon = iconMap[item.iconName];
               const isActive = pathname === item.href;
@@ -341,7 +346,7 @@ export default function Sidebar({
           </div>
         ) : (
           <div className="mt-auto flex flex-col items-center pb-6">
-            <div className="w-[90%] bg-white rounded-xl shadow-lg flex items-center gap-3 px-4 py-3 border border-gray-100">
+            <div className="w-[90%] bg-white rounded-xl shadow-lg flex items-center gap-2 px-4 py-3 border border-gray-100">
               {userProfile.avatar ? (
                 <img
                   src={userProfile.avatar}

@@ -1,5 +1,12 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./tooltip";
 
 interface CardProps {
   title?: string;
@@ -8,7 +15,7 @@ interface CardProps {
   viewAllLink?: string;
   headerButton?: ReactNode;
   headerIcon?: ReactNode;
-  headerInfoButton?: ReactNode;
+  headerInfo?: string;
 }
 
 export default function Card({
@@ -18,11 +25,10 @@ export default function Card({
   viewAllLink,
   headerButton,
   headerIcon,
-  headerInfoButton,
+  headerInfo,
 }: CardProps) {
   const renderHeader = () => {
-    if (!title && !headerIcon && !headerInfoButton && !headerButton)
-      return null;
+    if (!title && !headerIcon && !headerInfo && !headerButton) return null;
 
     return (
       <div className="flex items-center justify-between px-6 pt-5 pb-2 bg-white rounded-t-2xl">
@@ -31,7 +37,6 @@ export default function Card({
           {title && (
             <span className="font-400 text-lg text-gray-800">{title}</span>
           )}
-          {headerInfoButton && <span className="ml-1">{headerInfoButton}</span>}
         </div>
         <div className="flex items-center gap-2">
           {viewAllLink && (
@@ -41,6 +46,20 @@ export default function Card({
             >
               All {title} <span className="ml-1">→</span>
             </Link>
+          )}
+          {headerInfo && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                    <Info className="size-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="text-xs leading-relaxed">{headerInfo}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
           {headerButton}
         </div>
