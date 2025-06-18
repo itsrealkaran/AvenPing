@@ -35,7 +35,7 @@ export default function Card({
         <div className="flex items-center gap-2">
           {headerIcon && <span className="text-xl">{headerIcon}</span>}
           {title && (
-            <span className="font-400 text-lg text-gray-800">{title}</span>
+            <span className="font-500 text-base text-gray-800">{title}</span>
           )}
         </div>
         <div className="flex items-center gap-2">
