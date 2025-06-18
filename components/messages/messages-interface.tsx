@@ -37,6 +37,7 @@ type FilterType = "all" | "unread" | "label";
 
 const MessagesInterface = () => {
   const { conversations, sendMessage } = useMessages();
+  const [search, setSearch] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedConversationId, setSelectedConversationId] = useState<
@@ -76,13 +77,8 @@ const MessagesInterface = () => {
       setSelectedConversationId(conversations[0].id);
     }
   }, [conversations, selectedConversationId]);
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
+  
   if (!conversations) {
-    // make a proper loading state
     return (
       <div className="flex h-[84vh]">
         <div className="w-1/3 border-r border-gray-200 bg-white">
@@ -112,7 +108,7 @@ const MessagesInterface = () => {
         .includes(searchQuery.toLowerCase()) ||
       conversation.phoneNumber
         .toLowerCase()
-        .includes(searchQuery.toLowerCase()) 
+        .includes(searchQuery.toLowerCase())
     //   conversation.label
     //     ?.toLowerCase()
     //     .includes(searchQuery.toLowerCase());
@@ -173,8 +169,8 @@ const MessagesInterface = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search chats, labels or contacts"
-              value={searchQuery}
-              onChange={handleSearch}
+              value={search || ""}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
             />
           </div>
@@ -223,7 +219,7 @@ const MessagesInterface = () => {
             </div>
           ) : (
             <ConversationList
-              conversations={filteredConversations}
+              conversations={conversations}
               selectedConversationId={selectedConversationId || ""}
               onSelectConversation={handleConversationSelect}
             />

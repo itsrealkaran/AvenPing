@@ -20,6 +20,8 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '20');
     const take = Math.min(limit, 100); // Maximum 100 messages per request
     const phoneNumberId = searchParams.get('phoneNumberId');
+    const search = searchParams.get('search');
+    const label = searchParams.get('label');
 
     // Build the query
     const query: Prisma.WhatsAppRecipientFindManyArgs = {
@@ -31,14 +33,33 @@ export async function GET(
               email: session?.email
             }
           }
-        }
+        },
+        ...(search ? {
+          OR: [
+            { phoneNumber: { contains: search, mode: 'insensitive' } },
+            { name: { contains: search, mode: 'insensitive' } }
+          ]
+        } : {}),
+        ...(label && label === "unread" ? {
+          messages: {
+            some: {
+              status: "PENDING"
+            }
+          }
+        } : label ? {
+          labels: {
+            some: {
+              name: label
+            }
+          }
+        } : {})
       },
       select: {
         id: true,
         phoneNumber: true,
         name: true,
         messages: {
-          take: 10,
+          take: 20,
           select: {
             id: true,
             message: true,
@@ -50,6 +71,13 @@ export async function GET(
             createdAt: 'asc'
           },
         },
+        labels: {
+          select: {
+            name: true,
+            description: true,
+            color: true
+          }
+        }
       },
       orderBy: {
         createdAt: 'asc'
