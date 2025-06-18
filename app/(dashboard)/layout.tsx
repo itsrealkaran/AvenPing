@@ -34,7 +34,6 @@ export default function RootLayout({
   return (
     <UserProvider>
       <div className="flex h-screen overflow-hidden relative py-2">
-        <div className="absolute inset-0 bg-[#EDEDED]bg-gradient.svg backdrop-blur-sm" />
         <div
           className="absolute inset-0"
           style={{

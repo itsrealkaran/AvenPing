@@ -335,10 +335,10 @@ export default function Sidebar({
                 </TooltipTrigger>
                 <TooltipContent side="right">
                   <div className="space-y-1">
-                    <p className="font-medium text-gray-200">
+                    <p className="font-medium text-gray-800">
                       {userProfile.name}
                     </p>
-                    <p className="text-xs text-gray-400">{userProfile.email}</p>
+                    <p className="text-xs text-gray-500">{userProfile.email}</p>
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -346,7 +346,25 @@ export default function Sidebar({
           </div>
         ) : (
           <div className="mt-auto flex flex-col items-center pb-6">
-            <div className="w-[90%] bg-white rounded-xl shadow-lg flex items-center gap-2 px-4 py-3 border border-gray-100">
+            {userMenuOpen && (
+              <div className="w-[90%] mb-1 bg-white border-2 border-gray-200 rounded-md shadow-xl z-10 relative">
+                <ul className="py-1">
+                  <li
+                    className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-red-500 flex items-center gap-2"
+                    onClick={() => {
+                      handleLogout();
+                      setUserMenuOpen(false);
+                    }}
+                  >
+                    <LogOut size={18} />
+                    <span>Sign Out</span>
+                  </li>
+                </ul>
+                {/* Arrow in bottom right */}
+                <div className="absolute -bottom-0.5 right-4 w-2 h-2 bg-white border-r-2 border-b-2 border-gray-200 transform rotate-45"></div>
+              </div>
+            )}
+            <div className="w-[90%] bg-white rounded-xl border-2 border-[#E0E0E0] shadow-lg flex items-center gap-2 px-4 py-3">
               {userProfile.avatar ? (
                 <img
                   src={userProfile.avatar}
@@ -362,7 +380,7 @@ export default function Sidebar({
                 <p className="text-sm font-medium text-gray-800 leading-tight">
                   {userProfile.name}
                 </p>
-                <p className="text-xs text-gray-400 leading-tight">
+                <p className="text-xs text-gray-500 leading-tight">
                   {userProfile.email}
                 </p>
               </div>
@@ -373,21 +391,6 @@ export default function Sidebar({
               >
                 <MoreVertical size={20} className="text-gray-400" />
               </button>
-              {userMenuOpen && (
-                <div className="absolute bottom-14 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-10 w-48">
-                  <ul className="py-1">
-                    <li
-                      className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-red-500 flex items-center gap-2"
-                      onClick={() => {
-                        handleLogout();
-                        setUserMenuOpen(false);
-                      }}
-                    >
-                      <span>Sign Out</span>
-                    </li>
-                  </ul>
-                </div>
-              )}
             </div>
           </div>
         )}
