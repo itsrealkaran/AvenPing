@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  LayoutDashboard,
-  Phone,
-  MessageSquare,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { Phone, MessageSquare, CheckCircle, AlertCircle } from "lucide-react";
+import { useState } from "react";
 import Body from "@/components/layout/body";
 import Card from "@/components/ui/card";
 import QRCodeModal from "@/components/dashboard/qr-code-modal";
@@ -77,7 +70,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <Body icon={LayoutDashboard} title="Dashboard">
+    <Body title="Dashboard">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* QR Generator Card */}
         <Card title="QR Generator" className="md:col-span-1 md:row-span-2 !p-0">
@@ -265,11 +258,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Business Verification Card */}
-        <Card
-          title="Business Verification"
-          variant="darkHeader"
-          className="md:col-span-2 !p-0"
-        >
+        <Card title="Business Verification" className="md:col-span-2 !p-0">
           <div className="flex items-center justify-between p-5">
             <div>
               {isVerified ? (

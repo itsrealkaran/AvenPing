@@ -12,7 +12,7 @@ import { sampleMetrics } from "@/components/analytics/data";
 
 export default function AnalyticsPage() {
   return (
-    <Body icon={BarChartIcon} title="Analytics">
+    <Body title="Analytics">
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         {sampleMetrics.map((metric, index) => (

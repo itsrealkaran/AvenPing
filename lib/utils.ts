@@ -15,6 +15,11 @@ export const calculateTableHeight = () => {
   const padding = 64;
   const searchBarHeight = 55;
   const paginationHeight = 56;
+  const mainMargin = 4;
+  const pageHeader = 48;
 
-  return viewportHeight - (headerHeight + padding + searchBarHeight + paginationHeight);
+  return (
+    viewportHeight -
+    (headerHeight + padding + searchBarHeight + paginationHeight + mainMargin + pageHeader)
+  );
 };
