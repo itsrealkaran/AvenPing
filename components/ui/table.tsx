@@ -210,5 +210,9 @@ export default function Table<T extends Record<string, any>>({
     },
   });
 
-  return <MaterialReactTable table={table} />;
+  return (
+    <div className="w-full overflow-hidden">
+      <MaterialReactTable table={table} />
+    </div>
+  );
 }

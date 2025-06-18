@@ -68,9 +68,9 @@ export default function RootLayout({
             email: "karansingh@duck.com",
           }}
         />
-        <div className="flex flex-col relative flex-1 bg-white rounded-xl mr-2 border-[#E0DADA] border-5">
+        <div className="flex flex-col flex-1 relative overflow-hidden bg-white rounded-xl mr-2 border-[#E0DADA] border-5">
           <Header />
-          <main className="overflow-auto relative flex-1">{children}</main>
+          <main className="flex-1 overflow-auto">{children}</main>
         </div>
       </div>
     </UserProvider>
