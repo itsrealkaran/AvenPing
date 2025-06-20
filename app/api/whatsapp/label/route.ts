@@ -2,12 +2,15 @@ import { getSession } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
         const session = await getSession();
         if (!session?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        const url = new URL(request.url);
+        const search = url.searchParams.get('search');
 
         const account = await prisma.whatsAppAccount.findFirst({
             where: {
@@ -21,7 +24,13 @@ export async function GET() {
         }
         const labels = await prisma.label.findMany({
             where: {
-                accountId: account.id
+                accountId: account.id,
+                ...(search ? {
+                    name: {
+                        contains: search,
+                        mode: 'insensitive'
+                    }
+                } : {})
             },
             include: {
                 recipients: {
@@ -51,7 +60,7 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { name } = body;
+        const { name, description, color } = body;
 
         const account = await prisma.whatsAppAccount.findFirst({
             where: {
@@ -77,6 +86,8 @@ export async function POST(request: Request) {
         await prisma.label.create({
             data: {
                 name: name,
+                description: description,
+                color: color,
                 accountId: account.id
             }
         });
@@ -94,7 +105,7 @@ export async function PUT(request: Request) {
         }
 
         const body = await request.json();
-        const { id, name } = body;
+        const { id, name, description, color } = body;
 
         const account = await prisma.whatsAppAccount.findFirst({
             where: {
@@ -123,7 +134,9 @@ export async function PUT(request: Request) {
                 accountId: account.id
             },
             data: {
-                name: name
+                name: name,
+                description: description,
+                color: color
             }
         });
         

@@ -153,6 +153,9 @@ model WhatsAppAutomation {
 model Label {
   id String @id @default(cuid())
   name String
+  description String?
+  
+  color String @default("blue") // blue, green, red, yellow, purple, orange, pink, gray, brown, black, white
 
   accountId String
   account   WhatsAppAccount @relation(fields: [accountId], references: [id])

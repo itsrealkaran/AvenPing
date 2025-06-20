@@ -24,13 +24,6 @@ export async function GET(
           }
         }
       },
-      include: {
-        audience: {
-          include: {
-            recipients: true
-          }
-        }
-      }
     });
 
     if (!campaign) {
