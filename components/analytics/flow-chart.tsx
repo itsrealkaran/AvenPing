@@ -18,7 +18,7 @@ interface Issue {
 
 const status = {
   completed: "bg-blue-500",
-  dropped: "bg-amber-500",
+  dropped: "bg-emerald-500",
 };
 
 const Tooltip = ({ payload, active, label }: TooltipProps) => {
@@ -97,7 +97,7 @@ export default function FlowChart() {
           data={chartData}
           index="name"
           categories={categories}
-          colors={["blue", "amber"]}
+          colors={["blue", "emerald"]}
           yAxisWidth={35}
           showLegend={true}
           customTooltip={Tooltip}
@@ -107,7 +107,7 @@ export default function FlowChart() {
           data={chartData}
           index="date"
           categories={categories}
-          colors={["blue", "amber"]}
+          colors={["blue", "emerald"]}
           showYAxis={false}
           showLegend={true}
           startEndOnly={true}

@@ -1,5 +1,3 @@
-import { LucideIcon } from "lucide-react";
-
 // Types
 export type MetricData = {
   title: string;
@@ -46,28 +44,28 @@ export const sampleMetrics: MetricData[] = [
     value: "24,512",
     change: 12.5,
     icon: "Mail",
-    color: "bg-cyan-100",
+    color: "cyan",
   },
   {
     title: "Delivery Rate",
     value: "98.2%",
     change: 2.1,
     icon: "CheckCheck",
-    color: "bg-green-100",
+    color: "green",
   },
   {
     title: "Active Contacts",
     value: "8,642",
     change: 5.3,
     icon: "Users",
-    color: "bg-yellow-100",
+    color: "yellow",
   },
   {
     title: "Response Rate",
     value: "76.8%",
     change: -1.2,
     icon: "Clock",
-    color: "bg-orange-100",
+    color: "orange",
   },
 ];
 

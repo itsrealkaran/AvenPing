@@ -1,7 +1,6 @@
 "use client";
 
 import Body from "@/components/layout/body";
-import { BarChart as BarChartIcon } from "lucide-react";
 import MetricCard from "@/components/analytics/metric-card";
 import CampaignChart from "@/components/analytics/campaign-chart";
 import FlowChart from "@/components/analytics/flow-chart";
