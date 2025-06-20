@@ -2,7 +2,7 @@
 
 import React from "react";
 import Card from "@/components/ui/card";
-import { LineChart, TooltipProps } from "@/components/ui/line-chart";
+import { LineChart, TooltipProps } from "@/components/charts/line-chart";
 import {
   TEMPLATE_FILTER_OPTIONS,
   TEMPLATE_FILTER_DATA_MAP,

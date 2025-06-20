@@ -2,7 +2,7 @@
 
 import React from "react";
 import Card from "@/components/ui/card";
-import { DonutChart } from "@/components/ui/donut-chart";
+import { DonutChart } from "@/components/charts/donut-chart";
 import {
   RESPONSE_FILTER_OPTIONS,
   RESPONSE_FILTER_DATA_MAP,

@@ -7,7 +7,7 @@ import {
   FlowData,
 } from "./data";
 import { cx } from "@/lib/utils";
-import { BarChart, TooltipProps } from "@/components/ui/bar-chart";
+import { BarChart, TooltipProps } from "@/components/charts/bar-chart";
 import { DropdownButton } from "../ui/dropdown-button";
 
 interface Issue {

@@ -3,7 +3,7 @@
 import React from "react";
 import Card from "@/components/ui/card";
 import { cx } from "@/lib/utils";
-import { AreaChart, TooltipProps } from "@/components/ui/area-chart";
+import { AreaChart, TooltipProps } from "@/components/charts/area-chart";
 import {
   CONTACT_FILTER_OPTIONS,
   CONTACT_FILTER_DATA_MAP,

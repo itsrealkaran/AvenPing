@@ -4,7 +4,6 @@ import "./globals.css";
 import Script from "next/script";
 import { Toaster } from "sonner";
 import { AppProvider } from "@/context/app-provider";
-import { ThemeProvider } from "@/components/theme-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,24 +27,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <Script id="force-light-mode" strategy="beforeInteractive">
-          {`
-            // Force light mode by removing dark class
-            document.documentElement.classList.remove('dark');
-            document.documentElement.setAttribute('data-theme', 'light');
-          `}
-        </Script>
-      </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <ThemeProvider>
-          <Script
-            strategy="lazyOnload"
-            id="facebook-jssdk"
-            src="https://connect.facebook.net/en_US/sdk.js"
-          />
-          <Script id="facebook-init">
-            {`
+        <Script
+          strategy="lazyOnload"
+          id="facebook-jssdk"
+          src="https://connect.facebook.net/en_US/sdk.js"
+        />
+        <Script id="facebook-init">
+          {`
               window.fbAsyncInit = function() {
                 FB.init({
                   appId: '641045902102378',
@@ -55,10 +44,9 @@ export default function RootLayout({
                 });
               };
             `}
-          </Script>
-          <AppProvider>{children}</AppProvider>
-          <Toaster richColors position="bottom-right" />
-        </ThemeProvider>
+        </Script>
+        <AppProvider>{children}</AppProvider>
+        <Toaster richColors position="bottom-right" />
       </body>
     </html>
   );
