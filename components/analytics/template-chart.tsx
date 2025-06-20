@@ -19,26 +19,22 @@ const Tooltip = ({ payload, active, label }: TooltipProps) => {
 
   return (
     <>
-      <div className="w-60 rounded-md border border-gray-500/10 bg-blue-500 px-4 py-1.5 text-sm shadow-md dark:border-gray-400/20 dark:bg-gray-900">
+      <div className="w-60 rounded-md border border-gray-500/10 bg-blue-500 px-4 py-1.5 text-sm shadow-md">
         <p className="flex items-center justify-between">
-          <span className="text-gray-50 dark:text-gray-50">Flow</span>
-          <span className="font-medium text-gray-50 dark:text-gray-50">
-            {label}
-          </span>
+          <span className="text-gray-50">Flow</span>
+          <span className="font-medium text-gray-50">{label}</span>
         </p>
       </div>
-      <div className="mt-1 w-60 space-y-1 rounded-md border border-gray-500/10 bg-white px-4 py-2 text-sm shadow-md dark:border-gray-400/20 dark:bg-gray-900">
+      <div className="mt-1 w-60 space-y-1 rounded-md border border-gray-500/10 bg-white px-4 py-2 text-sm shadow-md">
         <div className="flex items-center space-x-2.5">
           <span
-            className="size-2.5 shrink-0 rounded-xs bg-emerald-500 dark:bg-emerald-500"
+            className="size-2.5 shrink-0 rounded-xs bg-emerald-500"
             aria-hidden={true}
           />
           <div className="flex w-full justify-between">
-            <span className="text-gray-700 dark:text-gray-300">
-              Success Rate
-            </span>
+            <span className="text-gray-700">Success Rate</span>
             <div className="flex items-center space-x-1">
-              <span className="font-medium text-gray-900 dark:text-gray-50">
+              <span className="font-medium text-gray-900">
                 {valueFormatter(payload[0].value)}
               </span>
             </div>
