@@ -11,6 +11,9 @@ import RegisterNumberCardContent from "@/components/dashboard/register-number-ca
 import WAButtonCardContent from "@/components/dashboard/wa-button-card";
 import WhatsAppNumbersCardContent from "@/components/dashboard/whatsapp-numbers-card";
 import BusinessVerificationCardContent from "@/components/dashboard/business-verification-card";
+import MetricCard from "@/components/analytics/metric-card";
+import { sampleMetrics } from "@/components/analytics/data";
+import Link from "next/link";
 
 export default function DashboardPage() {
   // QR Generator state
@@ -66,6 +69,21 @@ export default function DashboardPage() {
 
   return (
     <Body title="Dashboard">
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        {sampleMetrics.map((metric, index) => (
+          <MetricCard key={index} {...metric} />
+        ))}
+      </div>
+      <div className="mb-6 mx-2 px-1 flex justify-end border-b-3 border-gray-200 pb-1">
+        {/* view all analytics */}
+        <Link
+          href="/analytics"
+          className="text-sm text-gray-500 hover:text-gray-700"
+        >
+          {`View All Analytics >>`}
+        </Link>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* QR Generator Card */}
         <Card
