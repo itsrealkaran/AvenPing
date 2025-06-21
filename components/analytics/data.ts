@@ -3,8 +3,6 @@ export type MetricData = {
   title: string;
   value: string;
   change: number;
-  icon: keyof typeof import("lucide-react");
-  color: string;
 };
 
 export type CampaignData = {
@@ -40,32 +38,24 @@ export const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 export const sampleMetrics: MetricData[] = [
   {
-    title: "Total Messages Sent",
+    title: "Sent Messages",
     value: "24,512",
     change: 12.5,
-    icon: "Mail",
-    color: "cyan",
   },
   {
     title: "Delivery Rate",
     value: "98.2%",
     change: 2.1,
-    icon: "CheckCheck",
-    color: "green",
   },
   {
     title: "Active Contacts",
     value: "8,642",
     change: 5.3,
-    icon: "Users",
-    color: "yellow",
   },
   {
     title: "Response Rate",
     value: "76.8%",
     change: -1.2,
-    icon: "Clock",
-    color: "orange",
   },
 ];
 
