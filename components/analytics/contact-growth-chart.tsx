@@ -62,7 +62,7 @@ export default function ContactGrowthChart() {
           options={CONTACT_FILTER_OPTIONS}
           onChange={setSelected}
           selected={selected}
-          size="xs"
+          size="sm"
           variant="outline"
         >
           {selectedLabel}

@@ -58,7 +58,7 @@ export default function TemplateChart() {
           options={TEMPLATE_FILTER_OPTIONS}
           onChange={setSelected}
           selected={selected}
-          size="xs"
+          size="sm"
           variant="outline"
         >
           {selectedLabel}

@@ -5,7 +5,7 @@ import {
   FLOW_FILTER_DATA_MAP,
   getFlowFilterLabel,
   FlowData,
-} from "./data";
+} from "../analytics/data";
 import { cx } from "@/lib/utils";
 import { BarChart, TooltipProps } from "@/components/charts/bar-chart";
 import { DropdownButton } from "../ui/dropdown-button";

@@ -54,7 +54,7 @@ export default function ResponseTimeChart() {
           options={RESPONSE_FILTER_OPTIONS}
           onChange={setSelected}
           selected={selected}
-          size="xs"
+          size="sm"
           variant="outline"
         >
           {selectedLabel}
