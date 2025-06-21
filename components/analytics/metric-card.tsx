@@ -46,11 +46,11 @@ export default function MetricCard({ title, value, change }: MetricData) {
   };
 
   return (
-    <div className="border-3 border-[#E0E0E0] rounded-2xl bg-white px-6 py-4 flex flex-col">
+    <div className="border-3 border-[#E0E0E0] rounded-2xl bg-white p-4 flex flex-col">
       <span className="text-base text-gray-700">{title}</span>
       <div className="flex justify-between gap-4">
         <div className="flex flex-col">
-          <span className="text-3xl font-300 text-gray-800">{value}</span>
+          <span className="text-3xl font-300 text-gray-800 mt-2">{value}</span>
           <div
             className={`flex items-center gap-1 mt-2 text-xs ${
               isPositive ? "text-green-600" : "text-red-600"
