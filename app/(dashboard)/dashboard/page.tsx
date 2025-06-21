@@ -3,9 +3,7 @@
 import { useState } from "react";
 import Body from "@/components/layout/body";
 import Card from "@/components/ui/card";
-import QRCodeModal from "@/components/dashboard/qr-code-modal";
 import RegisterNumberModal from "@/components/dashboard/register-number-modal";
-import WAButtonModal from "@/components/dashboard/wa-button-modal";
 import QrGeneratorCardContent from "@/components/dashboard/qr-generator-card";
 import RegisterNumberCardContent from "@/components/dashboard/register-number-card";
 import WAButtonCardContent from "@/components/dashboard/wa-button-card";
@@ -16,17 +14,11 @@ import { sampleMetrics } from "@/components/analytics/data";
 import Link from "next/link";
 
 export default function DashboardPage() {
-  // QR Generator state
-  const [qrText, setQrText] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("+91 9876543210");
-  const [showQrModal, setShowQrModal] = useState(false);
-
   // Register Number state
   const [isRegistered, setIsRegistered] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   // WAButton state
-  const [showWAButtonModal, setShowWAButtonModal] = useState(false);
 
   // WhatsApp Account state
   const [connectedAccounts, setConnectedAccounts] = useState<string[]>([]);
@@ -91,13 +83,7 @@ export default function DashboardPage() {
           className="md:col-span-1 md:row-span-2 !p-0"
           headerInfo="This is a QR code generator for WhatsApp. It allows you to generate a QR code that can be scanned by a WhatsApp user to start a conversation with your business."
         >
-          <QrGeneratorCardContent
-            qrText={qrText}
-            setQrText={setQrText}
-            phoneNumber={phoneNumber}
-            setPhoneNumber={setPhoneNumber}
-            onGenerate={() => setShowQrModal(true)}
-          />
+          <QrGeneratorCardContent />
         </Card>
 
         {/* Register Number Card */}
@@ -149,26 +135,11 @@ export default function DashboardPage() {
         </Card>
       </div>
       {/* Modals */}
-      {showQrModal && (
-        <QRCodeModal
-          isOpen={showQrModal}
-          onClose={() => setShowQrModal(false)}
-          text={qrText}
-          phoneNumber={phoneNumber}
-        />
-      )}
       <RegisterNumberModal
         isOpen={showRegisterModal}
         onClose={() => setShowRegisterModal(false)}
         onRegister={handleRegister}
       />
-      {/* <WAButtonModal
-        isOpen={showWAButtonModal}
-        onClose={() => setShowWAButtonModal(false)}
-        color={buttonColor}
-        roundness={buttonRoundness}
-        text={buttonText}
-      /> */}
     </Body>
   );
 }
