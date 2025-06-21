@@ -106,7 +106,7 @@ export default function ProfilePage() {
         {/* Edit Form */}
         <div className="p-6 flex-1">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Edit Your Profile</h2>
+            <h2 className="text-xl font-semibold">WhatsApp Profile</h2>
             <Button
               type="submit"
               size="sm"
@@ -126,107 +126,107 @@ export default function ProfilePage() {
             {/* Section 1: Basic Info */}
             <div className="grid grid-cols-2 gap-4">
               {/* Left Column: Profile Picture */}
-              <div className="flex flex-col items-center justify-center">
-                <div
-                  className="relative w-20 h-20 rounded-full bg-gray-100 cursor-pointer flex items-center justify-center mb-2 border-2 border-primary hover:border-primary/80 transition-all"
-                  onClick={handleProfilePictureClick}
-                >
-                  {profile.profilePicture ? (
-                    <>
-                      <img
-                        src={profile.profilePicture}
-                        alt="Profile"
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                      <button
-                        onClick={handleClearPicture}
-                        className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
-                      >
-                        <X size={14} />
-                      </button>
-                    </>
-                  ) : (
-                    <Camera className="text-gray-400 h-6 w-6" />
-                  )}
-                </div>
-                <span className="text-xs text-gray-500">Change picture</span>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleProfilePictureChange}
-                />
-              </div>
-
-              {/* Right Column: Business Name */}
-              <div className="flex flex-col gap-4">
-                <div>
-                  <label
-                    htmlFor="displayName"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+              <div className="flex gap-4">
+                <div className="flex flex-col p-4 items-center justify-center">
+                  <div
+                    className="relative size-24 rounded-full bg-gray-100 cursor-pointer flex items-center justify-center mb-2 border-2 border-primary hover:border-primary/80 transition-all"
+                    onClick={handleProfilePictureClick}
                   >
-                    Business Name
-                  </label>
-                  <Input
-                    id="displayName"
-                    name="displayName"
-                    value={profile.displayName}
-                    onChange={handleChange}
-                    className="w-full"
-                    required
+                    {profile.profilePicture ? (
+                      <>
+                        <img
+                          src={profile.profilePicture}
+                          alt="Profile"
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                        <button
+                          onClick={handleClearPicture}
+                          className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
+                        >
+                          <X size={14} />
+                        </button>
+                      </>
+                    ) : (
+                      <Camera className="text-gray-400 h-6 w-6" />
+                    )}
+                  </div>
+                  <span className="text-sm text-gray-500">Profile Picture</span>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleProfilePictureChange}
                   />
                 </div>
+                {/* Right Column: Business Name */}
+                <div className="flex flex-1 flex-col gap-4">
+                  <div>
+                    <label
+                      htmlFor="displayName"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Business Name
+                    </label>
+                    <Input
+                      id="displayName"
+                      name="displayName"
+                      value={profile.displayName}
+                      onChange={handleChange}
+                      className="w-full"
+                      required
+                    />
+                  </div>
 
-                {/* Right Column: Category */}
-                <div>
-                  <label
-                    htmlFor="category"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Business Category
-                  </label>
-                  <Select
-                    id="category"
-                    name="category"
-                    value={profile.category}
-                    onChange={handleChange}
-                    className="w-full"
-                    required
-                  >
-                    <option value="">Select a category</option>
-                    {BUSINESS_CATEGORIES.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </Select>
+                  {/* Right Column: Category */}
+                  <div>
+                    <label
+                      htmlFor="category"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Business Category
+                    </label>
+                    <Select
+                      id="category"
+                      name="category"
+                      value={profile.category}
+                      onChange={handleChange}
+                      className="w-full"
+                      required
+                    >
+                      <option value="">Select a category</option>
+                      {BUSINESS_CATEGORIES.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Section 3: Description (Full Width) */}
-            <div>
-              <label
-                htmlFor="description"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                About
-              </label>
-              <Textarea
-                id="description"
-                name="description"
-                value={profile.description}
-                onChange={handleChange}
-                className="w-full"
-                rows={3}
-                maxLength={300}
-                placeholder="Tell customers about your business"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                {profile.description.length}/300 characters
-              </p>
+              {/* Section 3: Description (Full Width) */}
+              <div>
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  About
+                </label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={profile.description}
+                  onChange={handleChange}
+                  className="w-full"
+                  rows={3}
+                  maxLength={300}
+                  placeholder="Tell customers about your business"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {profile.description.length}/300 characters
+                </p>
+              </div>
             </div>
 
             {/* Section 4: Contact Info */}
