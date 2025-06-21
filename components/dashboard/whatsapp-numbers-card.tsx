@@ -53,7 +53,7 @@ export default function WhatsAppNumbersCardContent({
               </div>
               <Button
                 onClick={handleConnectAccount}
-                className="px-6 py-2 text-sm rounded-lg transition-colors bg-primary hover:bg-primary/90 text-white"
+                size="sm"
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Connect WhatsApp

@@ -14,33 +14,45 @@ export default function RegisterNumberCardContent({
   setShowRegisterModal,
 }: Props) {
   return (
-    <div className="flex flex-col items-center justify-center w-full gap-2">
+    <div className="flex flex-col w-full gap-3">
       {isRegistered ? (
         <>
-          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mb-2">
-            <CheckCircle className="w-5 h-5 text-green-500" />
-          </div>
-          <div className="text-base font-semibold text-gray-800">
-            Registered
-          </div>
-          <div className="text-xs text-gray-500 text-center">
-            Your number is registered and ready to use
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <div className="text-base font-semibold text-gray-800">
+                Registered
+              </div>
+              <div className="text-sm text-gray-500">
+                Your number is registered and ready to use
+              </div>
+            </div>
           </div>
         </>
       ) : (
         <>
-          <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center mb-2">
-            <AlertCircle className="w-5 h-5 text-yellow-500" />
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mt-1">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <div className="text-base font-semibold text-gray-800 mb-2">
+                Not Registered
+              </div>
+              <div className="text-sm text-gray-500 mb-4 leading-relaxed">
+                Your phone number needs to be registered with WhatsApp Business
+                API to send and receive messages.
+              </div>
+              <Button
+                onClick={() => setShowRegisterModal(true)}
+                size="sm"
+              >
+                Register Now
+              </Button>
+            </div>
           </div>
-          <div className="text-base font-semibold text-gray-800 mb-1">
-            Not Registered
-          </div>
-          <Button
-            onClick={() => setShowRegisterModal(true)}
-            className="px-4 py-2 text-sm rounded-md transition"
-          >
-            Register Now
-          </Button>
         </>
       )}
     </div>
