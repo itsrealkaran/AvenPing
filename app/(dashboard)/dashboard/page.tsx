@@ -18,13 +18,17 @@ export default function DashboardPage() {
   const [isRegistered, setIsRegistered] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
 
-  // WAButton state
+  // Business Verification state
+  const [isVerified, setIsVerified] = useState(true);
 
   // WhatsApp Account state
-  const [connectedAccounts, setConnectedAccounts] = useState<string[]>([]);
-
-  // Business Verification state
-  const [isVerified, setIsVerified] = useState(false);
+  const [connectedNumbers, setConnectedNumbers] = useState<
+    {
+      name: string;
+      avatar: string;
+      number: string;
+    }[]
+  >([]);
 
   const handleRegister = (pin?: string) => {
     setIsRegistered(true);
@@ -115,7 +119,7 @@ export default function DashboardPage() {
           className="md:col-span-1 !p-0"
         >
           <WhatsAppNumbersCardContent
-            connectedAccounts={connectedAccounts}
+            connectedNumbers={connectedNumbers}
             handleConnectAccount={handleConnectAccount}
           />
         </Card>
@@ -129,7 +133,10 @@ export default function DashboardPage() {
           <BusinessVerificationCardContent
             isVerified={isVerified}
             onVerify={() => {
-              window.open("https://business.example.com/verify", "_blank");
+              window.open(
+                "https://business.facebook.com/settings/info",
+                "_blank"
+              );
             }}
           />
         </Card>

@@ -1,14 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Phone } from "lucide-react";
 import React from "react";
 
 type Props = {
-  connectedAccounts: string[];
+  connectedNumbers: {
+    name: string;
+    avatar: string;
+    number: string;
+  }[];
   handleConnectAccount: () => void;
 };
 
 export default function WhatsAppNumbersCardContent({
-  connectedAccounts,
+  connectedNumbers,
   handleConnectAccount,
 }: Props) {
   return <div></div>;
