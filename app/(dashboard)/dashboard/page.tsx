@@ -17,18 +17,10 @@ export default function DashboardPage() {
   // Register Number state
   const [isRegistered, setIsRegistered] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
 
   // Business Verification state
   const [isVerified, setIsVerified] = useState(true);
-
-  // WhatsApp Account state
-  const [connectedNumbers, setConnectedNumbers] = useState<
-    {
-      name: string;
-      avatar: string;
-      number: string;
-    }[]
-  >([]);
 
   const handleRegister = (pin?: string) => {
     setIsRegistered(true);
@@ -48,6 +40,7 @@ export default function DashboardPage() {
               "Email:",
               userInfo.email
             );
+            setIsConnected(true);
           });
         } else {
           console.log("User cancelled login or did not fully authorize.");
@@ -96,10 +89,9 @@ export default function DashboardPage() {
           headerInfo="This is a register number for WhatsApp. It allows you to register a number that can be used to send and receive messages from WhatsApp."
           className="md:col-span-1"
         >
-          <RegisterNumberCardContent
-            isRegistered={isRegistered}
-            onRegister={handleRegister}
-            setShowRegisterModal={setShowRegisterModal}
+          <WhatsAppNumbersCardContent
+            isConnected={isConnected}
+            handleConnectAccount={handleConnectAccount}
           />
         </Card>
 
@@ -118,9 +110,10 @@ export default function DashboardPage() {
           headerInfo="Manage your connected WhatsApp numbers. Add new numbers or remove existing ones from your account."
           className="md:col-span-1 !p-0"
         >
-          <WhatsAppNumbersCardContent
-            connectedNumbers={connectedNumbers}
-            handleConnectAccount={handleConnectAccount}
+          <RegisterNumberCardContent
+            isRegistered={isRegistered}
+            onRegister={handleRegister}
+            setShowRegisterModal={setShowRegisterModal}
           />
         </Card>
 
