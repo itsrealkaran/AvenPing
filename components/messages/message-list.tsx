@@ -27,7 +27,7 @@ const MessageList = ({ messages }: MessageListProps) => {
   });
 
   return (
-    <div className="space-y-4 min-h-full">
+    <div className="space-y-4 h-[50vh]">
       {Object.entries(groupedMessages).map(([date, dateMessages]) => (
         <div key={date}>
           <div className="flex justify-center my-4">
