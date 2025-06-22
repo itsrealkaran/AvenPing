@@ -21,6 +21,21 @@ export type ActionMenuItem = {
   className?: string;
 };
 
+export type ToolbarAction<T extends Record<string, any>> = {
+  key: string;
+  label: string;
+  icon?: LucideIcon;
+  onClick: (rows: T[]) => void;
+  variant?:
+    | "default"
+    | "destructive"
+    | "outline"
+    | "secondary"
+    | "ghost"
+    | "link";
+  className?: string;
+};
+
 export type TableProps<T extends Record<string, any>> = {
   data: T[];
   columns: MRT_ColumnDef<T>[];
@@ -34,13 +49,17 @@ export type TableProps<T extends Record<string, any>> = {
   enableSorting?: boolean;
   enableRowActions?: boolean;
   actionMenuItems?: ActionMenuItem[];
+  toolbarActions?: ToolbarAction<T>[];
   onAddItem?: () => void;
+  onDelete?: (rows: T[]) => void;
   addButtonLabel?: string;
+  deleteButtonLabel?: string;
   searchPlaceholder?: string;
   tableHeight?: string;
   primaryColor?: string;
   density?: "compact" | "comfortable" | "spacious";
   Add?: LucideIcon;
+  Delete?: LucideIcon;
 };
 
 export default function Table<T extends Record<string, any>>({
@@ -56,13 +75,17 @@ export default function Table<T extends Record<string, any>>({
   enableSorting = true,
   enableRowActions = true,
   actionMenuItems = [],
+  toolbarActions = [],
   onAddItem,
+  onDelete,
   addButtonLabel = "Add Item",
+  deleteButtonLabel = "Delete",
   searchPlaceholder = "Search...",
   tableHeight: propTableHeight,
   primaryColor = "#7c3aed",
   density = "compact",
   Add,
+  Delete,
 }: TableProps<T>) {
   const [tableHeight, setTableHeight] = useState(propTableHeight || "450px");
 
@@ -152,34 +175,75 @@ export default function Table<T extends Record<string, any>>({
         borderBottom: "1px solid #e5e7eb",
       },
     },
-    renderTopToolbar: ({ table }) => (
-      <div className="flex justify-between items-center pb-3 bg-transparent">
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder={searchPlaceholder}
-              value={table.getState().globalFilter ?? ""}
-              onChange={(e) => table.setGlobalFilter(e.target.value)}
-              className="pl-10 w-64 bg-white"
-            />
+    renderTopToolbar: ({ table }) => {
+      const selectedRowCount = table.getSelectedRowModel().rows.length;
+
+      return (
+        <div className="flex justify-between items-center pb-3 bg-transparent">
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder={searchPlaceholder}
+                value={(table.getState().globalFilter as string) ?? ""}
+                onChange={(e) => table.setGlobalFilter(e.target.value)}
+                className="pl-10 w-64 bg-white"
+              />
+            </div>
+            <MRT_ToggleFiltersButton table={table} />
           </div>
-          <MRT_ToggleFiltersButton table={table} />
+
+          <div className="flex items-center gap-2">
+            {selectedRowCount > 0 &&
+              toolbarActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Button
+                    key={action.key}
+                    variant={action.variant || "outline"}
+                    onClick={() =>
+                      action.onClick(
+                        table.getSelectedRowModel().rows.map((r) => r.original)
+                      )
+                    }
+                    disabled={isLoading}
+                    className={action.className}
+                  >
+                    {Icon && <Icon className="h-4 w-4 mr-2" />}
+                    {action.label}
+                  </Button>
+                );
+              })}
+
+            {selectedRowCount > 0 && onDelete && (
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  onDelete(
+                    table.getSelectedRowModel().rows.map((r) => r.original)
+                  );
+                  table.resetRowSelection();
+                }}
+                disabled={isLoading}
+              >
+                {Delete && <Delete className="h-4 w-4 mr-2" />}
+                {deleteButtonLabel} ({selectedRowCount})
+              </Button>
+            )}
+
+            {onAddItem && (
+              <Button
+                onClick={onAddItem}
+                disabled={isLoading || selectedRowCount > 0}
+              >
+                {Add && <Add className="h-4 w-4 mr-2" />}
+                {addButtonLabel}
+              </Button>
+            )}
+          </div>
         </div>
-        {onAddItem && (
-          <div className="flex gap-2">
-            <Button
-              onClick={onAddItem}
-              disabled={isLoading}
-              className="flex items-center gap-1"
-            >
-              {Add && <Add className="h-4 w-4" />}
-              {addButtonLabel}
-            </Button>
-          </div>
-        )}
-      </div>
-    ),
+      );
+    },
     renderRowActionMenuItems:
       actionMenuItems.length > 0
         ? ({ row, closeMenu }) =>
@@ -216,3 +280,5 @@ export default function Table<T extends Record<string, any>>({
     </div>
   );
 }
+
+
