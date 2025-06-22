@@ -282,3 +282,39 @@ export default function Table<T extends Record<string, any>>({
 }
 
 
+
+/* Custom Button Example Usage */
+// const toolbarActions: ToolbarAction<Contact>[] = [
+//   {
+//     key: "export",
+//     label: "Export",
+//     icon: FileUp,
+//     onClick: (selectedRows) => {
+//       console.log("Exporting contacts:", selectedRows);
+//       alert(`Exporting ${selectedRows.length} contacts...`);
+//     },
+//   },
+//   {
+//     key: "add-to-campaign",
+//     label: "Add to Campaign",
+//     icon: Send,
+//     onClick: (selectedRows) => {
+//       console.log("Adding to campaign:", selectedRows);
+//       alert(`Adding ${selectedRows.length} contacts to a campaign...`);
+//     },
+//     variant: "secondary",
+//   },
+// ];
+
+// <Table
+//   data={contacts}
+//   columns={columns}
+//   isLoading={isLoading}
+//   actionMenuItems={actionMenuItems}
+//   onAddItem={handleAddContact}
+//   addButtonLabel="Add Contact"
+//   onDelete={handleDeleteContacts}
+//   deleteButtonLabel="Delete Contact"
+//   searchPlaceholder="Search contacts..."
+//   toolbarActions={toolbarActions}
+// />;
