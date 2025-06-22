@@ -1,7 +1,6 @@
 "use client";
 
 import { Message } from "./messages-interface";
-import { useEffect, useRef } from "react";
 import MessageBubble from "./message-bubble";
 
 interface MessageListProps {
@@ -9,21 +8,38 @@ interface MessageListProps {
 }
 
 const MessageList = ({ messages }: MessageListProps) => {
-  const endOfMessagesRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   // Group messages by date
   const groupedMessages: { [key: string]: Message[] } = {};
 
   messages.forEach((message) => {
-    const date = new Date(message.createdAt).toLocaleDateString();
-    if (!groupedMessages[date]) {
-      groupedMessages[date] = [];
+    const messageDate = new Date(message.createdAt);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    let dateLabel: string;
+    
+    if (messageDate.toDateString() === today.toDateString()) {
+      dateLabel = "Today";
+    } else if (messageDate.toDateString() === yesterday.toDateString()) {
+      dateLabel = "Yesterday";
+    } else if (messageDate.getFullYear() === today.getFullYear()) {
+      dateLabel = messageDate.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    } else {
+      dateLabel = messageDate.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: 'numeric'
+      });
     }
-    groupedMessages[date].push(message);
+
+    if (!groupedMessages[dateLabel]) {
+      groupedMessages[dateLabel] = [];
+    }
+    groupedMessages[dateLabel].push(message);
   });
 
   return (
@@ -43,7 +59,6 @@ const MessageList = ({ messages }: MessageListProps) => {
           </div>
         </div>
       ))}
-      <div ref={endOfMessagesRef} />
     </div>
   );
 };
