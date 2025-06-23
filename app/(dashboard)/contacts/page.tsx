@@ -1,9 +1,9 @@
 "use client";
 
 import Body from "@/components/layout/body";
-import { Users, Edit, Trash, Pause, Play, Plus } from "lucide-react";
+import { Edit, Trash, Pause, Play, FileUp, Send } from "lucide-react";
 import React, { useState } from "react";
-import Table, { ActionMenuItem } from "@/components/ui/table";
+import Table, { ActionMenuItem, ToolbarAction } from "@/components/ui/table";
 import { MRT_ColumnDef } from "material-react-table";
 
 type Contact = {
@@ -54,6 +54,10 @@ export default function ContactsPage() {
 
   const handleDeleteContact = (contact: Contact) => {
     setContacts(contacts.filter((c) => c.id !== contact.id));
+  };
+
+  const handleDeleteContacts = (contacts: Contact[]) => {
+    setContacts(contacts.filter((c) => !contacts.includes(c)));
   };
 
   const handleAddContact = () => {
@@ -166,6 +170,8 @@ export default function ContactsPage() {
         actionMenuItems={actionMenuItems}
         onAddItem={handleAddContact}
         addButtonLabel="Add Contact"
+        onDelete={handleDeleteContacts}
+        deleteButtonLabel="Delete Contact"
         searchPlaceholder="Search contacts..."
       />
     </Body>

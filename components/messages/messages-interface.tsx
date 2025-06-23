@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import ConversationList from "./conversation-list";
 import MessagePanel from "./message-panel";
-import { Search, MessageSquare } from "lucide-react";
+import { Search, MessageSquare, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import MessageCard from "./message-card";
 import SearchableDropdown from "@/components/ui/searchable-dropdown";
@@ -35,8 +35,14 @@ export type Conversation = {
 
 type FilterType = "all" | "unread" | "label";
 
+const Loading = () => (
+  <div className="flex flex-col py-10 items-center justify-center text-gray-500">
+    <Loader2 className="h-10 w-10 mb-4 opacity-30 animate-spin" />
+  </div>
+);
+
 const MessagesInterface = () => {
-  const { conversations, sendMessage } = useMessages();
+  const { conversations, sendMessage, isLoading } = useMessages();
   const [search, setSearch] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,6 +51,7 @@ const MessagesInterface = () => {
   >(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const [componentHeight, setComponentHeight] = useState("450px");
 
   // Extract unique labels from conversations
   // const labels = Array.from(
@@ -77,56 +84,34 @@ const MessagesInterface = () => {
       setSelectedConversationId(conversations[0].id);
     }
   }, [conversations, selectedConversationId]);
-  
-  if (!conversations) {
-    return (
-      <div className="flex h-[84vh]">
-        <div className="w-1/3 border-r border-gray-200 bg-white">
-          <div className="h-full flex flex-col items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-600"></div>
-            <p className="text-sm text-gray-500 mt-4">Loading conversations...</p>
-          </div>
-        </div>
-        <div className="w-2/3 bg-gray-50 flex flex-col items-center justify-center">
-          <div className="animate-pulse space-y-4 w-full max-w-lg px-8">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-          </div>
-          <p className="text-sm text-gray-500 mt-8">Loading messages...</p>
-        </div>
-      </div>
-    )
-  }
+
   // Filter conversations based on search and active filter
-  const filteredConversations = conversations.filter((conversation) => {
-    // First apply search filter
-    const matchesSearch =
-      conversation.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      conversation.phoneNumber
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase())
-    //   conversation.label
-    //     ?.toLowerCase()
-    //     .includes(searchQuery.toLowerCase());
+  const filteredConversations =
+    conversations?.filter((conversation) => {
+      // First apply search filter
+      const matchesSearch =
+        conversation.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conversation.phoneNumber
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
+      //   conversation.label
+      //     ?.toLowerCase()
+      //     .includes(searchQuery.toLowerCase());
 
-    if (!matchesSearch) return false;
+      if (!matchesSearch) return false;
 
-    // Then apply type filter
-    if (activeFilter === "unread") {
-      return conversation.messages.length > 0;
-    }
-    // if (activeFilter === "label" && selectedLabel) {
-    //   return conversation.label === selectedLabel;
-    // }
-    return true;
-  });
+      // Then apply type filter
+      if (activeFilter === "unread") {
+        return conversation.messages.length > 0;
+      }
+      // if (activeFilter === "label" && selectedLabel) {
+      //   return conversation.label === selectedLabel;
+      // }
+      return true;
+    }) || [];
 
   const handleSendMessage = async (message: string) => {
-    if (!selectedConversationId || !message.trim()) return;
+    if (!selectedConversationId || !message.trim() || !conversations) return;
 
     const newMessage: Message = {
       id: `m${Date.now()}`,
@@ -156,14 +141,16 @@ const MessagesInterface = () => {
     setSelectedConversationId(conversation.id);
   };
 
-  const selectedConversation = conversations.find(
+  const selectedConversation = conversations?.find(
     (conv) => conv.id === selectedConversationId
   );
 
   return (
     <MessageCard>
       {/* Sidebar */}
-      <div className="w-1/3 md:w-1/3 border-r border-gray-200 flex flex-col max-w-[350px] min-w-[280px] h-[84vh]">
+      <div
+        className={`w-1/3 md:w-1/3 border-r border-gray-200 flex flex-col max-w-[350px] min-w-[280px]`}
+      >
         <div className="p-3 flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -180,10 +167,11 @@ const MessagesInterface = () => {
                 setActiveFilter("all");
                 setSelectedLabel(null);
               }}
-              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${activeFilter === "all"
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
+                activeFilter === "all"
                   ? "bg-active-filter-bg text-active-filter font-medium"
                   : "text-gray-600 bg-gray-100"
-                }`}
+              }`}
             >
               All
             </button>
@@ -192,10 +180,11 @@ const MessagesInterface = () => {
                 setActiveFilter("unread");
                 setSelectedLabel(null);
               }}
-              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${activeFilter === "unread"
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
+                activeFilter === "unread"
                   ? "bg-active-filter-bg text-active-filter font-medium"
                   : "text-gray-600 bg-gray-100"
-                }`}
+              }`}
             >
               Unread
             </button>
@@ -203,17 +192,20 @@ const MessagesInterface = () => {
               items={[]}
               placeholder="Label"
               onSelect={handleLabelSelect}
-              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${activeFilter === "label"
+              className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
+                activeFilter === "label"
                   ? "bg-active-filter-bg text-active-filter font-medium"
                   : "text-gray-600 bg-gray-100"
-                }`}
+              }`}
               selectedLabel={selectedLabel}
             />
           </div>
         </div>
-        <div className="overflow-y-auto ">
-          {conversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[calc(100%-5rem)] text-gray-500">
+        <div>
+          {isLoading ? (
+            <Loading />
+          ) : !conversations || conversations.length === 0 ? (
+            <div className="flex flex-col py-10 items-center justify-center text-gray-500">
               <MessageSquare className="h-12 w-12 mb-2 opacity-20" />
               <p>No messages yet</p>
             </div>
@@ -228,7 +220,7 @@ const MessagesInterface = () => {
       </div>
 
       {/* Message area */}
-      <div className="flex-1 flex flex-col h-[84vh]">
+      <div className="flex-1 flex flex-col">
         {selectedConversation ? (
           <MessagePanel
             conversation={selectedConversation}

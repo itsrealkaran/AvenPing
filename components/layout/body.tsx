@@ -12,7 +12,7 @@ export default function Body({ title, children }: BodyProps) {
       <div className="flex items-center gap-1 mb-4">
         <h1 className="text-2xl font-400 text-gray-800">{title}</h1>
       </div>
-      <div className="flex-1">{children}</div>
+      <div className="flex flex-col flex-1">{children}</div>
     </div>
   );
 }
