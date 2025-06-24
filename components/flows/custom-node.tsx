@@ -9,15 +9,17 @@ import {
   MessageSquare,
   GitMerge,
   Play,
+  Trash,
 } from "lucide-react";
 
 interface CustomNodeProps {
   data: any;
   selected: boolean;
   id: string;
+  onDelete?: (id: string) => void;
 }
 
-const CustomNode = ({ data, selected, id }: CustomNodeProps) => {
+const CustomNode = ({ data, selected, id, onDelete }: CustomNodeProps) => {
   const isStartNode = id === "1" || data.isStartNode;
 
   // Debug log to see why some nodes are not getting colored correctly
@@ -108,7 +110,7 @@ const CustomNode = ({ data, selected, id }: CustomNodeProps) => {
 
   return (
     <div
-      className={`${nodeStyle} border ${borderStyle} rounded shadow p-3 text-xs min-w-[120px] text-center relative`}
+      className={`${nodeStyle} border ${borderStyle} rounded shadow p-3 text-xs min-w-[120px] text-center relative group`}
       style={{
         minHeight:
           data.nodeType === "MessageAction"
@@ -123,6 +125,21 @@ const CustomNode = ({ data, selected, id }: CustomNodeProps) => {
             : undefined,
       }}
     >
+      {/* Delete node button (not for start node) */}
+      {!isStartNode && onDelete && (
+        <button
+          type="button"
+          className="absolute -top-4 right-1 z-20 p-1 rounded-full bg-white shadow border border-gray-200 hover:bg-red-100 text-gray-400 hover:text-red-600 transition opacity-0 group-hover:opacity-100"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(id);
+          }}
+          title="Delete node"
+          aria-label="Delete node"
+        >
+          <Trash size={12} />
+        </button>
+      )}
       {/* Left handle (target) - Not shown for start nodes */}
       {!isStartNode && (
         <Handle

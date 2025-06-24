@@ -27,10 +27,6 @@ export interface FlowBuilderProps {
   initialEdges?: Edge[];
 }
 
-const nodeTypes: NodeTypes = {
-  custom: CustomNode,
-};
-
 export default function FlowBuilder({
   onBack,
   onSave,
@@ -53,6 +49,22 @@ export default function FlowBuilder({
   const [draggedNode, setDraggedNode] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
+
+  // Delete node handler
+  const handleDeleteNode = useCallback(
+    (nodeId: string) => {
+      setNodes((nds) => nds.filter((n) => n.id !== nodeId));
+      setEdges((eds) =>
+        eds.filter((e) => e.source !== nodeId && e.target !== nodeId)
+      );
+      setSelectedNode((sel) => (sel && sel.id === nodeId ? null : sel));
+    },
+    [setNodes, setEdges, setSelectedNode]
+  );
+
+  const nodeTypes: NodeTypes = {
+    custom: (props) => <CustomNode {...props} onDelete={handleDeleteNode} />,
+  };
 
   const onConnect = useCallback(
     (params: Edge | Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -96,7 +108,7 @@ export default function FlowBuilder({
       }
 
       // Log for debugging
-      console.log(`Creating node: ${nodeType} with category: ${category}`);
+      // console.log(`Creating node: ${nodeType} with category: ${category}`);
 
       const newNode: Node = {
         id: `${+new Date()}`,
