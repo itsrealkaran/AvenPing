@@ -15,6 +15,12 @@ interface NodeDetailsSidebarProps {
 
 const MAX_REPLY_BUTTONS = 3;
 
+// Mock file upload utility
+async function mockUploadFile(file: File): Promise<string> {
+  await new Promise((res) => setTimeout(res, 500));
+  return URL.createObjectURL(file);
+}
+
 function isFile(val: any): val is File {
   return (
     val &&
@@ -235,19 +241,29 @@ const renderNodeDetails = (
                 ? "application/pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
                 : "*"
             }
-            onChange={(e) => {
-              const file = (e.target as HTMLInputElement).files?.[0];
+            onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
+              const file = e.target.files?.[0];
               if (file) {
-                onUpdateNodeData("file", file);
+                const url = await mockUploadFile(file);
+                onUpdateNodeData("fileUrl", url);
               }
             }}
             className="mt-1"
           />
-          {isFile(selectedNode.data.file) && (
-            <div className="text-xs text-green-600 mt-1">
-              File selected: {selectedNode.data.file.name}
-            </div>
-          )}
+          {typeof selectedNode.data.fileUrl === "string" &&
+            selectedNode.data.fileUrl && (
+              <div className="text-xs text-green-600 mt-1">
+                File uploaded:{" "}
+                <a
+                  href={selectedNode.data.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  View
+                </a>
+              </div>
+            )}
         </div>
         <div>
           <Label htmlFor="caption">Message (optional)</Label>
