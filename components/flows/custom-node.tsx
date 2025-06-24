@@ -86,18 +86,26 @@ const CustomNode = ({ data, selected, id, onDelete }: CustomNodeProps) => {
       : [""];
     const count = Math.max(1, replyButtons.length);
     outgoingHandles = (
-      <>
+      <div className="flex flex-col gap-1 items-end mt-2">
         {Array.from({ length: count }).map((_, idx) => (
-          <Handle
+          <div
             key={idx}
-            type="source"
-            position={Position.Right}
-            id={`reply-${idx}`}
-            className={handleColor}
-            style={{ top: `${40 + idx * 24}px`, right: -8 }} // space handles vertically
-          />
+            className="flex items-center gap-1 w-full justify-end relative"
+            style={{ height: 24 }}
+          >
+            <span className="text-xs px-2 py-0.5 min-w-[48px] text-green-700 text-left truncate max-w-[70px]">
+              {replyButtons[idx] || `Button ${idx + 1}`}
+            </span>
+            <Handle
+              type="source"
+              position={Position.Right}
+              id={`reply-${idx}`}
+              className={handleColor}
+              style={{ right: -12 }}
+            />
+          </div>
         ))}
-      </>
+      </div>
     );
   }
 
