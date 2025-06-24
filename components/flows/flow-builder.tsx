@@ -27,6 +27,7 @@ export interface FlowBuilderProps {
   onSave: (flow: any) => void;
   initialNodes?: Node[];
   initialEdges?: Edge[];
+  editingFlow?: any; // Flow being edited, if any
 }
 
 interface BuildFlowJsonArgs {
@@ -177,6 +178,7 @@ export default function FlowBuilder({
     },
   ],
   initialEdges = [],
+  editingFlow = null,
 }: FlowBuilderProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -184,7 +186,7 @@ export default function FlowBuilder({
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [flowName, setFlowName] = useState("");
+  const [flowName, setFlowName] = useState(editingFlow?.name || "");
 
   // Delete node handler
   const handleDeleteNode = useCallback(
@@ -316,9 +318,9 @@ export default function FlowBuilder({
   // Confirm save: call onSave with flow data
   const handleConfirmSave = () => {
     if (!flowName.trim()) return;
-    const flowId = `${+new Date()}`;
-    const status = "active";
-    const date = new Date().toISOString();
+    const flowId = editingFlow?.id || `${+new Date()}`;
+    const status = editingFlow?.status || "active";
+    const date = editingFlow?.date || new Date().toISOString();
     const flowJson = buildFlowJson({
       nodes,
       edges,
