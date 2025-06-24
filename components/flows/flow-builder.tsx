@@ -24,15 +24,141 @@ import { Button } from "@/components/ui/button";
 
 export interface FlowBuilderProps {
   onBack: () => void;
-  onSave: (flow: {
-    id: string;
-    name: string;
-    steps: number;
-    status: string;
-    date: string;
-  }) => void;
+  onSave: (flow: any) => void;
   initialNodes?: Node[];
   initialEdges?: Edge[];
+}
+
+interface BuildFlowJsonArgs {
+  nodes: Node[];
+  edges: Edge[];
+  flowId: string;
+  flowName: string;
+  status: string;
+  date: string;
+}
+
+interface Step {
+  id: string;
+  type: string;
+  file?: string;
+  message?: string;
+  next?: string | null;
+  link?: string;
+  buttons?: { label: string; next: string | null }[];
+  flowId?: string;
+}
+
+interface FlowJson {
+  id: string;
+  name: string;
+  status: string;
+  date: string;
+  triggers: string[];
+  steps: Step[];
+}
+
+function buildFlowJson({
+  nodes,
+  edges,
+  flowId,
+  flowName,
+  status,
+  date,
+}: BuildFlowJsonArgs): FlowJson {
+  // 1. Find start node and triggers
+  const startNode = nodes.find((n) => n.data.nodeType === "Start");
+  const triggers = Array.isArray(startNode?.data.startKeywords)
+    ? startNode.data.startKeywords
+    : typeof startNode?.data.startKeywords === "string"
+    ? startNode.data.startKeywords
+        .split(",")
+        .map((k: string) => k.trim())
+        .filter(Boolean)
+    : [];
+
+  // 2. Build a map for quick lookup
+  const nodeMap: Record<string, Node> = Object.fromEntries(
+    nodes.map((n) => [n.id, n])
+  );
+  const outgoingMap: Record<string, { edge: Edge; target: string }[]> = {};
+  edges.forEach((e) => {
+    if (!outgoingMap[e.source]) outgoingMap[e.source] = [];
+    outgoingMap[e.source].push({ edge: e, target: e.target });
+  });
+
+  // 3. Build steps (skip Start node)
+  const steps: Step[] = nodes
+    .filter((n) => n.data.nodeType !== "Start")
+    .map((node) => {
+      const { id, data } = node;
+      const type = typeof data.nodeType === "string" ? data.nodeType : "";
+      // Message/Media nodes
+      if (
+        [
+          "ImageMessage",
+          "VideoMessage",
+          "AudioMessage",
+          "DocumentMessage",
+          "TemplateMessage",
+        ].includes(type)
+      ) {
+        const nextEdge = (outgoingMap[id] || [])[0];
+        return {
+          id,
+          type,
+          file: typeof data.fileUrl === "string" ? data.fileUrl : "", // fileUrl should be set after upload
+          message: typeof data.caption === "string" ? data.caption : "",
+          next: nextEdge ? nextEdge.target : null,
+        };
+      }
+      // MessageAction node
+      if (type === "MessageAction") {
+        const buttons = Array.isArray(data.replyButtons)
+          ? data.replyButtons.map((label: string, idx: number) => {
+              // Find edge with sourceHandle = reply-idx
+              const edge = (outgoingMap[id] || []).find(
+                (e) => e.edge.sourceHandle === `reply-${idx}`
+              );
+              return {
+                label: typeof label === "string" ? label : `Button ${idx + 1}`,
+                next: edge ? edge.target : null,
+              };
+            })
+          : [];
+        return {
+          id,
+          type,
+          message: typeof data.message === "string" ? data.message : "",
+          link: typeof data.link === "string" ? data.link : "",
+          buttons,
+        };
+      }
+      // ConnectFlow node
+      if (type === "ConnectFlowAction") {
+        const nextEdge = (outgoingMap[id] || [])[0];
+        return {
+          id,
+          type,
+          flowId: typeof data.flowId === "string" ? data.flowId : "",
+          next: nextEdge ? nextEdge.target : null,
+        };
+      }
+      // Fallback
+      return {
+        id,
+        type,
+      };
+    });
+
+  return {
+    id: flowId,
+    name: flowName,
+    status,
+    date,
+    triggers,
+    steps,
+  };
 }
 
 export default function FlowBuilder({
@@ -190,17 +316,19 @@ export default function FlowBuilder({
   // Confirm save: call onSave with flow data
   const handleConfirmSave = () => {
     if (!flowName.trim()) return;
-    const steps = nodes.length;
-    const flow = {
-      id: `${+new Date()}`,
-      name: flowName.trim(),
-      steps,
-      data: JSON.stringify(steps),
-      status: "active",
-      date: new Date().toISOString(),
-    };
-    console.log("Saved flow:", flow);
-    onSave(flow);
+    const flowId = `${+new Date()}`;
+    const status = "active";
+    const date = new Date().toISOString();
+    const flowJson = buildFlowJson({
+      nodes,
+      edges,
+      flowId,
+      flowName: flowName.trim(),
+      status,
+      date,
+    });
+    console.log("Exported flow JSON:", flowJson);
+    onSave(flowJson);
     setShowSaveModal(false);
     setFlowName("");
   };
