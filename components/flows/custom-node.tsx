@@ -83,9 +83,45 @@ const CustomNode = ({ data, selected, id }: CustomNodeProps) => {
     }
   };
 
+  // For MessageAction, render as many outgoing handles as reply buttons (default 1)
+  let outgoingHandles: React.ReactNode = null;
+  if (data.nodeType === "MessageAction") {
+    const replyButtons = Array.isArray(data.replyButtons)
+      ? data.replyButtons
+      : [""];
+    const count = Math.max(1, replyButtons.length);
+    outgoingHandles = (
+      <>
+        {Array.from({ length: count }).map((_, idx) => (
+          <Handle
+            key={idx}
+            type="source"
+            position={Position.Right}
+            id={`reply-${idx}`}
+            className={handleColor}
+            style={{ top: `${40 + idx * 24}px`, right: -8 }} // space handles vertically
+          />
+        ))}
+      </>
+    );
+  }
+
   return (
     <div
       className={`${nodeStyle} border ${borderStyle} rounded shadow p-3 text-xs min-w-[120px] text-center relative`}
+      style={{
+        minHeight:
+          data.nodeType === "MessageAction"
+            ? 40 +
+              24 *
+                Math.max(
+                  1,
+                  Array.isArray(data.replyButtons)
+                    ? data.replyButtons.length
+                    : 1
+                )
+            : undefined,
+      }}
     >
       {/* Left handle (target) - Not shown for start nodes */}
       {!isStartNode && (
@@ -110,7 +146,15 @@ const CustomNode = ({ data, selected, id }: CustomNodeProps) => {
       )}
 
       {/* Right handle (source) */}
-      <Handle type="source" position={Position.Right} className={handleColor} />
+      {data.nodeType === "MessageAction" ? (
+        outgoingHandles
+      ) : (
+        <Handle
+          type="source"
+          position={Position.Right}
+          className={handleColor}
+        />
+      )}
     </div>
   );
 };
