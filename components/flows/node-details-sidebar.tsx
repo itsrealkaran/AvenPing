@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Node } from "@xyflow/react";
 import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,51 @@ function isFile(val: any): val is File {
     typeof val.size === "number"
   );
 }
+
+const KeywordChips: React.FC<{
+  keywords: string[];
+  onAdd: (kw: string) => void;
+  onRemove: (kw: string) => void;
+}> = ({ keywords, onAdd, onRemove }) => {
+  const [input, setInput] = useState("");
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if ((e.key === "Enter" || e.key === ",") && input.trim() !== "") {
+      e.preventDefault();
+      if (!keywords.includes(input.trim())) {
+        onAdd(input.trim());
+      }
+      setInput("");
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap gap-2 mt-1">
+      {keywords.map((kw) => (
+        <span
+          key={kw}
+          className="inline-flex items-center bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 text-xs font-medium"
+        >
+          {kw}
+          <button
+            type="button"
+            className="ml-1 text-blue-400 hover:text-red-500"
+            onClick={() => onRemove(kw)}
+            aria-label={`Remove ${kw}`}
+          >
+            <X size={12} />
+          </button>
+        </span>
+      ))}
+      <Input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={keywords.length === 0 ? "Type and press Enter..." : ""}
+      />
+    </div>
+  );
+};
 
 const renderNodeDetails = (
   selectedNode: Node,
@@ -138,20 +183,32 @@ const renderNodeDetails = (
 
   // Start node
   if (nodeType === "Start") {
+    // Store keywords as array in data
+    const keywords: string[] = Array.isArray(selectedNode.data.startKeywords)
+      ? selectedNode.data.startKeywords
+      : typeof selectedNode.data.startKeywords === "string" &&
+        selectedNode.data.startKeywords.trim() !== ""
+      ? selectedNode.data.startKeywords
+          .split(",")
+          .map((k: string) => k.trim())
+          .filter(Boolean)
+      : [];
     return (
       <div>
-        <Label htmlFor="startKeywords">Start Keywords</Label>
-        <Input
-          id="startKeywords"
-          value={
-            typeof selectedNode.data.startKeywords === "string"
-              ? selectedNode.data.startKeywords
-              : ""
+        <Label>Start Keywords</Label>
+        <KeywordChips
+          keywords={keywords}
+          onAdd={(kw) => onUpdateNodeData("startKeywords", [...keywords, kw])}
+          onRemove={(kw) =>
+            onUpdateNodeData(
+              "startKeywords",
+              keywords.filter((k) => k !== kw)
+            )
           }
-          onChange={(e) => onUpdateNodeData("startKeywords", e.target.value)}
-          placeholder="Enter keywords, separated by commas"
-          className="mt-1"
         />
+        <div className="text-xs text-gray-400 mt-1">
+          Press Enter or comma to add.
+        </div>
       </div>
     );
   }
@@ -216,8 +273,7 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({
 
   return (
     <div
-      className="absolute z-30 top-16 right-4 flex flex-col gap-4 bg-white border border-gray-200 rounded-xl shadow-lg p-4 overflow-auto max-h-[calc(100%-5rem)]"
-      style={{ minWidth: 280 }}
+      className="absolute z-30 top-16 right-4 flex flex-col gap-4 bg-white border border-gray-200 rounded-xl shadow-lg p-4 overflow-auto max-h-[calc(100%-5rem)] min-w-[280px] w-[320px]"
     >
       <div className="flex items-center justify-between">
         <div className="text-sm font-semibold text-gray-500 pl-1">
