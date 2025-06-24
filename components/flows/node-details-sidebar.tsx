@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import SearchableDropdown from "../ui/searchable-dropdown";
 
 interface NodeDetailsSidebarProps {
   selectedNode: Node | null;
@@ -163,20 +164,13 @@ const renderNodeDetails = (
       <div>
         <Label htmlFor="flow">Connect to Flow</Label>
         {/* Placeholder dropdown, replace with real flows */}
-        <select
-          id="flow"
-          className="mt-1 w-full border rounded px-2 py-1"
-          value={
-            typeof selectedNode.data.flowId === "string"
-              ? selectedNode.data.flowId
-              : ""
-          }
-          onChange={(e) => onUpdateNodeData("flowId", e.target.value)}
-        >
-          <option value="">Select a flow...</option>
-          <option value="flow1">Flow 1</option>
-          <option value="flow2">Flow 2</option>
-        </select>
+        <SearchableDropdown
+          // className="mt-1 w-full border rounded px-2 py-1"
+          placeholder="Select a flow..."
+          variant="outline"
+          items={[]}
+          onSelect={() => {}}
+        />
       </div>
     );
   }
@@ -218,17 +212,26 @@ const renderNodeDetails = (
     nodeType === "ImageMessage" ||
     nodeType === "VideoMessage" ||
     nodeType === "DocumentMessage" ||
-    nodeType === "AudioMessage" ||
-    nodeType === "TemplateMessage"
+    nodeType === "AudioMessage"
   ) {
     return (
       <>
         <div>
-          <Label htmlFor="fileUpload">Upload File</Label>
+          <Label htmlFor="fileUpload">Upload {nodeType.replace("Message", "")}</Label>
           <Input
             id="fileUpload"
             type="file"
-            accept="image/*,video/*,audio/*,application/pdf"
+            accept={
+              nodeType === "ImageMessage"
+                ? "image/*"
+                : nodeType === "VideoMessage"
+                ? "video/*"
+                : nodeType === "AudioMessage"
+                ? "audio/*"
+                : nodeType === "DocumentMessage"
+                ? "application/pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
+                : "*"
+            }
             onChange={(e) => {
               const file = (e.target as HTMLInputElement).files?.[0];
               if (file) {
@@ -244,7 +247,7 @@ const renderNodeDetails = (
           )}
         </div>
         <div>
-          <Label htmlFor="caption">Caption (optional)</Label>
+          <Label htmlFor="caption">Message (optional)</Label>
           <Input
             id="caption"
             value={
@@ -257,6 +260,25 @@ const renderNodeDetails = (
           />
         </div>
       </>
+    );
+  }
+
+  // Template node
+  if (nodeType === "TemplateMessage") {
+    return (
+      <div>
+        <Label htmlFor="template">Template</Label>
+        <Input
+          id="template"
+          value={
+            typeof selectedNode.data.template === "string"
+              ? selectedNode.data.template
+              : ""
+          }
+          onChange={(e) => onUpdateNodeData("template", e.target.value)}
+          className="mt-1"
+        />
+      </div>
     );
   }
 
@@ -273,7 +295,7 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({
 
   return (
     <div
-      className="absolute z-30 top-16 right-4 flex flex-col gap-4 bg-white border border-gray-200 rounded-xl shadow-lg p-4 overflow-auto max-h-[calc(100%-5rem)] min-w-[280px] w-[320px]"
+      className="absolute z-30 top-16 right-4 flex flex-col gap-4 bg-white border border-gray-200 rounded-xl shadow-lg p-4 max-h-[calc(100%-5rem)] min-w-[280px] w-[320px]"
     >
       <div className="flex items-center justify-between">
         <div className="text-sm font-semibold text-gray-500 pl-1">
@@ -283,7 +305,7 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({
           <X size={16} />
         </button>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-4 overflow-auto px-2">
         {/* Render node-specific details */}
         {renderNodeDetails(selectedNode, onUpdateNodeData)}
 
