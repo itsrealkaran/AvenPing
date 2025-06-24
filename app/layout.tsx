@@ -40,7 +40,7 @@ export default function RootLayout({
                   appId: '641045902102378',
                   xfbml: true,
                   version: 'v22.0',
-                  config_id: '2721341521400507'
+                  config_id: '${process.env.NEXT_PUBLIC_META_CONFIG_ID}'
                 });
               };
             `}
