@@ -29,7 +29,7 @@ const initialFlows: Flow[] = [
   {
     id: "1",
     name: "Welcome Sequence",
-    status: "Active",
+    status: "active",
     date: "2023-06-01T09:00:00Z",
     triggers: [],
     steps: [5],
@@ -37,7 +37,7 @@ const initialFlows: Flow[] = [
   {
     id: "2",
     name: "Abandoned Cart",
-    status: "Inactive",
+    status: "inactive",
     date: "2023-06-02T10:30:00Z",
     triggers: ["hi", "hello"],
     steps: [3],
@@ -45,7 +45,7 @@ const initialFlows: Flow[] = [
   {
     id: "3",
     name: "Feedback Request",
-    status: "Active",
+    status: "active",
     date: "2023-06-03T14:15:00Z",
     triggers: [],
     steps: [4],
@@ -166,7 +166,7 @@ export default function FlowPage() {
         return (
           <span
             className={`px-2 py-1 text-xs font-medium rounded-full ${
-              value === "Active"
+              value === "active"
                 ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
             }`}
