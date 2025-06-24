@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Search, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface SearchableDropdownProps {
   items: {
@@ -12,6 +13,7 @@ interface SearchableDropdownProps {
   }[];
   placeholder?: string;
   onSelect: (item: { id: string; label: string; value: string }) => void;
+  variant?: "default" | "outline";
   className?: string;
   selectedLabel?: string | null;
   buttonContent?: React.ReactNode;
@@ -21,6 +23,7 @@ const SearchableDropdown = ({
   items,
   placeholder = "Select...",
   onSelect,
+  variant = "default",
   className = "",
   selectedLabel,
   buttonContent,
@@ -49,12 +52,17 @@ const SearchableDropdown = ({
     item.label.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const buttonClasses = cn(
+    className,
+    variant === "outline" && "flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+  );
+
   return (
     <div className="relative " ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={className}
+        className={buttonClasses}
       >
         {buttonContent || (
           <div className="flex items-center">
