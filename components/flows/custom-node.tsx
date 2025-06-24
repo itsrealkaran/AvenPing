@@ -83,30 +83,48 @@ const CustomNode = ({ data, selected, id, onDelete }: CustomNodeProps) => {
   if (data.nodeType === "MessageAction") {
     const replyButtons = Array.isArray(data.replyButtons)
       ? data.replyButtons
-      : [""];
-    const count = Math.max(1, replyButtons.length);
-    outgoingHandles = (
-      <div className="flex flex-col gap-1 items-end mt-2">
-        {Array.from({ length: count }).map((_, idx) => (
+      : [];
+    if (replyButtons.length === 0) {
+      outgoingHandles = (
+        <div className="flex flex-col gap-1 items-end mt-2">
           <div
-            key={idx}
             className="flex items-center gap-1 w-full justify-end relative"
             style={{ height: 24 }}
           >
-            <span className="text-xs px-2 py-0.5 min-w-[48px] text-green-700 text-left truncate max-w-[70px]">
-              {replyButtons[idx] || `Button ${idx + 1}`}
-            </span>
             <Handle
               type="source"
               position={Position.Right}
-              id={`reply-${idx}`}
+              id={`reply-0`}
               className={handleColor}
               style={{ right: -12 }}
             />
           </div>
-        ))}
-      </div>
-    );
+        </div>
+      );
+    } else {
+      outgoingHandles = (
+        <div className="flex flex-col gap-1 items-end mt-2">
+          {replyButtons.map((label: string, idx: number) => (
+            <div
+              key={idx}
+              className="flex items-center gap-1 w-full justify-end relative"
+              style={{ height: 24 }}
+            >
+              <span className="text-xs px-2 py-0.5 min-w-[48px] text-green-700 text-left truncate max-w-[70px]">
+                {label || `Button ${idx + 1}`}
+              </span>
+              <Handle
+                type="source"
+                position={Position.Right}
+                id={`reply-${idx}`}
+                className={handleColor}
+                style={{ right: -12 }}
+              />
+            </div>
+          ))}
+        </div>
+      );
+    }
   }
 
   return (

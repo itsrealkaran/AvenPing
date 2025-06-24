@@ -79,7 +79,7 @@ const renderNodeDetails = (
   if (nodeType === "MessageAction") {
     const replyButtons: string[] = Array.isArray(selectedNode.data.replyButtons)
       ? selectedNode.data.replyButtons
-      : [""];
+      : [];
     return (
       <>
         <div>
@@ -111,32 +111,33 @@ const renderNodeDetails = (
         </div>
         <div>
           <Label>Reply Buttons (max 3)</Label>
-          {replyButtons.map((label, idx) => (
-            <div key={idx} className="flex items-center gap-2 mt-2">
-              <Input
-                value={typeof label === "string" ? label : ""}
-                onChange={(e) => {
-                  const newButtons = [...replyButtons];
-                  newButtons[idx] = e.target.value;
-                  onUpdateNodeData("replyButtons", newButtons);
-                }}
-                placeholder={`Button ${idx + 1} label`}
-                className="flex-1"
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const newButtons = replyButtons.filter((_, i) => i !== idx);
-                  onUpdateNodeData("replyButtons", newButtons);
-                }}
-                disabled={replyButtons.length === 1}
-                type="button"
-              >
-                Remove
-              </Button>
-            </div>
-          ))}
+          <br />
+          {replyButtons.length > 0 &&
+            replyButtons.map((label, idx) => (
+              <div key={idx} className="flex items-center gap-2 mt-2">
+                <Input
+                  value={typeof label === "string" ? label : ""}
+                  onChange={(e) => {
+                    const newButtons = [...replyButtons];
+                    newButtons[idx] = e.target.value;
+                    onUpdateNodeData("replyButtons", newButtons);
+                  }}
+                  placeholder={`Button ${idx + 1} label`}
+                  className="flex-1"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const newButtons = replyButtons.filter((_, i) => i !== idx);
+                    onUpdateNodeData("replyButtons", newButtons);
+                  }}
+                  type="button"
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
           {replyButtons.length < MAX_REPLY_BUTTONS && (
             <Button
               variant="outline"
@@ -217,7 +218,9 @@ const renderNodeDetails = (
     return (
       <>
         <div>
-          <Label htmlFor="fileUpload">Upload {nodeType.replace("Message", "")}</Label>
+          <Label htmlFor="fileUpload">
+            Upload {nodeType.replace("Message", "")}
+          </Label>
           <Input
             id="fileUpload"
             type="file"
@@ -294,9 +297,7 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({
   if (!selectedNode) return null;
 
   return (
-    <div
-      className="absolute z-30 top-16 right-4 flex flex-col gap-4 bg-white border border-gray-200 rounded-xl shadow-lg p-4 max-h-[calc(100%-5rem)] min-w-[280px] w-[320px]"
-    >
+    <div className="absolute z-30 top-16 right-4 flex flex-col gap-4 bg-white border border-gray-200 rounded-xl shadow-lg p-4 max-h-[calc(100%-5rem)] min-w-[280px] w-[320px]">
       <div className="flex items-center justify-between">
         <div className="text-sm font-semibold text-gray-500 pl-1">
           Node Details
