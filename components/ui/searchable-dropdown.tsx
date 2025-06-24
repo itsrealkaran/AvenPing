@@ -54,7 +54,8 @@ const SearchableDropdown = ({
 
   const buttonClasses = cn(
     className,
-    variant === "outline" && "flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+    variant === "outline" &&
+      "flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
   );
 
   return (
@@ -65,7 +66,7 @@ const SearchableDropdown = ({
         className={buttonClasses}
       >
         {buttonContent || (
-          <div className="flex items-center">
+          <div className="flex flex-1 justify-between items-center">
             <span className="truncate">{selectedLabel || placeholder}</span>
             <ChevronDown className="h-4 w-4 opacity-50 ml-2" />
           </div>
@@ -73,7 +74,12 @@ const SearchableDropdown = ({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-32 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+        <div
+          className={cn(
+            "absolute w-32 z-50 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg",
+            variant === "outline" && "w-full"
+          )}
+        >
           <div className="p-2 border-b border-gray-100">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
