@@ -19,10 +19,18 @@ import ComponentsSidebar from "./components-sidebar";
 import NodeDetailsSidebar from "./node-details-sidebar";
 import FlowHeader from "./flow-header";
 import SidebarToggle from "./sidebar-toggle";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export interface FlowBuilderProps {
   onBack: () => void;
-  onSave: (nodes: Node[], edges: Edge[]) => void;
+  onSave: (flow: {
+    id: string;
+    name: string;
+    steps: number;
+    status: string;
+    date: string;
+  }) => void;
   initialNodes?: Node[];
   initialEdges?: Edge[];
 }
@@ -49,6 +57,8 @@ export default function FlowBuilder({
   const [draggedNode, setDraggedNode] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [flowName, setFlowName] = useState("");
 
   // Delete node handler
   const handleDeleteNode = useCallback(
@@ -106,9 +116,6 @@ export default function FlowBuilder({
       } else if (nodeType.includes("Action")) {
         category = "action";
       }
-
-      // Log for debugging
-      // console.log(`Creating node: ${nodeType} with category: ${category}`);
 
       const newNode: Node = {
         id: `${+new Date()}`,
@@ -175,10 +182,61 @@ export default function FlowBuilder({
     setSelectedNode(null);
   };
 
+  // Save handler: show modal
+  const handleSave = () => {
+    setShowSaveModal(true);
+  };
+
+  // Confirm save: call onSave with flow data
+  const handleConfirmSave = () => {
+    if (!flowName.trim()) return;
+    const steps = nodes.length;
+    const flow = {
+      id: `${+new Date()}`,
+      name: flowName.trim(),
+      steps,
+      data: JSON.stringify(steps),
+      status: "active",
+      date: new Date().toISOString(),
+    };
+    console.log("Saved flow:", flow);
+    onSave(flow);
+    setShowSaveModal(false);
+    setFlowName("");
+  };
+
   return (
     <div className="relative h-full w-full bg-gray-50 rounded-lg border border-gray-200 shadow">
       {/* Header */}
-      <FlowHeader onBack={onBack} onSave={() => onSave(nodes, edges)} />
+      <FlowHeader onBack={onBack} onSave={handleSave} />
+
+      {/* Save Modal */}
+      {showSaveModal && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px] max-w-[90vw]">
+            <div className="mb-4 text-lg font-semibold">Save Flow</div>
+            <div className="mb-2">
+              <label className="block text-sm font-medium mb-1">
+                Flow Name
+              </label>
+              <Input
+                value={flowName}
+                onChange={(e) => setFlowName(e.target.value)}
+                placeholder="Enter flow name"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2 justify-end mt-4">
+              <Button variant="ghost" onClick={() => setShowSaveModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmSave} disabled={!flowName.trim()}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hamburger Menu - Only shown when sidebar is hidden */}
       {!showSidebar && (

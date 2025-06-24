@@ -22,13 +22,6 @@ interface CustomNodeProps {
 const CustomNode = ({ data, selected, id, onDelete }: CustomNodeProps) => {
   const isStartNode = id === "1" || data.isStartNode;
 
-  // Debug log to see why some nodes are not getting colored correctly
-  console.log(`Node ${id}:`, {
-    nodeType: data.nodeType,
-    category: data.category,
-    isStartNode,
-  });
-
   // Determine node style based on category and nodeType
   let nodeStyle = "bg-white";
   let borderStyle = selected ? "border-blue-500" : "border-gray-300";
