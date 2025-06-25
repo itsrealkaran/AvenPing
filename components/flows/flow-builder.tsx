@@ -48,6 +48,7 @@ interface Step {
   link?: string;
   buttons?: { label: string; next: string | null }[];
   flowId?: string;
+  position: { x: number; y: number };
 }
 
 interface FlowJson {
@@ -92,7 +93,7 @@ function buildFlowJson({
   const steps: Step[] = nodes
     .filter((n) => n.data.nodeType !== "Start")
     .map((node) => {
-      const { id, data } = node;
+      const { id, data, position } = node;
       const type = typeof data.nodeType === "string" ? data.nodeType : "";
       // Message/Media nodes
       if (
@@ -111,6 +112,7 @@ function buildFlowJson({
           file: typeof data.fileUrl === "string" ? data.fileUrl : "", // fileUrl should be set after upload
           message: typeof data.caption === "string" ? data.caption : "",
           next: nextEdge ? nextEdge.target : null,
+          position: { x: position.x, y: position.y },
         };
       }
       // MessageAction node
@@ -133,6 +135,7 @@ function buildFlowJson({
           message: typeof data.message === "string" ? data.message : "",
           link: typeof data.link === "string" ? data.link : "",
           buttons,
+          position: { x: position.x, y: position.y },
         };
       }
       // ConnectFlow node
@@ -143,12 +146,14 @@ function buildFlowJson({
           type,
           flowId: typeof data.flowId === "string" ? data.flowId : "",
           next: nextEdge ? nextEdge.target : null,
+          position: { x: position.x, y: position.y },
         };
       }
       // Fallback
       return {
         id,
         type,
+        position: { x: position.x, y: position.y },
       };
     });
 

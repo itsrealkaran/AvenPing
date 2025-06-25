@@ -1,7 +1,7 @@
 "use client";
 
 import Body from "@/components/layout/body";
-import { GitBranch, Edit, Trash, Play, Pause, Plus } from "lucide-react";
+import { Edit, Trash, Play, Pause } from "lucide-react";
 import React, { useState } from "react";
 import Table, { ActionMenuItem } from "@/components/ui/table";
 import { MRT_ColumnDef } from "material-react-table";
@@ -48,10 +48,9 @@ function reconstructFlowData(flow: Flow): { nodes: Node[]; edges: Edge[] } {
   flow.steps.forEach((step, index) => {
     const nodeId = step.id;
     const nodeType = step.type;
-
-    // Determine position (simple grid layout)
-    const x = 250 + (index + 1) * 200;
-    const y = 100 + (index % 2) * 150;
+    // Use saved position if available, else fallback to grid
+    const x = step.position?.x ?? 250 + (index + 1) * 200;
+    const y = step.position?.y ?? 100 + (index % 2) * 150;
 
     const nodeData: any = {
       label: nodeType.replace(/([A-Z])/g, " $1").trim(),
@@ -119,89 +118,7 @@ function reconstructFlowData(flow: Flow): { nodes: Node[]; edges: Edge[] } {
   return { nodes, edges };
 }
 
-const initialFlows: Flow[] = [
-  {
-    id: "1",
-    name: "Welcome Sequence",
-    status: "active",
-    date: "2023-06-01T09:00:00Z",
-    triggers: [],
-    steps: [5],
-  },
-  {
-    id: "2",
-    name: "Abandoned Cart",
-    status: "inactive",
-    date: "2023-06-02T10:30:00Z",
-    triggers: ["hi", "hello"],
-    steps: [3],
-  },
-  {
-    id: "3",
-    name: "Feedback Request",
-    status: "active",
-    date: "2023-06-03T14:15:00Z",
-    triggers: [],
-    steps: [4],
-  },
-  {
-    id: "1750792206272",
-    name: "Test",
-    status: "active",
-    date: "2025-06-24T19:10:06.272Z",
-    triggers: ["testing", "test"],
-    steps: [
-      {
-        id: "1750791963173",
-        type: "MessageAction",
-        message: "Choose one reply?",
-        link: "",
-        buttons: [
-          {
-            label: "message",
-            next: "1750791983386",
-          },
-          {
-            label: "image1",
-            next: "1750791978085",
-          },
-          {
-            label: "image2",
-            next: "1750791993229",
-          },
-        ],
-      },
-      {
-        id: "1750791978085",
-        type: "ImageMessage",
-        file: "",
-        message: "no image attached",
-        next: "1750792159035",
-      },
-      {
-        id: "1750791983386",
-        type: "MessageAction",
-        message: "Just Message",
-        link: "",
-        buttons: [],
-      },
-      {
-        id: "1750791993229",
-        type: "ImageMessage",
-        file: "",
-        message: "Test image attached",
-        next: null,
-      },
-      {
-        id: "1750792159035",
-        type: "VideoMessage",
-        file: "",
-        message: "no video attached",
-        next: null,
-      },
-    ],
-  },
-];
+const initialFlows: Flow[] = [];
 
 export default function FlowPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -359,9 +276,7 @@ export default function FlowPage() {
         <FlowBuilderComponent
           onBack={handleBack}
           onSave={handleSaveFlow}
-          initialNodes={initialNodes}
-          initialEdges={initialEdges}
-          editingFlow={editingFlow}
+          {...(editingFlow ? { initialNodes, initialEdges, editingFlow } : {})}
         />
       ) : (
         <Table
