@@ -12,6 +12,7 @@ import BusinessVerificationCardContent from "@/components/dashboard/business-ver
 import MetricCard from "@/components/analytics/metric-card";
 import { sampleMetrics } from "@/components/analytics/data";
 import Link from "next/link";
+import axios from "axios";
 
 export default function DashboardPage() {
   // Register Number state
@@ -22,11 +23,22 @@ export default function DashboardPage() {
   // Business Verification state
   const [isVerified, setIsVerified] = useState(true);
 
-  const handleRegister = (pin?: string) => {
-    setIsRegistered(true);
+  const handleRegister = (pin: string, phoneNumberId: string) => {
+    axios.post("/api/whatsapp/phone-numbers/register", {
+      pin,
+      phoneNumberId,
+    })
+    .then((res) => {
+        if (res.data.success) {
+          setIsRegistered(true);
+          setShowRegisterModal(false);
+        } else {
+          console.log(res.data.error);
+        }
+      });
   };
 
-  const handleConnectAccount = () => {
+  const handleConnectAccount = async () => {
     //@ts-ignore
     FB.login(
       (response: any) => {
@@ -42,6 +54,13 @@ export default function DashboardPage() {
             );
             setIsConnected(true);
           });
+
+          axios.post("/api/whatsapp", {
+            code: response.authResponse.code,
+          }).then((res) => {
+            console.log(res.data);
+          });
+
         } else {
           console.log("User cancelled login or did not fully authorize.");
         }
@@ -112,7 +131,7 @@ export default function DashboardPage() {
         >
           <RegisterNumberCardContent
             isRegistered={isRegistered}
-            onRegister={handleRegister}
+            onRegister={() => setShowRegisterModal(true)}
             setShowRegisterModal={setShowRegisterModal}
           />
         </Card>

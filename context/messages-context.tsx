@@ -3,7 +3,7 @@
 import { createContext, useContext, ReactNode, useEffect, useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import useGetUser from '@/hooks/get-userdata';
+import { useUser } from './user-context';
 import { Label } from '@prisma/client';
 
 interface Message {
@@ -42,7 +42,7 @@ const MessagesContext = createContext<MessagesContextType | undefined>(undefined
 
 export function MessagesProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
-  const user = useGetUser();
+  const { userInfo: user } = useUser();
 
   const [phoneNumberId, setPhoneNumberId] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
