@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import ConversationList from "./conversation-list";
 import MessagePanel from "./message-panel";
-import { Search, MessageSquare, Loader2 } from "lucide-react";
+import { Search, MessageSquare, Loader2, Wifi, WifiOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import MessageCard from "./message-card";
 import SearchableDropdown from "@/components/ui/searchable-dropdown";
 import { useMessages } from "@/context/messages-context";
+import { useWebSocket } from "@/hooks/use-websocket";
 
 // Updated type definitions
 export type Contact = {
@@ -42,7 +43,7 @@ const Loading = () => (
 );
 
 const MessagesInterface = () => {
-  const { conversations, sendMessage, isLoading, searchQuery, setSearchQuery, labels, isLabelsLoading, labelsError, setLabel } = useMessages();
+  const { conversations, sendMessage, isLoading, searchQuery, setSearchQuery, labels, isLabelsLoading, labelsError, setLabel, addRealTimeMessage } = useMessages();
 
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
@@ -50,6 +51,49 @@ const MessagesInterface = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [componentHeight, setComponentHeight] = useState("450px");
+  const [isWebSocketConnected, setIsWebSocketConnected] = useState(false);
+
+  // WebSocket callbacks - memoized to prevent re-renders
+  const handleWebSocketMessage = useCallback((message: any) => {
+    if (message.type === 'new_message') {
+      // Handle incoming real-time message
+      const newMessage: Message = {
+        id: message.id || `m${Date.now()}`,
+        message: message.message,
+        createdAt: message.createdAt || new Date().toISOString(),
+        status: message.status || "DELIVERED",
+        isOutbound: false, // Incoming messages are not outbound
+      };
+      
+      // Add the message to the appropriate conversation
+      if (message.conversationId) {
+        addRealTimeMessage(newMessage, message.conversationId);
+      }
+    }
+  }, [addRealTimeMessage]);
+
+  const handleWebSocketConnect = useCallback(() => {
+    console.log('WebSocket connected for real-time messaging');
+    setIsWebSocketConnected(true);
+  }, []);
+
+  const handleWebSocketDisconnect = useCallback(() => {
+    console.log('WebSocket disconnected');
+    setIsWebSocketConnected(false);
+  }, []);
+
+  const handleWebSocketError = useCallback((error: Event) => {
+    console.error('WebSocket error in messages interface:', error);
+    setIsWebSocketConnected(false);
+  }, []);
+
+  // WebSocket integration
+  const { isConnected } = useWebSocket({
+    onMessage: handleWebSocketMessage,
+    onConnect: handleWebSocketConnect,
+    onDisconnect: handleWebSocketDisconnect,
+    onError: handleWebSocketError,
+  });
 
   const handleLabelSelect = (item: {
     id: string;
@@ -119,6 +163,24 @@ const MessagesInterface = () => {
               className="pl-10"
             />
           </div>
+          
+          {/* WebSocket Connection Status */}
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center space-x-1 text-xs">
+              {isWebSocketConnected ? (
+                <>
+                  <Wifi className="h-3 w-3 text-green-500" />
+                  <span className="text-green-600">Real-time active</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="h-3 w-3 text-gray-400" />
+                  <span className="text-gray-500">Connecting...</span>
+                </>
+              )}
+            </div>
+          </div>
+          
           <div className="flex items-center space-x-2 mt-3">
             <button
               onClick={(e) => {

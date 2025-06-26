@@ -35,7 +35,9 @@ interface MessagesContextType {
   labels: Label[];
   isLabelsLoading: boolean;
   labelsError: Error | null;
+  label: string | null;
   setLabel: (label: string | null) => void;
+  addRealTimeMessage: (message: Message, conversationId: string) => void;
 }
 
 const MessagesContext = createContext<MessagesContextType | undefined>(undefined);
@@ -150,6 +152,21 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     labelsError,
     label,
     setLabel,
+    addRealTimeMessage: (message: Message, conversationId: string) => {
+      queryClient.setQueryData(['messages', phoneNumberId, debouncedSearchQuery, label], (oldData: any) => {
+        if (!oldData) return oldData;
+        
+        return oldData.map((conv: Conversation) => {
+          if (conv.id === conversationId) {
+            return {
+              ...conv,
+              messages: [...conv.messages, message]
+            };
+          }
+          return conv;
+        });
+      });
+    },
   };
 
   return (
