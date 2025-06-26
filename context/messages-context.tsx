@@ -1,9 +1,10 @@
 'use client';
 
-import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
+import { createContext, useContext, ReactNode, useEffect, useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import useGetUser from '@/hooks/get-userdata';
+import { Label } from '@prisma/client';
 
 interface Message {
   id: string;
@@ -26,9 +27,15 @@ interface MessagesContextType {
   conversations: Conversation[] | undefined;
   isLoading: boolean;
   error: Error | null;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
   sendMessage: (message: Omit<Message, 'id' | 'createdAt'>, recipientId: string) => Promise<void>;
   deleteMessage: (messageId: string) => Promise<void>;
   getConversation: (conversationId: string) => Promise<Conversation | undefined>;
+  labels: Label[];
+  isLabelsLoading: boolean;
+  labelsError: Error | null;
+  setLabel: (label: string | null) => void;
 }
 
 const MessagesContext = createContext<MessagesContextType | undefined>(undefined);
@@ -39,17 +46,40 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
   const [phoneNumberId, setPhoneNumberId] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [label, setLabel] = useState<string | null>(null);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
+
   useEffect(() => {
     if (user?.whatsappAccount?.phoneNumbers[0].id) {
       setPhoneNumberId(user?.whatsappAccount?.phoneNumbers[0].id);
     }
   }, [user]);
 
-  // Fetch messages
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch messages with search functionality
   const { data: conversations, isLoading, error } = useQuery({
-    queryKey: ['messages', phoneNumberId],
+    queryKey: ['messages', phoneNumberId, debouncedSearchQuery, label],
     queryFn: async () => {
-      const response = await axios.get(`/api/whatsapp/messages?phoneNumberId=${phoneNumberId}`);
+      const params = new URLSearchParams();
+      if (phoneNumberId) {
+        params.append('phoneNumberId', phoneNumberId);
+      }
+      if (debouncedSearchQuery.trim()) {
+        params.append('search', debouncedSearchQuery.trim());
+      }
+      if (label) {
+        params.append('label', label);
+      }
+      const response = await axios.get(`/api/whatsapp/messages?${params.toString()}`);
       return response.data.items;
     },
     enabled: !!phoneNumberId, // Only fetch when phoneNumberId is available
@@ -89,10 +119,22 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Get labels
+  const { data: labels, isLoading: isLabelsLoading, error: labelsError } = useQuery({
+    queryKey: ['labels', phoneNumberId],
+    queryFn: async () => {
+      const response = await axios.get(`/api/whatsapp/label`);
+      return response.data;
+    },
+    enabled: !!phoneNumberId,
+  });
+
   const value = {
     conversations,
     isLoading,
     error: error as Error | null,
+    searchQuery,
+    setSearchQuery,
     sendMessage: async (message: Omit<Message, 'id' | 'createdAt'>, recipientId: string) => {
       await sendMessageMutation.mutateAsync({ newMessage: message, recipientId });
     },
@@ -103,6 +145,11 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       setConversationId(conversationId);
       return conversation;
     },
+    labels,
+    isLabelsLoading,
+    labelsError,
+    label,
+    setLabel,
   };
 
   return (

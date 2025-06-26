@@ -42,10 +42,8 @@ const Loading = () => (
 );
 
 const MessagesInterface = () => {
-  const { conversations, sendMessage, isLoading } = useMessages();
-  const [search, setSearch] = useState<string | null>(null);
+  const { conversations, sendMessage, isLoading, searchQuery, setSearchQuery, labels, isLabelsLoading, labelsError, setLabel } = useMessages();
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
   >(null);
@@ -53,27 +51,12 @@ const MessagesInterface = () => {
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [componentHeight, setComponentHeight] = useState("450px");
 
-  // Extract unique labels from conversations
-  // const labels = Array.from(
-  //   new Set(
-  //     conversations
-  //       .map((conv) => conv.label)
-  //       .filter((label): label is string => !!label)
-  //   )
-  // );
-
-  // const labelItems = labels.map((label) => ({
-  //   id: label,
-  //   label: label,
-  //   value: label,
-  // }));
-
   const handleLabelSelect = (item: {
     id: string;
     label: string;
     value: string;
   }) => {
-    setSelectedLabel(item.value);
+    setLabel(item.value);
     setActiveFilter("label");
   };
 
@@ -84,31 +67,6 @@ const MessagesInterface = () => {
       setSelectedConversationId(conversations[0].id);
     }
   }, [conversations, selectedConversationId]);
-
-  // Filter conversations based on search and active filter
-  const filteredConversations =
-    conversations?.filter((conversation) => {
-      // First apply search filter
-      const matchesSearch =
-        conversation.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        conversation.phoneNumber
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase());
-      //   conversation.label
-      //     ?.toLowerCase()
-      //     .includes(searchQuery.toLowerCase());
-
-      if (!matchesSearch) return false;
-
-      // Then apply type filter
-      if (activeFilter === "unread") {
-        return conversation.messages.length > 0;
-      }
-      // if (activeFilter === "label" && selectedLabel) {
-      //   return conversation.label === selectedLabel;
-      // }
-      return true;
-    }) || [];
 
   const handleSendMessage = async (message: string) => {
     if (!selectedConversationId || !message.trim() || !conversations) return;
@@ -156,16 +114,16 @@ const MessagesInterface = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search chats, labels or contacts"
-              value={search || ""}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchQuery || ""}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
           </div>
           <div className="flex items-center space-x-2 mt-3">
             <button
-              onClick={() => {
+              onClick={(e) => {
+                setLabel(null);
                 setActiveFilter("all");
-                setSelectedLabel(null);
               }}
               className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
                 activeFilter === "all"
@@ -177,8 +135,8 @@ const MessagesInterface = () => {
             </button>
             <button
               onClick={() => {
+                setLabel("unread");
                 setActiveFilter("unread");
-                setSelectedLabel(null);
               }}
               className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
                 activeFilter === "unread"
@@ -189,7 +147,11 @@ const MessagesInterface = () => {
               Unread
             </button>
             <SearchableDropdown
-              items={[]}
+              items={labels ?labels.map((label) => ({
+                id: label.id,
+                label: label.name,
+                value: label.name,
+              })) : []}
               placeholder="Label"
               onSelect={handleLabelSelect}
               className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${

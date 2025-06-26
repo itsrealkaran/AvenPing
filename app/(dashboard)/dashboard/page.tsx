@@ -47,7 +47,7 @@ export default function DashboardPage() {
         }
       },
       {
-        config_id: process.env.NEXT_PUBLIC_WHATSAPP_CONFIG_ID,
+        config_id: process.env.NEXT_PUBLIC_META_CONFIG_ID,
         response_type: "code",
         override_default_response_type: true,
         scope:

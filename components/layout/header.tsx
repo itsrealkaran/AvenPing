@@ -47,7 +47,7 @@ export default function Header() {
         {/* Right Icons */}
         <div className="flex items-center gap-2">
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <button className="p-2 rounded-md hover:bg-gray-100 transition">
                 <Bell size={20} className="text-gray-500" />
               </button>
@@ -55,7 +55,7 @@ export default function Header() {
             <TooltipContent>Notifications</TooltipContent>
           </Tooltip>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <button className="p-2 rounded-md hover:bg-gray-100 transition">
                 <BookMarked size={20} className="text-gray-500" />
               </button>

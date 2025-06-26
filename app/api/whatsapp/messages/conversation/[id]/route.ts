@@ -34,7 +34,8 @@ export async function GET(
                         },
                         skip: 1
                     } : {})
-                }
+                },
+                labels: true
             }
         });
 
@@ -53,6 +54,7 @@ export async function GET(
             id: conversation.id,
             phoneNumber: conversation.phoneNumber,
             name: conversation.name,
+            labels: conversation.labels,
             messages,
             nextCursor,
             hasMore

@@ -29,7 +29,7 @@ wss.on("connection", (ws) => {
   });
 });
 
-function sendMessageToUser(userId, message) {
+export function sendMessageToUser(userId, message) {
   clients.forEach((client) => {
     if (client.userId === userId) {
       client.ws.send(JSON.stringify({ type: "new_message", ...message }));
