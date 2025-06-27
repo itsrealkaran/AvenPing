@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -36,6 +36,9 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import { cn } from "@/lib/utils";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/context/user-context";
 
 // Types for icon identifiers
 export type IconName =
@@ -123,16 +126,44 @@ export default function Sidebar({
   const pathname = usePathname();
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const accountDropdownRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const { setActivePhoneNumber } = useUser();
 
-  const handleLogout = () => {
-    console.log("Logout");
+  const handleLogout = async() => {
+    const response = await axios.post("/api/auth/signout");
+    if (response.status === 200) {
+      router.push("/login");
+    }
   };
 
-  const handleChangeAccount = () => {
-    console.log("Change Account");
+  const handleChangeAccount = (phoneNumber: string) => {
+    setActivePhoneNumber(phoneNumber);
   };
 
   const items = navigationItems.length > 0 ? navigationItems : [];
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+      
+      // Check if click is outside account dropdown
+      if (accountDropdownOpen && accountDropdownRef.current && !accountDropdownRef.current.contains(target)) {
+        setAccountDropdownOpen(false);
+      }
+      
+      // Check if click is outside user menu dropdown
+      if (userMenuOpen && userMenuRef.current && !userMenuRef.current.contains(target)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [accountDropdownOpen, userMenuOpen]);
 
   return (
     <TooltipProvider>
@@ -197,7 +228,7 @@ export default function Sidebar({
         {/* Account */}
         {!isCollapsed && accountInfo.length > 0 && (
           <div className="px-4 pt-2 pb-2">
-            <div className="bg-white rounded-xl shadow flex flex-col items-start px-4 py-3 mb-2 border border-gray-100">
+            <div className="bg-white rounded-xl shadow flex flex-col items-start px-4 py-3 mb-2 border border-gray-100 relative">
               <p className="text-xs text-gray-400 mb-1">Choose Number</p>
               <div className="flex items-center w-full justify-between">
                 <div className="flex items-center gap-2">
@@ -226,7 +257,10 @@ export default function Sidebar({
                 </button>
               </div>
               {accountDropdownOpen && (
-                <div className="absolute left-8 right-8 mt-2 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                <div
+                  ref={accountDropdownRef}
+                  className="absolute left-8 right-8 mt-2 bg-white border border-gray-200 rounded-md shadow-lg z-10"
+                >
                   <ul className="py-1">
                     {accountInfo.length > 0 ? (
                       accountInfo.map((acc, index) => (
@@ -234,7 +268,7 @@ export default function Sidebar({
                           key={index}
                           className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm"
                           onClick={() => {
-                            handleChangeAccount();
+                            handleChangeAccount(acc.number);
                             setAccountDropdownOpen(false);
                           }}
                         >
@@ -347,7 +381,10 @@ export default function Sidebar({
         ) : (
           <div className="mt-auto flex flex-col items-center pb-6">
             {userMenuOpen && (
-              <div className="w-[90%] mb-1 bg-white border-2 border-gray-200 rounded-md shadow-xl z-10 relative">
+              <div 
+                ref={userMenuRef}
+                className="w-[90%] mb-1 bg-white border-2 border-gray-200 rounded-md shadow-xl z-10 relative"
+              >
                 <ul className="py-1">
                   <li
                     className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-red-500 flex items-center gap-2"
@@ -369,18 +406,18 @@ export default function Sidebar({
                 <img
                   src={userProfile.avatar}
                   alt={userProfile.name}
-                  className="h-8 w-8 rounded-full object-cover"
+                  className="h-8 w-8 flex-1 rounded-full flex-shrink-0 object-cover"
                 />
               ) : (
-                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                <div className="h-8 w-8 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center">
                   <User size={16} className="text-gray-500" />
                 </div>
               )}
-              <div className="flex flex-col">
+              <div className="flex flex-col w-[67%]">
                 <p className="text-sm font-medium text-gray-800 leading-tight">
                   {userProfile.name}
                 </p>
-                <p className="text-xs text-gray-500 leading-tight">
+                <p className="text-xs text-gray-500 leading-tight truncate">
                   {userProfile.email}
                 </p>
               </div>

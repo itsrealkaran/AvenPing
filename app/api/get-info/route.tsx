@@ -15,12 +15,15 @@ export async function GET(request: Request) {
         email: session.email as string,
       },
       select: {
+        name: true,
+        email: true,
         whatsAppAccount: {
           select: {
             id: true,
             phoneNumbers: {
               select: {
                 id: true,
+                name: true,
                 phoneNumber: true,
                 phoneNumberId: true,
               },
@@ -31,7 +34,12 @@ export async function GET(request: Request) {
     });
     
     const userData = {
-      whatsappAccount: user?.whatsAppAccount,
+      whatsappAccount: {
+        id: user?.whatsAppAccount?.id,
+        name: user?.name,
+        email: user?.email,
+        phoneNumbers: user?.whatsAppAccount?.phoneNumbers,
+      },
     };
 
     return NextResponse.json({ userData }, { status: 200 });
