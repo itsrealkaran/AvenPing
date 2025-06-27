@@ -22,25 +22,17 @@ export async function GET(request: Request) {
         where: {
             user: {
                 email: session.email
-            },
-        },
-        include: {
-            phoneNumbers: {
-                where: {
-                    id: phoneNumberId
-                }
             }
-        }
+        },
     });
-    if (!account || !account.phoneNumbers || account.phoneNumbers.length === 0) {
+
+    if (!account) {
         return NextResponse.json({ error: 'Account not found' }, { status: 404 });
     }
 
-    const phoneNumber = account.phoneNumbers[0];
-    
     try {
         const profile = await axios.get(
-            `https://graph.facebook.com/v17.0/${phoneNumber.phoneNumberId}/whatsapp_business_profile`,
+            `https://graph.facebook.com/v22.0/${phoneNumberId}/whatsapp_business_profile`,
             {
                 params: {
                     fields: 'about,address,description,email,profile_picture_url,websites',
@@ -48,7 +40,7 @@ export async function GET(request: Request) {
                 }
             }
         );
-        return NextResponse.json(profile.data);
+        return NextResponse.json(profile.data.data[0]);
     } catch (error: any) {
         console.error('WhatsApp API Error:', error.response?.data || error.message);
         if (error.response?.status === 400) {
@@ -87,24 +79,16 @@ export async function POST(request: Request) {
             user: {
                 email: session.email
             }
-        },
-        include: {
-            phoneNumbers: {
-                where: {
-                    id: phoneNumberId
-                }
-            }
         }
     });
 
-    if (!account || !account.phoneNumbers || account.phoneNumbers.length === 0) {
+    if (!account) {
         return NextResponse.json({ error: 'Account not found' }, { status: 404 });
     }
 
-    const phoneNumber = account.phoneNumbers[0];
-
-    const profile = await axios.put(
-        `https://graph.facebook.com/v17.0/${phoneNumber.phoneNumberId}/whatsapp_business_profile`,
+    // console.log(about, address, description, email, profile_picture_url, websites);
+    const profile = await axios.post(
+        `https://graph.facebook.com/v22.0/${phoneNumberId}/whatsapp_business_profile`,
         {
             about,
             address,

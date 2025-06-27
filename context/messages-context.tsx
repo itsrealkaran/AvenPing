@@ -90,6 +90,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const { data: conversation, isLoading: isConversationLoading, error: conversationError } = useQuery({
     queryKey: ['conversation', conversationId],
     queryFn: async () => {
+      if (!conversationId) return null;
       const response = await axios.get(`/api/whatsapp/messages/conversation/${conversationId}`);
       return response.data;
     },

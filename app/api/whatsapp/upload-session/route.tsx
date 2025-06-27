@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     console.log(process.env.META_APP_ID, "meta app id")
 
-    const uploadSession = await axios.post(`https://graph.facebook.com/v22.0/${process.env.META_APP_ID}/uploads`, {
+    const uploadSession = await axios.post(`https://graph.facebook.com/v23.0/${process.env.META_APP_ID}/uploads`, {
       file_name,
       file_length,
       file_type,
@@ -31,8 +31,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ id: uploadSession.data.id, accessToken: userAccount.accessToken }, { status: 200 });
+    return NextResponse.json({ 
+      id: uploadSession.data.id,
+      accessToken: userAccount.accessToken 
+    }, { status: 200 });
   } catch (error) {
     console.log(error)
+    return NextResponse.json({ error: "Failed to create upload session" }, { status: 500 });
   }
 }

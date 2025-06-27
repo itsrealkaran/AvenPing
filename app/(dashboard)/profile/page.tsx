@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Body from "@/components/layout/body";
 import {
   User,
@@ -17,36 +17,45 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import Card from "@/components/messages/message-card";
-
-// Business categories for the dropdown
-const BUSINESS_CATEGORIES = [
-  "Retail",
-  "Food & Beverage",
-  "Health & Wellness",
-  "Professional Services",
-  "Education",
-  "Technology",
-  "Arts & Entertainment",
-  "Travel & Tourism",
-  "Non-profit",
-  "Other",
-];
+import { useProfile } from "@/context/profile-provider";
+import { useUser } from "@/context/user-context";
 
 export default function ProfilePage() {
   // Profile state
   const [profile, setProfile] = useState({
-    displayName: "AvenCRM",
-    phoneNumber: "+1 587-332-4680",
-    category: "Other",
-    description:
-      "AvenCRM is a real-estate CRM that enables realtors to manage their leads, deals and manage campaigns and ads.",
-    address: "7/2 OCL Colony, Rajgangpur, India",
-    email: "karan@duck.com",
-    website: "https://duck.com/",
-    website2: "https://duck.com/",
-    profilePicture: "",
+    displayName: "",
+    phoneNumber: "",
+    about: "",
+    description: "",
+    address: "",
+    email: "",
+    websites: ["", ""],
+    profile_picture_url: "",
   });
   const [isEditing, setIsEditing] = useState(false);
+
+  const { profile: profileDetails, updateProfile } = useProfile();
+  const { userInfo } = useUser();
+
+  useEffect(() => {
+    if (profileDetails) {
+      console.log("profileDetails", profileDetails);
+      setProfile((prev) => {
+        return {
+          displayName: prev.displayName,
+          phoneNumber:
+            userInfo.whatsappAccount.activePhoneNumber?.phoneNumberId ||
+            prev.phoneNumber,
+          about: profileDetails.about || "",
+          description: profileDetails.description || "",
+          address: profileDetails.address || "",
+          email: profileDetails.email || "",
+          websites: profileDetails.websites || ["", ""],
+          profile_picture_url: profileDetails.profile_picture_url || "",
+        };
+      });
+    }
+  }, [profileDetails, userInfo]);
 
   // Reference for the hidden file input
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,30 +67,87 @@ export default function ProfilePage() {
     >
   ) => {
     const { name, value } = e.target;
-    setProfile((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+
+    if (name === "website") {
+      // Handle website array updates
+      setProfile((prev) => ({
+        ...prev,
+        websites: [value, prev.websites[1] || ""],
+      }));
+    } else if (name === "website2") {
+      // Handle second website
+      setProfile((prev) => ({
+        ...prev,
+        websites: [prev.websites[0] || "", value],
+      }));
+    } else {
+      // Handle regular fields
+      setProfile((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   // Handle profile picture upload
   const handleProfilePictureClick = () => {
-    fileInputRef.current?.click();
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = (e) => {
+      const target = e.target as HTMLInputElement;
+      handleProfilePictureChange({ target } as React.ChangeEvent<HTMLInputElement>);
+    };
+    input.click();
   };
 
-  const handleProfilePictureChange = (
+  const handleProfilePictureChange = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setProfile((prev) => ({
-          ...prev,
-          profilePicture: event.target?.result as string,
-        }));
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', 'profile_picture');
+
+        // Upload file to WhatsApp
+        const uploadResponse = await fetch('/api/whatsapp/upload-file', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload file');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        
+        // Update profile with the uploaded image URL
+        const updatedProfile = {
+          ...profile,
+          profile_picture_url: uploadResult.h
+        };
+
+        // Update the profile in WhatsApp
+        await updateProfile(updatedProfile);
+
+        // Update local state for immediate UI feedback
+        setProfile(updatedProfile);
+
+      } catch (error) {
+        console.error('Error uploading profile picture:', error);
+        // Fallback to local preview
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setProfile((prev) => ({
+            ...prev,
+            profile_picture_url: "",
+          }));
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -96,8 +162,13 @@ export default function ProfilePage() {
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically send the data to your backend
-    alert("Profile updated successfully!");
+    console.log("isEditing", isEditing);
+    if (!isEditing) {
+      updateProfile(profile);
+      setIsEditing(false);
+    } else {
+      setIsEditing(true);
+    }
   };
 
   return (
@@ -105,24 +176,24 @@ export default function ProfilePage() {
       <Card className="flex flex-row ">
         {/* Edit Form */}
         <div className="p-6 flex-1">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">WhatsApp Profile</h2>
-            <Button
-              type="submit"
-              size="sm"
-              className="text-sm"
-              onClick={() => setIsEditing(!isEditing)}
-            >
-              {isEditing ? (
-                <CheckCircle className="size-4" />
-              ) : (
-                <Edit3 className="size-4" />
-              )}
-              {isEditing ? "Save Updates" : "Edit Profile"}
-            </Button>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold">WhatsApp Profile</h2>
+              <Button
+                type="submit"
+                size="sm"
+                className="text-sm"
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                {isEditing ? (
+                  <CheckCircle className="size-4" />
+                ) : (
+                  <Edit3 className="size-4" />
+                )}
+                {isEditing ? "Save Updates" : "Edit Profile"}
+              </Button>
+            </div>
+
             {/* Section 1: Basic Info */}
             <div className="grid grid-cols-2 gap-4">
               {/* Left Column: Profile Picture */}
@@ -132,10 +203,10 @@ export default function ProfilePage() {
                     className="relative size-24 rounded-full bg-gray-100 cursor-pointer flex items-center justify-center mb-2 border-2 border-primary hover:border-primary/80 transition-all"
                     onClick={handleProfilePictureClick}
                   >
-                    {profile.profilePicture ? (
+                    {profile.profile_picture_url ? (
                       <>
                         <img
-                          src={profile.profilePicture}
+                          src={profile.profile_picture_url}
                           alt="Profile"
                           className="w-full h-full object-cover rounded-full"
                         />
@@ -151,13 +222,6 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <span className="text-sm text-gray-500">Profile Picture</span>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleProfilePictureChange}
-                  />
                 </div>
                 {/* Right Column: Business Name */}
                 <div className="flex flex-1 flex-col gap-4">
@@ -174,33 +238,26 @@ export default function ProfilePage() {
                       value={profile.displayName}
                       onChange={handleChange}
                       className="w-full"
-                      required
+                      disabled={!isEditing}
                     />
                   </div>
 
                   {/* Right Column: Category */}
                   <div>
                     <label
-                      htmlFor="category"
+                      htmlFor="about"
                       className="block text-sm font-medium text-gray-700 mb-1"
                     >
-                      Business Category
+                      About
                     </label>
-                    <Select
-                      id="category"
-                      name="category"
-                      value={profile.category}
+                    <Input
+                      id="about"
+                      name="about"
+                      value={profile.about}
                       onChange={handleChange}
                       className="w-full"
-                      required
-                    >
-                      <option value="">Select a category</option>
-                      {BUSINESS_CATEGORIES.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </Select>
+                      disabled={!isEditing}
+                    />
                   </div>
                 </div>
               </div>
@@ -210,7 +267,7 @@ export default function ProfilePage() {
                   htmlFor="description"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  About
+                  Description
                 </label>
                 <Textarea
                   id="description"
@@ -221,7 +278,7 @@ export default function ProfilePage() {
                   rows={3}
                   maxLength={300}
                   placeholder="Tell customers about your business"
-                  required
+                  disabled={!isEditing}
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   {profile.description.length}/300 characters
@@ -245,6 +302,7 @@ export default function ProfilePage() {
                   value={profile.address}
                   onChange={handleChange}
                   className="w-full"
+                  disabled={!isEditing}
                 />
               </div>
 
@@ -263,6 +321,7 @@ export default function ProfilePage() {
                   value={profile.email}
                   onChange={handleChange}
                   className="w-full"
+                  disabled={!isEditing}
                 />
               </div>
             </div>
@@ -281,29 +340,31 @@ export default function ProfilePage() {
                   id="website"
                   name="website"
                   type="url"
-                  value={profile.website}
+                  value={profile.websites[0] || ""}
                   onChange={handleChange}
                   className="w-full"
                   placeholder="https://..."
+                  disabled={!isEditing}
                 />
               </div>
 
               {/* Right Column: Submit Button */}
               <div>
                 <label
-                  htmlFor="website"
+                  htmlFor="website2"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Website
+                  Website 2
                 </label>
                 <Input
-                  id="website"
-                  name="website"
+                  id="website2"
+                  name="website2"
                   type="url"
-                  value={profile.website}
+                  value={profile.websites[1] || ""}
                   onChange={handleChange}
                   className="w-full"
                   placeholder="https://..."
+                  disabled={!isEditing}
                 />
               </div>
             </div>
@@ -326,9 +387,9 @@ export default function ProfilePage() {
               </button>
             </div>
             <div className="w-30 h-30 rounded-full bg-gray-200 overflow-hidden mb-2">
-              {profile.profilePicture ? (
+              {profile.profile_picture_url ? (
                 <img
-                  src={profile.profilePicture}
+                  src={profile.profile_picture_url}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
@@ -341,7 +402,10 @@ export default function ProfilePage() {
               {profile.displayName}
             </h3>
             <p className="font-medium text-lg text-gray-800 mt-1">
-              {profile.phoneNumber}
+              {userInfo &&
+                userInfo.whatsappAccount &&
+                userInfo.whatsappAccount.activePhoneNumber &&
+                userInfo.whatsappAccount.activePhoneNumber.phoneNumber}
             </p>
 
             {/* Share button */}
@@ -365,123 +429,135 @@ export default function ProfilePage() {
           {/* Profile information */}
           <div className="p-4 bg-white">
             {/* Description */}
-            <div className="flex mb-2">
-              <div className="mr-4 text-gray-500">
-                <img
-                  src="https://static.xx.fbcdn.net/rsrc.php/v4/yA/r/WnArqot5JSj.png"
-                  alt="Description icon"
-                  style={{
-                    maxWidth: "16px",
-                    width: "16px",
-                    height: "16px",
-                    objectFit: "none",
-                    objectPosition: "-68px -338px",
-                  }}
-                />
+            {profile.description && (
+              <div className="flex mb-2">
+                <div className="mr-4 text-gray-500">
+                  <img
+                    src="https://static.xx.fbcdn.net/rsrc.php/v4/yA/r/WnArqot5JSj.png"
+                    alt="Description icon"
+                    style={{
+                      maxWidth: "16px",
+                      width: "16px",
+                      height: "16px",
+                      objectFit: "none",
+                      objectPosition: "-68px -338px",
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">{profile.description}</p>
               </div>
-              <p className="text-xs text-gray-500">{profile.description}</p>
-            </div>
+            )}
 
             {/* Category */}
-            <div className="flex mb-2">
-              <div className="mr-4 text-gray-500">
-                <img
-                  src="https://static.xx.fbcdn.net/rsrc.php/v4/y3/r/jZeThiu706q.png"
-                  alt="Category icon"
-                  style={{
-                    maxWidth: "16px",
-                    width: "16px",
-                    height: "16px",
-                    objectFit: "none",
-                    objectPosition: "-318px -221px",
-                  }}
-                />
+            {profile.about && (
+              <div className="flex mb-2">
+                <div className="mr-4 text-gray-500">
+                  <img
+                    src="https://static.xx.fbcdn.net/rsrc.php/v4/y3/r/jZeThiu706q.png"
+                    alt="Category icon"
+                    style={{
+                      maxWidth: "16px",
+                      width: "16px",
+                      height: "16px",
+                      objectFit: "none",
+                      objectPosition: "-318px -221px",
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">{profile.about}</p>
               </div>
-              <p className="text-xs text-gray-500">{profile.category}</p>
-            </div>
+            )}
 
             {/* Address */}
-            <div className="flex mb-2">
-              <div className="mr-4 text-gray-500">
-                <img
-                  src="https://static.xx.fbcdn.net/rsrc.php/v4/yJ/r/CJ4Zti0ZGNK.png"
-                  alt="Category icon"
-                  style={{
-                    maxWidth: "16px",
-                    width: "16px",
-                    height: "16px",
-                    objectFit: "none",
-                    objectPosition: "0px -313px",
-                  }}
-                />
+            {profile.address && (
+              <div className="flex mb-2">
+                <div className="mr-4 text-gray-500">
+                  <img
+                    src="https://static.xx.fbcdn.net/rsrc.php/v4/yJ/r/CJ4Zti0ZGNK.png"
+                    alt="Category icon"
+                    style={{
+                      maxWidth: "16px",
+                      width: "16px",
+                      height: "16px",
+                      objectFit: "none",
+                      objectPosition: "0px -313px",
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">{profile.address}</p>
               </div>
-              <p className="text-xs text-gray-500">{profile.address}</p>
-            </div>
+            )}
 
             {/* Email */}
-            <div className="flex mb-2">
-              <div className="mr-4 text-gray-500">
-                <img
-                  src="https://static.xx.fbcdn.net/rsrc.php/v4/yA/r/WnArqot5JSj.png"
-                  alt="Category icon"
-                  style={{
-                    maxWidth: "16px",
-                    width: "16px",
-                    height: "16px",
-                    objectFit: "none",
-                    objectPosition: "-136px -321px",
-                  }}
-                />
+            {profile.email && (
+              <div className="flex mb-2">
+                <div className="mr-4 text-gray-500">
+                  <img
+                    src="https://static.xx.fbcdn.net/rsrc.php/v4/yA/r/WnArqot5JSj.png"
+                    alt="Category icon"
+                    style={{
+                      maxWidth: "16px",
+                      width: "16px",
+                      height: "16px",
+                      objectFit: "none",
+                      objectPosition: "-136px -321px",
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">{profile.email}</p>
               </div>
-              <p className="text-xs text-gray-500">{profile.email}</p>
-            </div>
+            )}
 
             {/* Website */}
-            <div className="flex mb-2">
-              <div className="mr-4 text-gray-500">
-                <img
-                  src="https://static.xx.fbcdn.net/rsrc.php/v4/ym/r/k0gSR9QfhKU.png"
-                  alt="Category icon"
-                  style={{
-                    maxWidth: "16px",
-                    width: "16px",
-                    height: "16px",
-                    objectFit: "none",
-                    objectPosition: "0px -264px",
-                  }}
-                />
+            {profile.websites[0] && (
+              <div className="flex mb-2">
+                <div className="mr-4 text-gray-500">
+                  <img
+                    src="https://static.xx.fbcdn.net/rsrc.php/v4/ym/r/k0gSR9QfhKU.png"
+                    alt="Category icon"
+                    style={{
+                      maxWidth: "16px",
+                      width: "16px",
+                      height: "16px",
+                      objectFit: "none",
+                      objectPosition: "0px -264px",
+                    }}
+                  />
+                </div>
+                <a
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-sky-600"
+                >
+                  {profile.websites[0]}
+                </a>
               </div>
-              <a
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-sky-600"
-              >
-                {profile.website}
-              </a>
-            </div>
+            )}
 
-            <div className="flex mb-2">
-              <div className="mr-4 text-gray-500">
-                <img
-                  src="https://static.xx.fbcdn.net/rsrc.php/v4/ym/r/k0gSR9QfhKU.png"
-                  alt="Category icon"
-                  style={{
-                    maxWidth: "16px",
-                    width: "16px",
-                    height: "16px",
-                    objectFit: "none",
-                    objectPosition: "0px -264px",
-                  }}
-                />
+            {profile.websites[1] && (
+              <div className="flex mb-2">
+                <div className="mr-4 text-gray-500">
+                  <img
+                    src="https://static.xx.fbcdn.net/rsrc.php/v4/ym/r/k0gSR9QfhKU.png"
+                    alt="Category icon"
+                    style={{
+                      maxWidth: "16px",
+                      width: "16px",
+                      height: "16px",
+                      objectFit: "none",
+                      objectPosition: "0px -264px",
+                    }}
+                  />
+                </div>
+                <a
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-sky-600"
+                >
+                  {profile.websites[1]}
+                </a>
               </div>
-              <a
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-sky-600"
-              >
-                {profile.website2}
-              </a>
-            </div>
+            )}
           </div>
           {/* Bottom message */}
           <div className="text-center mt-4 text-xs text-gray-500">

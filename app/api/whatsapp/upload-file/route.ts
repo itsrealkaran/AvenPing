@@ -36,22 +36,25 @@ export async function POST(request: NextRequest) {
     });
 
     const uploadSessionId = uploadSession.data.id;
+    const accessToken = uploadSession.data.accessToken;
+    console.log(accessToken, "accessToken");
+    console.log(uploadSessionId, "uploadSessionId");
 
     // Convert the file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // Upload the file to WhatsApp Business API
     const uploadResponse = await axios.post(
-      `https://graph.facebook.com/v22.0/${uploadSessionId}`,
+      `https://graph.facebook.com/v23.0/upload:${uploadSessionId}`,
       buffer,
       {
         headers: {
-          'Authorization': `OAuth ${uploadSession.data.accessToken}`,
+          'Authorization': `OAuth ${accessToken}`,
           'file_offset': '0',
-          'Content-Type': file.type,
         },
       }
     );
+    console.log(uploadResponse.data);
 
     return NextResponse.json(uploadResponse.data);
   } catch (error) {
