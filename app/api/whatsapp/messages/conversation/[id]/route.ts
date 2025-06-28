@@ -43,6 +43,39 @@ export async function GET(
             return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
         }
 
+        prisma.whatsAppRecipient.update({
+            where: { id: id },
+            data: {
+                lastCheckedTime: new Date(),
+            }
+        }).then(() => {
+            console.log('Last checked time updated');
+            // Update unread messages separately
+            prisma.whatsAppMessage.updateMany({
+                where: {
+                    recipientId: id,
+                    createdAt: {
+                        gt: conversation.lastCheckedTime
+                    },
+                    isOutbound: false,
+                    status: {
+                        not: "READ"
+                    }
+                },
+                data: {
+                    readAt: new Date(),
+                    status: "READ"
+                }
+            }).then(() => {
+                console.log('Unread messages updated');
+            }).catch((err) => {
+                console.log(err);
+            });
+        }).catch((err) => {
+            console.log(err);
+        });
+
+
         // Check if there are more results
         const hasMore = conversation.messages.length > take;
         const messages = hasMore ? conversation.messages.slice(0, take) : conversation.messages;

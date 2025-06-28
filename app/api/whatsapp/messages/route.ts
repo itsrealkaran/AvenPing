@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/jwt';
-import type { Prisma } from '@prisma/client';
+import type { Prisma, WhatsAppMessage } from '@prisma/client';
 
 // Get all messages for an account with pagination
 export async function GET(
@@ -58,6 +58,7 @@ export async function GET(
         id: true,
         phoneNumber: true,
         name: true,
+        lastCheckedTime: true,
         messages: {
           take: 20,
           select: {
@@ -99,7 +100,13 @@ export async function GET(
 
     // Check if there are more results
     const hasMore = messages.length > take;
-    const items = hasMore ? messages.slice(0, take) : messages;
+    let items = hasMore ? messages.slice(0, take) : messages;
+
+    // add a unread count to the items, Compare the lastCheckedTime with the createdAt of the messages
+    items = items.map((item: any) => ({
+      ...item,
+      unreadCount: item.messages.filter((message: WhatsAppMessage) => !message.isOutbound && message.createdAt > item.lastCheckedTime).length
+    }));
 
     // Get the cursor for the next page
     const nextCursor = hasMore ? items[items.length - 1].createdAt.toISOString() : null;
