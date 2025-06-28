@@ -33,6 +33,7 @@ const ConversationList = ({
             phoneNumber,
             avatar:  "https://placehold.co/150x150",
             isOnline: true,
+            unreadCount: conversation.unreadCount,
           };
           const lastMsg = messages[messages.length - 1];
           const timeAgo = lastMsg
@@ -74,15 +75,17 @@ const ConversationList = ({
                       {contact.name}
                     </h3>
                   </div>
-                  <span
-                    className={`text-xs ${
-                      conversation.messages.length > 0
-                        ? "font-semibold text-unread-timestamp"
-                        : "text-gray-500"
-                    } flex-shrink-0`}
-                  >
-                    {timeAgo}
-                  </span>
+                  {!isSelected && conversation.unreadCount && conversation.unreadCount > 0 ? (
+                    <span
+                      className={`text-xs ${
+                        conversation.unreadCount > 0
+                          ? "font-semibold text-unread-timestamp"
+                          : "text-gray-500"
+                      } flex-shrink-0`}
+                      >
+                        {timeAgo}
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className="flex justify-between items-center">
@@ -91,11 +94,11 @@ const ConversationList = ({
                     {lastMsg?.message || "No messages yet"}
                   </p>
 
-                  {conversation.messages.length > 0 && (
+                  {!isSelected && conversation.unreadCount && conversation.unreadCount > 0 ? (
                     <div className="ml-2 bg-primary text-white rounded-full h-5 w-5 flex items-center justify-center text-xs flex-shrink-0">
-                      {conversation.messages.length}
+                      {conversation.unreadCount}
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>

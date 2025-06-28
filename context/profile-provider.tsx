@@ -32,10 +32,22 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   // Set phone number ID when user info is available
   const updatePhoneNumberId = useCallback(() => {
-    if (user?.whatsappAccount?.activePhoneNumber?.phoneNumberId) {
-      setPhoneNumberId(user.whatsappAccount.activePhoneNumber.phoneNumberId);
+    if (user?.whatsappAccount?.phoneNumbers?.[0]?.id) {
+      const newPhoneNumberId = user.whatsappAccount.phoneNumbers[0].id;
+      
+      // Only update if the phone number ID has actually changed
+      if (newPhoneNumberId !== phoneNumberId) {
+        setPhoneNumberId(newPhoneNumberId);
+        
+        // Clear profile query to force fresh data fetch
+        queryClient.removeQueries({ queryKey: ['whatsapp-profile'] });
+      }
+    } else {
+      // Reset if no user data
+      setPhoneNumberId(null);
+      queryClient.removeQueries({ queryKey: ['whatsapp-profile'] });
     }
-  }, [user]);
+  }, [user, phoneNumberId, queryClient]);
 
   // Update phone number ID when user info changes
   useEffect(() => {

@@ -21,6 +21,7 @@ interface Conversation {
   phoneNumber: string;
   name: string;
   messages: Message[];
+  unreadCount?: number;
 }
 
 interface MessagesContextType {
@@ -38,6 +39,7 @@ interface MessagesContextType {
   label: string | null;
   setLabel: (label: string | null) => void;
   addRealTimeMessage: (message: Message, conversationId: string) => void;
+  updateConversationUnreadCount: (conversationId: string, unreadCount: number) => void;
 }
 
 const MessagesContext = createContext<MessagesContextType | undefined>(undefined);
@@ -54,9 +56,30 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (user?.whatsappAccount?.phoneNumbers[0].id) {
-      setPhoneNumberId(user?.whatsappAccount?.phoneNumbers[0].id);
+      const newPhoneNumberId = user.whatsappAccount.phoneNumbers[0].id;
+      
+      // Only update if the phone number ID has actually changed
+      if (newPhoneNumberId !== phoneNumberId) {
+        setPhoneNumberId(newPhoneNumberId);
+        
+        // Reset states when user changes
+        setSearchQuery('');
+        setLabel(null);
+        setConversationId(null);
+        
+        // Clear all related queries to force fresh data fetch
+        queryClient.removeQueries({ queryKey: ['messages'] });
+        queryClient.removeQueries({ queryKey: ['conversation'] });
+        queryClient.removeQueries({ queryKey: ['labels'] });
+      }
+    } else {
+      // Reset everything if no user data
+      setPhoneNumberId(null);
+      setSearchQuery('');
+      setLabel(null);
+      setConversationId(null);
     }
-  }, [user]);
+  }, [user, phoneNumberId, queryClient]);
 
   // Debounce search query
   useEffect(() => {
@@ -162,6 +185,21 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
             return {
               ...conv,
               messages: [...conv.messages, message]
+            };
+          }
+          return conv;
+        });
+      });
+    },
+    updateConversationUnreadCount: (conversationId: string, unreadCount: number) => {
+      queryClient.setQueryData(['messages', phoneNumberId, debouncedSearchQuery, label], (oldData: any) => {
+        if (!oldData) return oldData;
+        
+        return oldData.map((conv: Conversation) => {
+          if (conv.id === conversationId) {
+            return {
+              ...conv,
+              unreadCount
             };
           }
           return conv;

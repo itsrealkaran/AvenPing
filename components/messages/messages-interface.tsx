@@ -17,6 +17,7 @@ export type Contact = {
   phone: string;
   isOnline?: boolean;
   label?: string;
+  unreadCount?: number;
 };
 
 export type Message = {
@@ -32,6 +33,7 @@ export type Conversation = {
   phoneNumber: string;
   name: string;
   messages: Message[];
+  unreadCount?: number;
 };
 
 type FilterType = "all" | "unread" | "label";
@@ -43,7 +45,7 @@ const Loading = () => (
 );
 
 const MessagesInterface = () => {
-  const { conversations, sendMessage, isLoading, searchQuery, setSearchQuery, labels, isLabelsLoading, labelsError, setLabel, addRealTimeMessage } = useMessages();
+  const { conversations, sendMessage, isLoading, searchQuery, setSearchQuery, labels, isLabelsLoading, labelsError, setLabel, addRealTimeMessage, updateConversationUnreadCount } = useMessages();
 
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
@@ -141,6 +143,11 @@ const MessagesInterface = () => {
 
   const handleConversationSelect = (conversation: Conversation) => {
     setSelectedConversationId(conversation.id);
+    
+    // Reset unread count for the selected conversation
+    if (conversation.unreadCount && conversation.unreadCount > 0) {
+      updateConversationUnreadCount(conversation.id, 0);
+    }
   };
 
   const selectedConversation = conversations?.find(

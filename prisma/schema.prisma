@@ -3,7 +3,7 @@
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+  
 generator client {
   provider = "prisma-client-js" 
 }
@@ -16,6 +16,14 @@ datasource db {
 enum ActivityStatus {
   ACTIVE
   INACTIVE
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
 }
 
 // Unified User Model
@@ -89,6 +97,8 @@ model WhatsAppRecipient {
 
   hasConversation Boolean @default(false)
 
+  lastCheckedTime DateTime @default(now())
+
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
   messages  WhatsAppMessage[]
@@ -119,7 +129,7 @@ model WhatsAppCampaign {
 model WhatsAppMessage {
   id                    String               @id @default(cuid())
   wamid                 String? // WhatsApp Message ID for delivery tracking
-  status                String               @default("PENDING") // PENDING, SENT, DELIVERED, READ, FAILED
+  status                MessageStatus        @default(PENDING)
   message               String?
   isOutbound            Boolean              @default(false)
   errorMessage          String?
