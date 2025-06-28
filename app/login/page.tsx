@@ -46,34 +46,34 @@ export default function Login() {
 
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent" />
 
-      <div className="relative z-10 w-full max-w-lg mx-auto px-6 py-6 flex flex-col items-center justify-center space-y-1">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Triangle className="w-8 h-8 text-[#43A2C9] fill-current" />
-            <span className="text-3xl md:text-4xl font-bold text-gray-800">
+      <div className="relative z-10 w-full max-w-lg mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col items-center justify-center space-y-1">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="flex items-center justify-center gap-2 mb-2 sm:mb-3">
+            <Triangle className="w-6 h-6 sm:w-8 sm:h-8 text-[#43A2C9] fill-current" />
+            <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800">
               <span className="text-[#43A2C9]">Aven</span>Ping
             </span>
           </div>
-          <p className="text-gray-600 text-sm">
+          <p className="text-gray-600 text-xs sm:text-sm">
             Your Business Communication Hub
           </p>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border-4 border-black/10 p-8 w-full max-w-lg">
-          <div className="text-center mb-8">
-            <h1 className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border-4 border-black/10 p-6 sm:p-8 w-full max-w-lg">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 mb-1 sm:mb-2">
               Sign in to your account
             </h1>
-            <p className="text-gray-600 text-xs md:text-sm">
+            <p className="text-gray-600 text-xs sm:text-sm">
               Welcome back! Please enter your details.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2"
               >
                 Email or Username
               </label>
@@ -82,7 +82,7 @@ export default function Login() {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#43A2C9] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#43A2C9] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400 text-sm sm:text-base"
                 placeholder="Enter your email"
                 required
               />
@@ -91,9 +91,9 @@ export default function Login() {
             <div>
               <label
                 htmlFor="Password"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2"
               >
-                password
+                Password
               </label>
               <div className="relative">
                 <input
@@ -101,7 +101,7 @@ export default function Login() {
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#43A2C9] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400 pr-12"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#43A2C9] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400 pr-12 text-sm sm:text-base"
                   placeholder="Enter your password"
                   required
                 />
@@ -110,7 +110,11 @@ export default function Login() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? (
+                    <EyeOff size={18} className="sm:w-5 sm:h-5" />
+                  ) : (
+                    <Eye size={18} className="sm:w-5 sm:h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -118,7 +122,7 @@ export default function Login() {
             <div className="text-left">
               <Link
                 href="#"
-                className="text-sm text-[#43A2C9] hover:text-cyan-600 transition-colors"
+                className="text-xs sm:text-sm text-[#43A2C9] hover:text-cyan-600 transition-colors"
               >
                 Forgot Password
               </Link>
@@ -127,12 +131,12 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#43A2C9] hover:bg-cyan-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-[#43A2C9] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#43A2C9] hover:bg-cyan-600 text-white font-medium py-2.5 sm:py-3 px-4 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-[#43A2C9] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Signing in...
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  <span className="text-xs sm:text-sm">Signing in...</span>
                 </div>
               ) : (
                 "Sign In"
@@ -140,8 +144,8 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="mt-8 text-center space-y-4">
-            <p className="text-xs text-gray-500">
+          <div className="mt-6 sm:mt-8 text-center space-y-3 sm:space-y-4">
+            <p className="text-xs text-gray-500 leading-relaxed">
               By proceeding, you agree to our{" "}
               <Link
                 href="/terms-of-service"
@@ -158,7 +162,7 @@ export default function Login() {
               </Link>
             </p>
 
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               {"Don't have an account? "}
               <Link
                 href="/signup"
@@ -170,7 +174,7 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="mt-6 text-center">
+        <div className="mt-4 sm:mt-6 text-center">
           <p className="text-xs text-gray-500">
             Demo credentials: pushkarkamble23@gmail.com / 12345678
           </p>
