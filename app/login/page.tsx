@@ -1,15 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Triangle } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
-import { useRouter } from "next/navigation";
 
-const Page: React.FC = () => {
+export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -41,109 +40,142 @@ const Page: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-hidden">
-      {/* Decorative elements */}
-      <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-whatsapp/20 to-transparent" />
-      <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-whatsapp/10 blur-3xl" />
-      <div className="absolute -bottom-10 -right-10 w-40 h-40 rounded-full bg-whatsapp/10 blur-3xl" />
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      {/* So this is the bg I have added, ig you can change this with themes */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#DFFFF9] via-white to-[#FDCEFF]" />
 
-      <div className="w-full max-w-md relative">
-        <div className="mb-8 flex flex-col items-center">
-          <div className="text-4xl font-bold text-whatsapp-dark mb-2 animate-fadeIn">
-            AvenPing
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent" />
+
+      <div className="relative z-10 w-full max-w-lg mx-auto px-6 py-6 flex flex-col items-center justify-center space-y-1">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Triangle className="w-8 h-8 text-[#43A2C9] fill-current" />
+            <span className="text-3xl md:text-4xl font-bold text-gray-800">
+              <span className="text-[#43A2C9]">Aven</span>Ping
+            </span>
           </div>
-          <div className="text-gray-600 text-sm">
+          <p className="text-gray-600 text-sm">
             Your Business Communication Hub
-          </div>
+          </p>
         </div>
 
-        <div className="border shadow-2xl backdrop-blur-sm bg-white/90 animate-slideUp rounded-lg overflow-hidden">
-          <div className="p-6 pb-4 space-y-1">
-            <h2 className="text-2xl font-bold text-center">Welcome Back</h2>
-            <p className="text-sm text-center text-gray-600">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border-4 border-black/10 p-8 w-full max-w-lg">
+          <div className="text-center mb-8">
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">
               Sign in to your account
+            </h1>
+            <p className="text-gray-600 text-xs md:text-sm">
+              Welcome back! Please enter your details.
             </p>
           </div>
-          <div className="p-6 pt-2">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <div className="relative group">
-                  <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400 transition-colors group-hover:text-whatsapp" />
-                  <Input
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 transition-all border-gray-200 focus:border-whatsapp focus:ring-whatsapp hover:border-gray-300"
-                    required
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <div className="relative group">
-                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400 transition-colors group-hover:text-whatsapp" />
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 transition-all border-gray-200 focus:border-whatsapp focus:ring-whatsapp hover:border-gray-300"
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:text-whatsapp"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400" />
-                    ) : (
-                      <Eye className="h-5 w-5 text-gray-400" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-whatsapp hover:bg-whatsapp-dark transition-colors duration-200 shadow-lg hover:shadow-whatsapp/50"
-                disabled={isLoading}
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Signing in...
-                  </div>
-                ) : (
-                  "Sign in"
-                )}
-              </Button>
-            </form>
-            <div className="mt-6 text-center text-sm">
-              <span className="text-gray-600">dummy credentials</span>
-              <div>
-                <span>email: pushkarkamble23@gmail.com</span>
-                <span>password: 12345678</span>
+                Email or Username
+              </label>
+              <input
+                type="text"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#43A2C9] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                placeholder="Enter your email"
+                required
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="Password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#43A2C9] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400 pr-12"
+                  placeholder="Enter your password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
               </div>
             </div>
 
-            <div className="mt-6 text-center text-sm">
-              <span className="text-gray-600">Don't have an account? </span>
+            <div className="text-left">
+              <Link
+                href="#"
+                className="text-sm text-[#43A2C9] hover:text-cyan-600 transition-colors"
+              >
+                Forgot Password
+              </Link>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-[#43A2C9] hover:bg-cyan-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-[#43A2C9] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Signing in...
+                </div>
+              ) : (
+                "Sign In"
+              )}
+            </button>
+          </form>
+
+          <div className="mt-8 text-center space-y-4">
+            <p className="text-xs text-gray-500">
+              By proceeding, you agree to our{" "}
+              <Link
+                href="/terms-of-service"
+                className="text-[#43A2C9] hover:text-cyan-600"
+              >
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/privacy-policy"
+                className="text-[#43A2C9] hover:text-cyan-600"
+              >
+                Privacy Policy
+              </Link>
+            </p>
+
+            <p className="text-sm text-gray-600">
+              {"Don't have an account? "}
               <Link
                 href="/signup"
-                className="text-whatsapp hover:underline font-medium transition-colors"
+                className="text-[#43A2C9] hover:text-cyan-600 font-medium"
               >
                 Sign up
               </Link>
-            </div>
+            </p>
           </div>
+        </div>
+
+        <div className="mt-6 text-center">
+          <p className="text-xs text-gray-500">
+            Demo credentials: pushkarkamble23@gmail.com / 12345678
+          </p>
         </div>
       </div>
     </div>
   );
-};
-
-export default Page;
+}
