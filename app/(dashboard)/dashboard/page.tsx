@@ -24,11 +24,12 @@ export default function DashboardPage() {
   const [isVerified, setIsVerified] = useState(true);
 
   const handleRegister = (pin: string, phoneNumberId: string) => {
-    axios.post("/api/whatsapp/phone-numbers/register", {
-      pin,
-      phoneNumberId,
-    })
-    .then((res) => {
+    axios
+      .post("/api/whatsapp/phone-numbers/register", {
+        pin,
+        phoneNumberId,
+      })
+      .then((res) => {
         if (res.data.success) {
           setIsRegistered(true);
           setShowRegisterModal(false);
@@ -55,12 +56,13 @@ export default function DashboardPage() {
             setIsConnected(true);
           });
 
-          axios.post("/api/whatsapp", {
-            code: response.authResponse.code,
-          }).then((res) => {
-            console.log(res.data);
-          });
-
+          axios
+            .post("/api/whatsapp", {
+              code: response.authResponse.code,
+            })
+            .then((res) => {
+              console.log(res.data);
+            });
         } else {
           console.log("User cancelled login or did not fully authorize.");
         }
@@ -146,7 +148,7 @@ export default function DashboardPage() {
             isVerified={isVerified}
             onVerify={() => {
               window.open(
-                "https://business.facebook.com/settings/info",
+                "https://business.facebook.com/latest/settings/security_center/",
                 "_blank"
               );
             }}
