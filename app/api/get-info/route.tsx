@@ -26,6 +26,8 @@ export async function GET(request: Request) {
                 name: true,
                 phoneNumber: true,
                 phoneNumberId: true,
+                isRegistered: true,
+                codeVerificationStatus: true,
               },
             },
           }
@@ -39,6 +41,7 @@ export async function GET(request: Request) {
         name: user?.name,
         email: user?.email,
         phoneNumbers: user?.whatsAppAccount?.phoneNumbers,
+        codeVerificationStatus: user?.whatsAppAccount?.phoneNumbers[0]?.codeVerificationStatus,
       },
     };
 

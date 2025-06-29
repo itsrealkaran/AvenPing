@@ -3,12 +3,10 @@ import { CheckCircle, AlertCircle } from "lucide-react";
 
 type Props = {
   isVerified: boolean;
-  onVerify: () => void;
 };
 
 export default function BusinessVerificationCardContent({
   isVerified,
-  onVerify,
 }: Props) {
   return (
     <div className="flex items-center justify-between">
@@ -29,9 +27,6 @@ export default function BusinessVerificationCardContent({
               unlock all WhatsApp Business features.
             </p>
           </div>
-          <Button onClick={onVerify} variant="outline">
-            Verify Now
-          </Button>
         </div>
       )}
     </div>

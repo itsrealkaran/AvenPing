@@ -12,12 +12,16 @@ interface UserInfo {
         name: string;
         phoneNumber: string;
         phoneNumberId: string;
+        isRegistered: boolean;
+        codeVerificationStatus: string;
       }[];
       activePhoneNumber: {
         id: string;
         name: string;
         phoneNumber: string;
         phoneNumberId: string;
+        isRegistered: boolean;
+        codeVerificationStatus: string;
       } | null;
     };
   };

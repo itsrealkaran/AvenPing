@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Body from "@/components/layout/body";
 import Card from "@/components/ui/card";
 import RegisterNumberModal from "@/components/dashboard/register-number-modal";
@@ -13,12 +13,35 @@ import MetricCard from "@/components/analytics/metric-card";
 import { sampleMetrics } from "@/components/analytics/data";
 import Link from "next/link";
 import axios from "axios";
+import { useUser } from "@/context/user-context";
 
 export default function DashboardPage() {
   // Register Number state
   const [isRegistered, setIsRegistered] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+
+  const { userInfo } = useUser()
+
+  useEffect(() => {
+    if (userInfo?.whatsappAccount?.phoneNumbers?.length > 0) {
+      setIsConnected(true);
+    } else {
+      setIsConnected(false);
+    }
+
+    if (userInfo?.whatsappAccount?.activePhoneNumber?.isRegistered) {
+      setIsRegistered(true);
+    } else {
+      setIsRegistered(false);
+    }
+
+    if (userInfo?.whatsappAccount?.activePhoneNumber?.codeVerificationStatus === 'VERIFIED') {
+      setIsVerified(true);
+    } else {
+      setIsVerified(false);
+    }
+  }, [userInfo]);
 
   // Business Verification state
   const [isVerified, setIsVerified] = useState(true);
@@ -144,12 +167,6 @@ export default function DashboardPage() {
         >
           <BusinessVerificationCardContent
             isVerified={isVerified}
-            onVerify={() => {
-              window.open(
-                "https://business.facebook.com/settings/info",
-                "_blank"
-              );
-            }}
           />
         </Card>
       </div>
