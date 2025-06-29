@@ -169,7 +169,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     },
     getConversation: async (conversationId: string) => {
       setConversationId(conversationId);
-      return conversation;
+      return conversation as Conversation & { nextCursor?: string | null; hasMore?: boolean };
     },
     labels,
     isLabelsLoading,

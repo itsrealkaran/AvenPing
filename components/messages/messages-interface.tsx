@@ -34,6 +34,8 @@ export type Conversation = {
   name: string;
   messages: Message[];
   unreadCount?: number;
+  nextCursor?: string | null;
+  hasMore?: boolean;
 };
 
 type FilterType = "all" | "unread" | "label";

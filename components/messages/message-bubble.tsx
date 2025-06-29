@@ -6,9 +6,11 @@ import { format } from "date-fns";
 
 interface MessageBubbleProps {
   message: Message;
+  searchQuery?: string;
+  isCurrentMatch?: boolean;
 }
 
-const MessageBubble = ({ message }: MessageBubbleProps) => {
+const MessageBubble = ({ message, searchQuery, isCurrentMatch }: MessageBubbleProps) => {
   const isMe = message.isOutbound;
   const time = format(new Date(message.createdAt), "h:mm a");
 
@@ -23,6 +25,24 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
       default:
         return null;
     }
+  };
+
+  // Function to highlight search query in text
+  const highlightText = (text: string, query: string) => {
+    if (!query || !text) return text;
+    
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, index) => 
+      regex.test(part) ? (
+        <mark key={index} className="bg-yellow-200 px-1 rounded">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
   };
 
   return (
@@ -59,7 +79,9 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
           </div>
         )} */}
 
-        <div className="text-sm">{message.message}</div>
+        <div className="text-sm">
+          {searchQuery ? highlightText(message.message, searchQuery) : message.message}
+        </div>
 
         <div className="flex items-center justify-end gap-1 mt-1">
           <span className="text-[10px] text-gray-500">{time}</span>

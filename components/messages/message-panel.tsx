@@ -1,11 +1,13 @@
 "use client";
 
-import { Conversation } from "./messages-interface";
+import { Conversation, Message } from "./messages-interface";
 import MessageList from "./message-list";
 import MessageInput from "./message-input";
-import { Bookmark, Search, MoreVertical, User } from "lucide-react";
+import { Bookmark, Search, MoreVertical, User, X, ChevronUp, ChevronDown, Loader2 } from "lucide-react";
 import { useMessages } from "@/context/messages-context";
-import { useEffect } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { Input } from "@/components/ui/input";
+import axios from "axios";
 
 interface MessagePanelProps {
   conversation: Conversation;
@@ -15,6 +17,19 @@ interface MessagePanelProps {
 const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
   let { name, phoneNumber, messages } = conversation;
   const { getConversation } = useMessages();
+  
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const [matchingMessageIds, setMatchingMessageIds] = useState<string[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [searchAttempts, setSearchAttempts] = useState(0);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [allMessages, setAllMessages] = useState<Message[]>(messages);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const messageListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (conversation.id) {
@@ -23,11 +38,180 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
           name = conversation.name;
           phoneNumber = conversation.phoneNumber;
           messages = conversation.messages;
+          setAllMessages(conversation.messages);
+          setNextCursor((conversation as any).nextCursor || null);
+          setHasMoreMessages((conversation as any).hasMore || false);
         }
       });
     }
-    
   }, [conversation.id]);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Find matching messages when search query changes
+  useEffect(() => {
+    if (!debouncedSearchQuery.trim()) {
+      setMatchingMessageIds([]);
+      setCurrentMatchIndex(0);
+      setSearchAttempts(0);
+      return;
+    }
+
+    const matchingIds = allMessages
+      .filter((message) =>
+        message.message.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+      )
+      .map((message) => message.id);
+
+    setMatchingMessageIds(matchingIds);
+    setCurrentMatchIndex(0);
+    setSearchAttempts(0);
+
+    // If no matches found and we have more messages, try to fetch more
+    if (matchingIds.length === 0 && hasMoreMessages && searchAttempts < 3) {
+      fetchMoreMessagesForSearch();
+    }
+  }, [debouncedSearchQuery, allMessages, hasMoreMessages, searchAttempts]);
+
+  // Fetch more messages for search
+  const fetchMoreMessagesForSearch = async () => {
+    if (isLoadingMore || searchAttempts >= 3 || !hasMoreMessages || !nextCursor) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+    setSearchAttempts(prev => prev + 1);
+
+    try {
+      const response = await axios.get(`/api/whatsapp/messages/conversation/${conversation.id}?cursor=${nextCursor}&limit=50`);
+      const newConversation = response.data;
+      
+      // Update messages with new ones
+      const updatedMessages = [...allMessages, ...newConversation.messages];
+      setAllMessages(updatedMessages);
+      
+      // Update conversation data
+      setNextCursor(newConversation.nextCursor);
+      setHasMoreMessages(newConversation.hasMore);
+
+      // Search in the new messages
+      const newMatchingIds = updatedMessages
+        .filter((message) =>
+          message.message.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+        )
+        .map((message) => message.id);
+
+      setMatchingMessageIds(newMatchingIds);
+      setCurrentMatchIndex(0);
+
+      // If still no matches and we can fetch more, try again
+      if (newMatchingIds.length === 0 && newConversation.hasMore && searchAttempts < 3) {
+        setTimeout(() => {
+          fetchMoreMessagesForSearch();
+        }, 500); // Small delay to prevent too many rapid requests
+      }
+    } catch (error) {
+      console.error('Error fetching more messages for search:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  // Scroll to current match
+  useEffect(() => {
+    if (matchingMessageIds.length > 0 && currentMatchIndex < matchingMessageIds.length) {
+      const messageId = matchingMessageIds[currentMatchIndex];
+      const messageElement = document.getElementById(`message-${messageId}`);
+      
+      if (messageElement) {
+        messageElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+        
+        // Add temporary highlight
+        messageElement.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-50');
+        setTimeout(() => {
+          messageElement.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-50');
+        }, 2000);
+      }
+    }
+  }, [currentMatchIndex, matchingMessageIds]);
+
+  // Close search dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearch(false);
+        setSearchQuery("");
+        setDebouncedSearchQuery("");
+        setMatchingMessageIds([]);
+        setCurrentMatchIndex(0);
+        setSearchAttempts(0);
+      }
+    };
+
+    if (showSearch) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSearch]);
+
+  const handleSearchToggle = () => {
+    setShowSearch(!showSearch);
+    if (!showSearch) {
+      // Focus the input after a short delay to ensure the dropdown is rendered
+      setTimeout(() => {
+        const input = searchRef.current?.querySelector('input');
+        input?.focus();
+      }, 100);
+    } else {
+      setSearchQuery("");
+      setDebouncedSearchQuery("");
+      setMatchingMessageIds([]);
+      setCurrentMatchIndex(0);
+      setSearchAttempts(0);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setDebouncedSearchQuery("");
+    setMatchingMessageIds([]);
+    setCurrentMatchIndex(0);
+    setSearchAttempts(0);
+    setShowSearch(false);
+  };
+
+  const goToNextMatch = () => {
+    if (matchingMessageIds.length > 0) {
+      setCurrentMatchIndex((prev) => 
+        prev < matchingMessageIds.length - 1 ? prev + 1 : 0
+      );
+    }
+  };
+
+  const goToPreviousMatch = () => {
+    if (matchingMessageIds.length > 0) {
+      setCurrentMatchIndex((prev) => 
+        prev > 0 ? prev - 1 : matchingMessageIds.length - 1
+      );
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -45,9 +229,78 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
         </div>
 
         <div className="flex items-center gap-4">
-          <button className="text-gray-500 hover:text-gray-700">
-            <Search size={18} />
-          </button>
+          <div className="relative" ref={searchRef}>
+            <button 
+              className={`text-gray-500 hover:text-gray-700 flex items-center justify-center ${showSearch ? 'text-blue-600' : ''}`}
+              onClick={handleSearchToggle}
+            >
+              <Search size={18} />
+            </button>
+            
+            {showSearch && (
+              <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <div className="p-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search messages..."
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                      className="pl-10 pr-8"
+                    />
+                    <button
+                      onClick={clearSearch}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                  
+                  {debouncedSearchQuery && (
+                    <div className="mt-3">
+                      {isLoadingMore ? (
+                        <div className="flex items-center gap-2 text-sm text-blue-700">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Searching older messages...
+                        </div>
+                      ) : matchingMessageIds.length > 0 ? (
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-blue-700">
+                            {currentMatchIndex + 1} of {matchingMessageIds.length} matches
+                          </div>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={goToPreviousMatch}
+                              className="p-1 text-gray-500 hover:text-gray-700 rounded"
+                              title="Previous match"
+                            >
+                              <ChevronUp size={16} />
+                            </button>
+                            <button
+                              onClick={goToNextMatch}
+                              className="p-1 text-gray-500 hover:text-gray-700 rounded"
+                              title="Next match"
+                            >
+                              <ChevronDown size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ) : searchAttempts >= 3 ? (
+                        <div className="text-sm text-gray-500">
+                          No messages found
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-500">
+                          No messages found
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          
           <button className="text-gray-500 hover:text-gray-700">
             <Bookmark size={18} />
           </button>
@@ -58,6 +311,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
       </div>
 
       <div
+        ref={messageListRef}
         className="flex-1 p-4 overflow-y-auto"
         style={{
           backgroundImage: 'url("/message-bg.png")',
@@ -66,7 +320,12 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
           backgroundColor: "#f0f2f5",
         }}
       >
-        <MessageList messages={messages} />
+        <MessageList 
+          messages={allMessages} 
+          searchQuery={debouncedSearchQuery}
+          currentMatchIndex={currentMatchIndex}
+          matchingMessageIds={matchingMessageIds}
+        />
       </div>
 
       <div className="p-3 border-t border-gray-200 bg-white flex-shrink-0">
