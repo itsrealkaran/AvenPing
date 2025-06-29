@@ -2,7 +2,8 @@
 import CallToAction from "@/components/landing/call-to-action";
 import Faqs from "@/components/landing/faqs";
 import Features from "@/components/landing/features";
-import Footer from "@/components/landing/footer";
+import { Footer } from "@/components/landing/footer";
+
 import Hero from "@/components/landing/hero";
 import Integrations from "@/components/landing/integrations";
 import Introduction from "@/components/landing/introduction";
@@ -56,7 +57,7 @@ export default function Home() {
     }
   }, [])
     return (
-        <div ref={scrollRef} data-scroll-container>
+        <div ref={scrollRef} data-scroll-container className="bg-[#cbf9fe] selection:bg-cyan-500 selection:text-white ">
             <Navbar />
             <Hero />
             <LogoTicker />
@@ -67,6 +68,7 @@ export default function Home() {
             <Faqs />
             <CallToAction />
             <Footer />
+            
         </div>
     );
 }

@@ -69,8 +69,8 @@ export default function Pricing() {
   };
 
   return (
-    <section className="py-24 bg-gray-50">
-      <div className="container">
+    <section className="py-24 bg-gray-100 ">
+      <div className="container max-w-6xl mx-auto p-[1rem] sm:p-[0rem]">
         <div className="flex justify-center">
           <Tag>Pricing</Tag>
         </div>

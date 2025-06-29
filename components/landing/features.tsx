@@ -18,7 +18,7 @@ import {
   Globe,
   Lock,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, easeOut } from "framer-motion";
 import { GlowingEffect } from "@/components/landing/ui/glowing-effect";
 
 const features = [
@@ -46,7 +46,7 @@ const cardVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: "easeOut" },
+    transition: { duration: 0.6, ease: easeOut },
   },
 };
 
@@ -106,7 +106,7 @@ const FeatureCard = ({
 export default function Features() {
   return (
     <section className="py-24 bg-gradient-to-b from-white to-gray-50/80">
-      <div className="container">
+      <div className="container max-w-6xl mx-auto p-[1rem] sm:p-[0rem]">
         <div className="flex justify-center">
           <Tag>Features</Tag>
         </div>
