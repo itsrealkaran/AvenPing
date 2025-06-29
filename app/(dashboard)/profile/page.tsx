@@ -31,6 +31,7 @@ export default function ProfilePage() {
     email: "",
     websites: ["", ""],
     profile_picture_url: "",
+    vertical: "",
   });
   const [isEditing, setIsEditing] = useState(false);
 
@@ -39,7 +40,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (profileDetails) {
-      console.log("profileDetails", profileDetails);
       setProfile((prev) => {
         return {
           displayName: prev.displayName,
@@ -52,6 +52,7 @@ export default function ProfilePage() {
           email: profileDetails.email || "",
           websites: profileDetails.websites || ["", ""],
           profile_picture_url: profileDetails.profile_picture_url || "",
+          vertical: profileDetails.vertical || "",
         };
       });
     }
@@ -155,7 +156,7 @@ export default function ProfilePage() {
     e.stopPropagation();
     setProfile((prev) => ({
       ...prev,
-      profilePicture: "",
+      profile_picture_url: "",
     }));
   };
 
@@ -169,6 +170,34 @@ export default function ProfilePage() {
     } else {
       setIsEditing(true);
     }
+  };
+
+  // Helper function to get category display name
+  const getCategoryDisplayName = (categoryValue: string) => {
+    const categoryMap: { [key: string]: string } = {
+      'ALCOHOL': 'Alcoholic Beverages',
+      'APPAREL': 'Clothing and Apparel',
+      'AUTO': 'Automotive',
+      'BEAUTY': 'Beauty, Spa and Salon',
+      'EDU': 'Education',
+      'ENTERTAIN': 'Entertainment',
+      'EVENT_PLAN': 'Event Planning and Service',
+      'FINANCE': 'Finance and Banking',
+      'GOVT': 'Public Service',
+      'GROCERY': 'Food and Grocery',
+      'HEALTH': 'Medical and Health',
+      'HOTEL': 'Hotel and Lodging',
+      'NONPROFIT': 'Non-profit',
+      'ONLINE_GAMBLING': 'Online Gambling & Gaming',
+      'OTC_DRUGS': 'Over-the-Counter Drugs',
+      'OTHER': 'Other',
+      'PHYSICAL_GAMBLING': 'Non-Online Gambling & Gaming (E.g. Brick and mortar)',
+      'PROF_SERVICES': 'Professional Services',
+      'RESTAURANT': 'Restaurant',
+      'RETAIL': 'Shopping and Retail',
+      'TRAVEL': 'Travel and Transportation',
+    };
+    return categoryMap[categoryValue] || categoryValue;
   };
 
   return (
@@ -240,9 +269,9 @@ export default function ProfilePage() {
                       className="w-full"
                       disabled={!isEditing}
                     />
-                  </div>
+                  </div> 
 
-                  {/* Right Column: Category */}
+                  {/* Right Column: About */}
                   <div>
                     <label
                       htmlFor="about"
@@ -285,6 +314,46 @@ export default function ProfilePage() {
                 </p>
               </div>
             </div>
+
+             {/* Right Column: Category */}
+             <div>
+                    <label
+                      htmlFor="vertical"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Category
+                    </label>
+                    <Select
+                      id="vertical"
+                      name="vertical"
+                      value={profile.vertical}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    >
+                      <option value="">Select a category</option>
+                      <option value="ALCOHOL">Alcoholic Beverages</option>
+                      <option value="APPAREL">Clothing and Apparel</option>
+                      <option value="AUTO">Automotive</option>
+                      <option value="BEAUTY">Beauty, Spa and Salon</option>
+                      <option value="EDU">Education</option>
+                      <option value="ENTERTAIN">Entertainment</option>
+                      <option value="EVENT_PLAN">Event Planning and Service</option>
+                      <option value="FINANCE">Finance and Banking</option>
+                      <option value="GOVT">Public Service</option>
+                      <option value="GROCERY">Food and Grocery</option>
+                      <option value="HEALTH">Medical and Health</option>
+                      <option value="HOTEL">Hotel and Lodging</option>
+                      <option value="NONPROFIT">Non-profit</option>
+                      <option value="ONLINE_GAMBLING">Online Gambling & Gaming</option>
+                      <option value="OTC_DRUGS">Over-the-Counter Drugs</option>
+                      <option value="OTHER">Other</option>
+                      <option value="PHYSICAL_GAMBLING">Non-Online Gambling & Gaming (E.g. Brick and mortar)</option>
+                      <option value="PROF_SERVICES">Professional Services</option>
+                      <option value="RESTAURANT">Restaurant</option>
+                      <option value="RETAIL">Shopping and Retail</option>
+                      <option value="TRAVEL">Travel and Transportation</option>
+                    </Select>
+                  </div>
 
             {/* Section 4: Contact Info */}
             <div className="grid grid-cols-2 gap-4">
@@ -449,12 +518,32 @@ export default function ProfilePage() {
             )}
 
             {/* Category */}
-            {profile.about && (
+            {profile.vertical && (
               <div className="flex mb-2">
                 <div className="mr-4 text-gray-500">
                   <img
                     src="https://static.xx.fbcdn.net/rsrc.php/v4/y3/r/jZeThiu706q.png"
                     alt="Category icon"
+                    style={{
+                      maxWidth: "16px",
+                      width: "16px",
+                      height: "16px",
+                      objectFit: "none",
+                      objectPosition: "-318px -221px",
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">{getCategoryDisplayName(profile.vertical)}</p>
+              </div>
+            )}
+
+            {/* About */}
+            {profile.about && (
+              <div className="flex mb-2">
+                <div className="mr-4 text-gray-500">
+                  <img
+                    src="https://static.xx.fbcdn.net/rsrc.php/v4/y3/r/jZeThiu706q.png"
+                    alt="About icon"
                     style={{
                       maxWidth: "16px",
                       width: "16px",

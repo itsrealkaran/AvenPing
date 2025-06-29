@@ -12,6 +12,7 @@ interface WhatsAppProfile {
   email?: string;
   profile_picture_url?: string;
   websites?: string[];
+  vertical?: string;
 }
 
 interface ProfileContextType {
@@ -32,8 +33,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   // Set phone number ID when user info is available
   const updatePhoneNumberId = useCallback(() => {
-    if (user?.whatsappAccount?.phoneNumbers?.[0]?.id) {
-      const newPhoneNumberId = user.whatsappAccount.phoneNumbers[0].id;
+    if (user?.whatsappAccount?.phoneNumbers?.[0]?.phoneNumberId) {
+      const newPhoneNumberId = user.whatsappAccount.phoneNumbers[0].phoneNumberId;
       
       // Only update if the phone number ID has actually changed
       if (newPhoneNumberId !== phoneNumberId) {
