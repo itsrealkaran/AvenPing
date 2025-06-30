@@ -31,12 +31,12 @@ export default function Introduction() {
 
     return (
         <section className="py-28 lg:py-40 bg-gray-50">
-            <div className="container">
+            <div className="container max-w-6xl mx-auto p-[1rem] sm:p-[0rem]">
                 <div className="sticky top-28 md:top-32">
                     <div className="flex justify-center">
                         <Tag>Why AvenPing</Tag>
                     </div>
-                    <div className="text-4xl md:text-6xl lg:text-6xl text-center font-medium mt-10 text-gray-900">
+                    <div className="text-3xl md:text-6xl lg:text-7xl text-center font-medium mt-10 text-gray-900">
                         <span>Your WhatsApp business deserves better.&nbsp;</span>
                         <span className="text-gray-300">
                             {words.map((word, wordIndex) => (

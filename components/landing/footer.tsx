@@ -1,184 +1,142 @@
-import Button from "@/components/landing/ui/button";
-import { Facebook, Instagram, Linkedin, Youtube } from "lucide-react";
-import Link from "next/link";
+"use client"
 
-const platformLinks = [
-  { href: "#", label: "Features" },
-  { href: "#", label: "Pricing" },
-  { href: "#", label: "Insights" },
-];
+import { motion } from "framer-motion"
+import { Facebook, Instagram, Twitter, Linkedin, User2, Youtube } from 'lucide-react'
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import Logo from "@/components/landing/logo"
 
-const companyLinks = [
-  { href: "#", label: "About" },
-  { href: "#", label: "Careers" },
-  { href: "#", label: "Contact" },
-];
-
-const legalLinks = [
-  { href: "#", label: "Privacy Policy" },
-  { href: "#", label: "Terms of Service" },
-];
+const footerLinks = {
+  Platform: [
+    { name: "Features", href: "/features" },
+    { name: "Pricing", href: "/pricing" },
+    { name: "Insights", href: "/insights" },
+  ],
+  Company: [
+    { name: "About", href: "#" },
+    { name: "Careers", href: "/careers" },
+    { name: "Contact", href: "#" },
+  ],
+  Legal: [
+    { name: "Privacy Policy", href: "/privacy-policy" },
+    { name: "Terms of Service", href: "/terms-of-service" },
+  ],
+}
 
 const socialLinks = [
-  { href: "#", icon: Facebook, label: "Facebook" },
-  { href: "#", icon: Instagram, label: "Instagram" },
-  { href: "#", icon: Linkedin, label: "LinkedIn" },
-  { href: "#", icon: Youtube, label: "YouTube" },
-];
+  { icon: Facebook, href: "http://facebook.com/avencrm" },
+  { icon: Instagram, href: "https://instagram.com/avencrm_" },
+  // { icon: Twitter, href: "#" },
+  { icon: Linkedin, href: "https://www.linkedin.com/company/aven-crm/" },
+  { icon: Youtube, href: "https://youtube.com/@avencrm" },
+]
 
-export default function Footer() {
+export function Footer() {
   return (
-    <footer className="bg-gray-50">
-      {/* Newsletter Section */}
-      <div className="border-b border-gray-200">
-        <div className="container py-12">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-center md:text-left">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Join our newsletter to keep up to date with us!
-              </h3>
-            </div>
-            <div
-              className="flex flex-col
-md:flex-row items-center justify-center md:justify-start
-             gap-3 w-full md:w-auto"
-            >
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="bg-white border border-gray-300 px-4 py-2 flex-1 min-w-[300px] text-gray-900 rounded-full placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent "
-              />
-              <Link href="/signup">
-                <Button
-                  size="sm"
-                  className="whitespace-nowrap"
-                  type="button"
-                  variant="primary"
-                >
-                  Get Started
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Footer Content */}
-      <div className="container py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 md:lg:gap-12 lg:gap-20">
-          {/* Brand Section */}
-          <div className="lg:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl font-bold text-cyan-600">AvenPing</span>
-            </div>
-            <p className="text-gray-600 text-sm max-w-xs">
-              A simple CRM that is easy to use and easy to manage
-            </p>
-          </div>
-
-          {/* Empty space for alignment */}
-          <div className="hidden lg:block"></div>
-
-          {/* Platform Links */}
+    // <footer className="border-t border-gray-200">
+    <footer className="bg-gray-50 border-t border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 pt-16 pb-8 p-[1rem] sm:p-[0rem]">
+        {/* Logo and Newsletter Section */}
+        {/* <div className="grid md:grid-cols-2 gap-12 mb-16">
           <div>
-            <h4 className="font-semibold text-gray-900 mb-4">Platform</h4>
-            <nav className="flex flex-col gap-3">
-              {platformLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="text-gray-600 text-sm hover:text-cyan-600 transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </nav>
+            <h3 className="text-2xl font-bold font-mono">
+            Join our newsletter to keep<br /> up to date with us!
+            </h3>
           </div>
-
-          {/* Company Links */}
+          
           <div>
-            <h4 className="font-semibold text-gray-900 mb-4">Company</h4>
-            <nav className="flex flex-col gap-3">
-              {companyLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="text-gray-600 text-sm hover:text-cyan-600 transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </nav>
+            <form className="flex gap-2">
+              <div className="relative flex-grow">
+                <User2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <Input 
+                  type="email" 
+                  placeholder="Enter your email" 
+                  className="pl-10 h-12 rounded-full bg-white border-[#e6e6e6]"
+                />
+              </div>
+              <Button 
+                type="submit"
+                className="violet-500 hover:bg-[#00bdbd]/90 text-white rounded-full px-8 h-12"
+              >
+                Subscribe
+              </Button>
+            </form>
           </div>
+        </div> */}
 
-          {/* Legal Links */}
-          <div>
-            <h4 className="font-semibold text-gray-900 mb-4">Legal</h4>
-            <nav className="flex flex-col gap-3">
-              {legalLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="text-gray-600 text-sm hover:text-cyan-600 transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </nav>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Section */}
-      <div className="border-t border-gray-200">
-        <div className="container py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            {/* Social Links */}
-            <div className="flex gap-4">
-              {socialLinks.map((social) => {
-                const Icon = social.icon;
-                return (
-                  <a
-                    key={social.label}
-                    href={social.href}
-                    className="text-gray-400 hover:text-cyan-600 transition-colors"
-                    aria-label={social.label}
+        {/* Links Section */}
+        <div className="grid md:grid-cols-2 mb-16 md:mb-28 pt-8  border-[#dddddd]">
+            <div className="hidden md:flex flex-col justify-between">
+              <Link href="/" className="flex items-center gap-[2px] mb-6">
+                <div className='text-[1.6rem] md:text-[2rem]'>
+                  <Logo variant='black'/>
+                </div>
+                <div
+                className='text-[1rem] md:text-[1.3rem] flex gap-[2px] items-end font-bold'
                   >
-                    <Icon size={20} />
-                  </a>
-                );
-              })}
+                  <h1>AvenCRM</h1>
+                </div>
+              </Link>
+              <p className="text-[#5c5f66] max-w-sm">
+                A simple CRM that is easy to use and easy to manage.
+              </p>
             </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+          {Object.entries(footerLinks).map(([category, links]) => (
+            <div key={category}>
+              <h4 className="text-[#444444] mb-4">{category}</h4>
+              <ul className="space-y-3">
+                {links.map((link) => (
+                  <li key={link.name}>
+                    <Link 
+                      href={link.href}
+                      className="text-[#111111] hover:text-[#000000] transition-colors"
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          </div>
+        </div>
 
-            {/* Center Links */}
-            <div className="flex gap-6">
-              <a
-                href="#"
-                className="text-gray-600 text-sm hover:text-cyan-600 transition-colors"
-              >
-                English
-              </a>
-              <a
-                href="#"
-                className="text-gray-600 text-sm hover:text-cyan-600 transition-colors"
-              >
-                Privacy
-              </a>
-              <a
-                href="#"
-                className="text-gray-600 text-sm hover:text-cyan-600 transition-colors"
-              >
-                Legal
-              </a>
-            </div>
+        {/* Bottom Bar */}
+        <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-[#d6d6d6]">
+          <div className="flex items-center gap-6 mb-4 md:mb-0">
+            {socialLinks.map((link, index) => {
+              const Icon = link.icon
+              return (
+                <Link 
+                  key={index} 
+                  href={link.href}
+                  className="text-[#5c5f66] hover:text-[#000000] transition-colors"
+                >
+                  <Icon className="h-5 w-5" />
+                </Link>
+              )
+            })}
+          </div>
 
-            {/* Copyright */}
-            <div className="text-gray-500 text-sm">
-              © 2024 Aven Technologies Inc. All Rights Reserved.
-            </div>
+          <div className="flex items-center gap-6 text-sm text-[#5c5f66]">
+            <button className="hover:text-[#000000] transition-colors">
+              English
+            </button>
+            <Link href="/privacy-policy" className="hover:text-[#000000] transition-colors">
+              Privacy
+            </Link>
+            <Link href="/terms-of-service" className="hover:text-[#000000] transition-colors">
+              Legal
+            </Link>
+          </div>
+
+          <div className="text-sm text-[#5c5f66] mt-4 md:mt-0">
+            © 2024 Aven Technologies Inc. All Rights Reserved.
           </div>
         </div>
       </div>
     </footer>
-  );
+  )
 }

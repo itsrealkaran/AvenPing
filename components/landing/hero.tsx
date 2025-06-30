@@ -77,7 +77,7 @@ export default function Hero() {
         w-full relative lg:h-[calc(100vh)] 
         "
     >
-      <div className="container relative ">
+      <div className="container max-w-6xl mx-auto relative p-[1rem] sm:p-[0rem]">
         <motion.div
           ref={leftDesignScope}
           initial={{ opacity: 0, y: 400, x: 0 }}
@@ -114,7 +114,7 @@ export default function Hero() {
         <motion.div
           initial={{ opacity: 0, y: 100, x: -100 }}
           ref={leftDesignScope2}
-          className="absolute -left-[3rem] -top-[4rem] hidden lg:block"
+          className="absolute -left-[1rem] -top-[4rem] hidden lg:block"
           drag
           dragConstraints={{
             left: 0,
@@ -133,7 +133,7 @@ export default function Hero() {
                   { duration: 0.8, ease: "easeInOut" },
                 ],
               ]);
-            }, 3000);
+            }, 2000);
           }}
           style={{ zIndex: 1 }}
         >
@@ -143,7 +143,7 @@ export default function Hero() {
             alt="WhatsApp business example 3"
             className=" shadow-lg"
             style={{
-              maxWidth: "60%",
+              maxWidth: "70%",
               height: "auto",
               border: "4px solid transparent",
               borderRadius: "1rem",
@@ -159,7 +159,7 @@ export default function Hero() {
         <motion.div
           initial={{ opacity: 0, y: 100, x: 100 }}
           ref={rightDesignScope}
-          className="absolute -right-[29rem] top-[10rem] hidden lg:block"
+          className="absolute -right-[35rem] top-[10rem] hidden lg:block"
           drag
           dragConstraints={{
             left: 0,
@@ -223,10 +223,10 @@ export default function Hero() {
             alt="WhatsApp business example 2"
             className="rounded-lg shadow-lg"
             style={{
-              maxWidth: "40%",
+              maxWidth: "42%",
               height: "auto",
               border: "4px solid transparent",
-              borderRadius: "0.5rem",
+              borderRadius: "0.7rem",
               backgroundOrigin: "border-box",
               backgroundClip: "padding-box, border-box",
               backgroundImage:
@@ -253,13 +253,13 @@ export default function Hero() {
           </div>
         </div>
         <h1
-          className="text-6xl md:text-7xl lg:text-8xl font-medium text-center mt-6 text-gray-900 selection:bg-yellow-300 selection:text-black"
+          className="text-6xl md:text-7xl lg:text-8xl font-medium text-center mt-6 text-gray-900 selection:bg-cyan-500 selection:text-white"
           style={{ zIndex: 10, position: "relative" }}
         >
           WhatsApp Business, <span className="text-cyan-600">simplified</span>
         </h1>
         <p
-          className="selection:bg-yellow-300 selection:text-black text-center text-xl text-gray-600 mt-8 max-w-2xl mx-auto"
+          className="selection:bg-cyan-500 selection:text-white text-center text-xl text-gray-600 mt-8 max-w-2xl mx-auto"
           style={{ zIndex: 10, position: "relative" }}
         >
           Streamline your WhatsApp business communications with powerful

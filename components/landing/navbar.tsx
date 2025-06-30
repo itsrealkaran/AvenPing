@@ -37,7 +37,7 @@ export default function Navbar() {
         transition={{ duration: 0.3 }}
       >
         <div
-          className={`container transition-all duration-300 ${
+          className={`container mx-auto transition-all duration-300 p-[1rem] sm:p-[0rem] ${
             isScrolled ? "max-w-5xl" : "max-w-full px-0"
           }`}
         >
@@ -63,9 +63,16 @@ export default function Navbar() {
               }`}
             >
               <div>
+                <Link href="/" className="flex items-center gap-2">
+                  {/* <img
+                    src="/images/logo.png"
+                    alt="AvenPing Logo"
+                    className="h-8 w-8"
+                  /> */}
                 <div className="text-2xl font-bold text-cyan-600 px-5">
                   AvenPing
                 </div>
+                </Link>
               </div>
               <div className="hidden lg:flex justify-center items-center">
                 <nav className="flex gap-6 font-medium text-gray-700">

@@ -39,7 +39,7 @@ export default function Faqs() {
 
   return (
     <section className="py-24 bg-gray-50">
-      <div className="container">
+      <div className="container max-w-6xl mx-auto p-[1rem] sm:p-[0rem]">
         <div className="flex justify-center">
           <Tag>FAQs</Tag>
         </div>
