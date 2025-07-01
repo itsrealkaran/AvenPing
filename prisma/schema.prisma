@@ -26,6 +26,11 @@ enum MessageStatus {
   FAILED
 }
 
+enum ContactAttributeType {
+  TEXT
+  NUMBER
+}
+
 // Unified User Model
 model User {
   id          String    @id @default(cuid())
@@ -63,6 +68,7 @@ model WhatsAppAccount {
   campaigns       WhatsAppCampaign[]
   phoneNumbers    WhatsAppPhoneNumber[]
   labels          Label[]
+  attributes      ContactAttribute[]
 }
 
 model WhatsAppPhoneNumber {
@@ -103,7 +109,9 @@ model WhatsAppRecipient {
   updatedAt DateTime          @updatedAt
   messages  WhatsAppMessage[]
   labels    Label[]
-  
+
+  attributeValues Json[]
+
   @@unique([whatsAppPhoneNumberId, phoneNumber])
 }
 
@@ -171,6 +179,18 @@ model Label {
   account   WhatsAppAccount @relation(fields: [accountId], references: [id])
 
   recipients WhatsAppRecipient[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContactAttribute {
+  id String @id @default(cuid())
+  name String
+  type ContactAttributeType @default(TEXT)
+
+  accountId String
+  account   WhatsAppAccount @relation(fields: [accountId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

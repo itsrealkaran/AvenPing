@@ -4,88 +4,146 @@ import Body from "@/components/layout/body";
 import { Edit, Trash, Pause, Play, FileUp, Send } from "lucide-react";
 import React, { useState } from "react";
 import Table, { ActionMenuItem, ToolbarAction } from "@/components/ui/table";
-import { MRT_ColumnDef } from "material-react-table";
+import { MRT_ColumnDef, MRT_Row } from "material-react-table";
+import { useContacts, Contact } from "@/context/contact-provider";
+import { useUser } from "@/context/user-context";
+import AddContactModal from "@/components/contacts/add-contact-modal";
 
-type Contact = {
-  id: string;
-  name: string;
-  phone: string;
-  group: string;
-  status: string;
-  createdAt: string;
+// Utility function to convert contacts to CSV format
+const exportContactsToCSV = (contacts: Contact[]) => {
+  // Define CSV headers
+  const headers = ['Name', 'Phone Number', 'Status', 'Group', 'Created At', 'Has Conversation'];
+  
+  // Convert contacts to CSV rows
+  const rows = contacts.map(contact => [
+    contact.name || 'No name',
+    contact.phoneNumber,
+    contact.status || 'N/A',
+    contact.group || 'N/A',
+    new Date(contact.createdAt).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }),
+    contact.hasConversation ? 'Yes' : 'No'
+  ]);
+  
+  // Combine headers and rows
+  const csvContent = [headers, ...rows]
+    .map(row => row.map(field => `"${field}"`).join(','))
+    .join('\n');
+  
+  return csvContent;
+};
+
+// Utility function to download CSV file
+const downloadCSV = (csvContent: string, filename: string) => {
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  
+  if (link.download !== undefined) {
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 };
 
 export default function ContactsPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [contacts, setContacts] = useState<Contact[]>([
-    {
-      id: "1",
-      name: "John Doe",
-      phone: "+91 9876543210",
-      group: "Friends",
-      status: "Active",
-      createdAt: "2023-05-15T10:30:00Z",
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      phone: "+91 9876543211",
-      group: "Family",
-      status: "Active",
-      createdAt: "2023-05-16T11:20:00Z",
-    },
-    {
-      id: "3",
-      name: "Mike Johnson",
-      phone: "+91 9876543212",
-      group: "Work",
-      status: "Inactive",
-      createdAt: "2023-05-17T09:15:00Z",
-    },
-    {
-      id: "4",
-      name: "Sarah Williams",
-      phone: "+91 9876543213",
-      group: "Friends",
-      status: "Active",
-      createdAt: "2023-05-18T14:45:00Z",
-    },
-  ]);
+  const { contacts, isLoading, error, createContact, updateContact, deleteContacts, isCreating, isUpdating, isDeleting, createError, updateError, deleteError, attributes } = useContacts();
+  const { userInfo } = useUser();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
 
   const handleDeleteContact = (contact: Contact) => {
-    setContacts(contacts.filter((c) => c.id !== contact.id));
+    deleteContacts([contact.id]);
   };
 
   const handleDeleteContacts = (contacts: Contact[]) => {
-    setContacts(contacts.filter((c) => !contacts.includes(c)));
+    deleteContacts(contacts.map((c) => c.id));
   };
 
   const handleAddContact = () => {
-    console.log("Add contact");
-    // Implement your add contact logic here
+    setEditingContact(null);
+    setShowAddModal(true);
+  };
+
+  const handleCreateContact = async (data: { name: string; phoneNumber: string; attributes: { name: string; value: string }[] }) => {
+    if (editingContact) {
+      // Update existing contact
+      await updateContact({
+        id: editingContact.id,
+        name: data.name,
+        phoneNumber: data.phoneNumber,
+        attributes: data.attributes,
+      });
+    } else {
+      // Create new contact
+      if (!userInfo?.whatsappAccount?.phoneNumbers?.[0]?.id) {
+        throw new Error("No phone number available");
+      }
+      
+      await createContact({
+        name: data.name,
+        phoneNumber: data.phoneNumber,
+        phoneNumberId: userInfo.whatsappAccount.phoneNumbers[0].id,
+        attributes: data.attributes,
+      });
+    }
   };
 
   const handleEditContact = (contact: Contact) => {
-    console.log("Edit contact", contact);
-    // Implement your edit contact logic here
+    setEditingContact(contact);
+    setShowAddModal(true);
   };
 
   const handleToggleStatus = (contact: Contact) => {
     const newStatus = contact.status === "Active" ? "Inactive" : "Active";
-    setContacts(
-      contacts.map((c) =>
-        c.id === contact.id ? { ...c, status: newStatus } : c
-      )
-    );
+    // setContacts(
+    //   contacts.map((c) =>
+    //     c.id === contact.id ? { ...c, status: newStatus } : c
+    //   )
+    // );
+  };
+
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+    setEditingContact(null);
+  };
+
+  const handleExportContacts = () => {
+    if (contacts?.length === 0) {
+      alert('Please select at least one contact to export.');
+      return;
+    }
+
+    try {
+      const csvContent = exportContactsToCSV(contacts || []);
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      const filename = `contacts_export_${timestamp}.csv`;
+      
+      downloadCSV(csvContent, filename);
+      
+      console.log(`Exported ${contacts?.length} contacts to ${filename}`);
+    } catch (error) {
+      console.error('Error exporting contacts:', error);
+      alert('Failed to export contacts. Please try again.');
+    }
   };
 
   const columns: MRT_ColumnDef<Contact>[] = [
     {
       accessorKey: "name",
       header: "Name",
+      Cell: ({ row }) => row.original.name || "No name",
     },
     {
-      accessorKey: "phone",
+      accessorKey: "phoneNumber",
       header: "Phone Number",
     },
     {
@@ -110,6 +168,14 @@ export default function ContactsPage() {
         );
       },
     },
+    ...(attributes || []).map((attribute) => ({
+      accessorKey: attribute.name,
+      header: attribute.name,
+      Cell: ({ row }: { row: MRT_Row<Contact> }) => {
+        const value = row.original.attributeValues?.find((av) => av.name === attribute.name)?.value;
+        return value || "N/A";
+      },
+    })),
     {
       accessorKey: "createdAt",
       header: "Created At",
@@ -161,19 +227,41 @@ export default function ContactsPage() {
     },
   ];
 
+  const toolbarActions: ToolbarAction<Contact>[] = [
+    {
+      key: "export",
+      label: "Export",
+      icon: FileUp,
+      onClick: () => {
+        handleExportContacts();
+      },
+    }
+  ];
+
   return (
-    <Body title="Contacts">
-      <Table
-        data={contacts}
-        columns={columns}
-        isLoading={isLoading}
-        actionMenuItems={actionMenuItems}
-        onAddItem={handleAddContact}
-        addButtonLabel="Add Contact"
-        onDelete={handleDeleteContacts}
-        deleteButtonLabel="Delete Contact"
-        searchPlaceholder="Search contacts..."
+    <>
+      <Body title="Contacts">
+        <Table
+          data={contacts || []}
+          columns={columns}
+          isLoading={isLoading}
+          actionMenuItems={actionMenuItems}
+          onAddItem={handleAddContact}
+          addButtonLabel="Add Contact"
+          onDelete={handleDeleteContacts}
+          deleteButtonLabel="Delete Contact"
+          searchPlaceholder="Search contacts..."
+          toolbarActions={toolbarActions}
+        />
+      </Body>
+      
+      <AddContactModal
+        isOpen={showAddModal}
+        onClose={handleCloseModal}
+        onSubmit={handleCreateContact}
+        isLoading={editingContact ? isUpdating : isCreating}
+        editContact={editingContact}
       />
-    </Body>
+    </>
   );
 }

@@ -194,7 +194,7 @@ export default function Table<T extends Record<string, any>>({
           </div>
 
           <div className="flex items-center gap-2">
-            {selectedRowCount > 0 &&
+            {toolbarActions.length > 0 &&
               toolbarActions.map((action) => {
                 const Icon = action.icon;
                 return (
