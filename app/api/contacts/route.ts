@@ -46,6 +46,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { name, phoneNumber, phoneNumberId, attributes = [] } = body
 
+    const attributeValues = (attributes || []).map((attribute: any) => ({
+      name: attribute.name,
+      value: attribute.value,
+    }));
+
     const existingAttributes = await prisma.contactAttribute.findMany({
       where: {
         account: {
@@ -55,11 +60,6 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-
-    const attributeValues = (attributes || []).map((attribute: any) => ({
-      name: attribute.name,
-      value: attribute.value,
-    }));
 
     // get the attribute names from the attributeValues
     const attributeNames = attributeValues.map((attribute: any) => attribute.name);
@@ -105,6 +105,24 @@ export async function PUT(request: NextRequest) {
       name: attribute.name,
       value: attribute.value,
     }));
+
+    const existingAttributes = await prisma.contactAttribute.findMany({
+      where: {
+        account: {
+          user: {
+            email: session.email,
+          },
+        },
+      },
+    });
+
+    // get the attribute names from the attributeValues
+    const attributeNames = attributeValues.map((attribute: any) => attribute.name);
+
+    // check if the attribute names are in the existingAttributes
+    if (attributeNames.some((name: string) => !existingAttributes.some((attribute: any) => attribute.name === name))) {
+      return NextResponse.json({ error: "New attribute name cannot be created" }, { status: 400 });
+    }
 
     const contact = await prisma.whatsAppRecipient.update({
       where: { id },

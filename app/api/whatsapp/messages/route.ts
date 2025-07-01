@@ -34,6 +34,7 @@ export async function GET(
             }
           }
         },
+        hasConversation: true,
         ...(search ? {
           OR: [
             { phoneNumber: { contains: search, mode: 'insensitive' } },
