@@ -26,16 +26,17 @@ export type Message = {
   createdAt: string;
   status: "SENT" | "DELIVERED" | "READ";
   isOutbound: boolean;
+  media?: { type: string; mediaId: string }[];
 };
 
 export type Conversation = {
-  id: string;
-  phoneNumber: string;
-  name: string;
-  messages: Message[];
-  unreadCount?: number;
-  nextCursor?: string | null;
-  hasMore?: boolean;
+    id: string;
+    phoneNumber: string;
+    name: string;
+    messages: Message[];
+    unreadCount?: number;
+    nextCursor?: string | null;
+    hasMore?: boolean;
 };
 
 type FilterType = "all" | "unread" | "label";
@@ -67,6 +68,7 @@ const MessagesInterface = () => {
         createdAt: message.createdAt || new Date().toISOString(),
         status: message.status || "DELIVERED",
         isOutbound: false, // Incoming messages are not outbound
+        media: message.media,
       };
       
       // Add the message to the appropriate conversation
@@ -116,15 +118,16 @@ const MessagesInterface = () => {
     }
   }, [conversations, selectedConversationId]);
 
-  const handleSendMessage = async (message: string) => {
-    if (!selectedConversationId || !message.trim() || !conversations) return;
+  const handleSendMessage = async (message: string, media?: { type: string; mediaId: string }) => {
+    if (!selectedConversationId || (!message.trim() && !media) || !conversations) return;
 
     const newMessage: Message = {
       id: `m${Date.now()}`,
-      message,
+      message: message || "",
       createdAt: new Date().toISOString(),
       isOutbound: true,
       status: "SENT",
+      media: media ? [{ type: media.type, mediaId: media.mediaId }] : undefined,
     };
 
     await sendMessage(newMessage, selectedConversationId);

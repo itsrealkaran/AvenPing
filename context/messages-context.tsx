@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, ReactNode, useEffect, useState, useMemo } from 'react';
+import { createContext, useContext, ReactNode, useEffect, useState, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useUser } from './user-context';
@@ -14,6 +14,7 @@ interface Message {
   isOutbound: boolean;
   templateId?: string;
   templateParams?: Record<string, string>;
+  media?: { type: string; mediaId: string }[];
 }
 
 interface Conversation {
@@ -22,6 +23,8 @@ interface Conversation {
   name: string;
   messages: Message[];
   unreadCount?: number;
+  nextCursor?: string | null;
+  hasMore?: boolean;
 }
 
 interface MessagesContextType {
@@ -53,6 +56,9 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [label, setLabel] = useState<string | null>(null);
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
+
+  // Message cache: conversationId -> Message[]
+  const messageCache = useRef<Map<string, Message[]>>(new Map());
 
   useEffect(() => {
     if (user?.whatsappAccount?.phoneNumbers[0].id) {
@@ -105,7 +111,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         params.append('label', label);
       }
       const response = await axios.get(`/api/whatsapp/messages?${params.toString()}`);
-      return response.data.items;
+      response.data.items.forEach((item: any) => {
+        messageCache.current.set(item.id, item.messages);
+      });
+      return response.data.items as Conversation[];
     },
     enabled: !!phoneNumberId, // Only fetch when phoneNumberId is available
   });
@@ -127,6 +136,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         templateId: newMessage.templateId,
         templateParams: newMessage.templateParams,
         recipientId,
+        media: newMessage.media,
       });
       return response.data;
     },
@@ -163,28 +173,63 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     setSearchQuery,
     sendMessage: async (message: Omit<Message, 'id' | 'createdAt'>, recipientId: string) => {
       await sendMessageMutation.mutateAsync({ newMessage: message, recipientId });
+      // Optimistically update cache for the recipient conversation
+      if (recipientId) {
+        const cached = messageCache.current.get(recipientId) || [];
+        // Create a fake message object for cache (id and createdAt will be replaced by backend on next fetch)
+        const fakeMessage: Message = {
+          ...message,
+          id: `temp-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+        };
+        messageCache.current.set(recipientId, [...cached, fakeMessage]);
+      }
     },
     deleteMessage: async (messageId: string) => {
       await deleteMessageMutation.mutateAsync(messageId);
+      // Optionally, remove the message from cache for all conversations
+      messageCache.current.forEach((messages, convId) => {
+        messageCache.current.set(convId, messages.filter(m => m.id !== messageId));
+      });
     },
-    getConversation: async (conversationId: string) => {
+    getConversation: async (conversationId: string, cursor?: string) => {
       setConversationId(conversationId);
-      return conversation as Conversation & { nextCursor?: string | null; hasMore?: boolean };
+      if (cursor) {
+        const response = await axios.get(`/api/whatsapp/messages/conversation/${conversationId}?cursor=${cursor}`);
+        messageCache.current.set(conversationId, response.data.messages);
+        return { ...response.data, messages: response.data.messages, nextCursor: response.data.nextCursor };
+      }
+      // Check cache first
+      if (messageCache.current.has(conversationId)) {
+        const cachedMessages = messageCache.current.get(conversationId)!;
+        const conv = conversations?.find((c) => c.id === conversationId);
+        if (conv) {
+          return { ...conv, messages: cachedMessages };
+        }
+      }
+      // Always fetch if not in cache
+      const response = await axios.get(`/api/whatsapp/messages/conversation/${conversationId}`);
+      messageCache.current.set(conversationId, response.data.messages);
+      return { ...response.data, messages: response.data.messages, nextCursor: response.data.nextCursor };
     },
+    
     labels,
     isLabelsLoading,
     labelsError,
     label,
     setLabel,
     addRealTimeMessage: (message: Message, conversationId: string) => {
-      queryClient.setQueryData(['messages', phoneNumberId, debouncedSearchQuery, label], (oldData: any) => {
+      // Update cache
+      const cached = messageCache.current.get(conversationId) || [];
+      messageCache.current.set(conversationId, [...cached, message]);
+      // Update react-query cache as before
+      queryClient.setQueryData(['messages', phoneNumberId, debouncedSearchQuery, label], (oldData: Conversation[] | undefined) => {
         if (!oldData) return oldData;
-        
-        return oldData.map((conv: Conversation) => {
+        return oldData.map((conv) => {
           if (conv.id === conversationId) {
             return {
               ...conv,
-              messages: [...conv.messages, message]
+              messages: [...conv.messages, message],
             };
           }
           return conv;
@@ -192,14 +237,13 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       });
     },
     updateConversationUnreadCount: (conversationId: string, unreadCount: number) => {
-      queryClient.setQueryData(['messages', phoneNumberId, debouncedSearchQuery, label], (oldData: any) => {
+      queryClient.setQueryData(['messages', phoneNumberId, debouncedSearchQuery, label], (oldData: Conversation[] | undefined) => {
         if (!oldData) return oldData;
-        
-        return oldData.map((conv: Conversation) => {
+        return oldData.map((conv) => {
           if (conv.id === conversationId) {
             return {
               ...conv,
-              unreadCount
+              unreadCount,
             };
           }
           return conv;

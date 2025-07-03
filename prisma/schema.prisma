@@ -139,6 +139,7 @@ model WhatsAppMessage {
   wamid                 String? // WhatsApp Message ID for delivery tracking
   status                MessageStatus        @default(PENDING)
   message               String?
+  media                 Json[] // { type: "image", handle: "https://example.com/image.jpg" }
   isOutbound            Boolean              @default(false)
   errorMessage          String?
   phoneNumber           String?

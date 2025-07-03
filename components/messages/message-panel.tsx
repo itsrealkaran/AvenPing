@@ -11,12 +11,12 @@ import axios from "axios";
 
 interface MessagePanelProps {
   conversation: Conversation;
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, media?: { type: string; mediaId: string }) => void;
 }
 
 const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
-  let { name, phoneNumber, messages } = conversation;
-  const { getConversation } = useMessages();
+  // Use state for the current conversation
+  const [currentConversation, setCurrentConversation] = useState(conversation);
   
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,27 +24,33 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [matchingMessageIds, setMatchingMessageIds] = useState<string[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [searchAttempts, setSearchAttempts] = useState(0);
-  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const searchAttemptsRef = useRef(0);
+  const [hasMoreMessages, setHasMoreMessages] = useState(conversation.hasMore || false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [allMessages, setAllMessages] = useState<Message[]>(messages);
+  const [allMessages, setAllMessages] = useState<Message[]>(conversation.messages);
   const searchRef = useRef<HTMLDivElement>(null);
   const messageListRef = useRef<HTMLDivElement>(null);
 
+  const { getConversation } = useMessages();
+
+  // Sync state with prop so UI updates immediately on conversation switch
   useEffect(() => {
-    if (conversation.id) {
-      getConversation(conversation.id).then((conversation) => {
-        if (conversation) {
-          name = conversation.name;
-          phoneNumber = conversation.phoneNumber;
-          messages = conversation.messages;
-          setAllMessages(conversation.messages);
-          setNextCursor((conversation as any).nextCursor || null);
-          setHasMoreMessages((conversation as any).hasMore || false);
-        }
-      });
-    }
-  }, [conversation.id]);
+    getConversation(conversation.id).then((conversation) => {
+      if (conversation) {
+        setCurrentConversation(conversation);
+        setAllMessages(conversation.messages);
+        setNextCursor((conversation as any).nextCursor || null);
+        console.log(conversation.hasMore, "conversation.hasMore");
+        console.log(conversation, "conversation");
+        setHasMoreMessages(conversation.hasMore || false);
+      } else {
+        setCurrentConversation(conversation as any);
+        setAllMessages([]);
+        setNextCursor(null);
+        setHasMoreMessages(false);
+      }
+    });
+  }, [conversation]);
 
   // Debounce search query
   useEffect(() => {
@@ -55,12 +61,16 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Find matching messages when search query changes
+  // Reset searchAttemptsRef when the search query changes
+  useEffect(() => {
+    searchAttemptsRef.current = 0;
+  }, [debouncedSearchQuery]);
+
+  // Main effect for searching
   useEffect(() => {
     if (!debouncedSearchQuery.trim()) {
       setMatchingMessageIds([]);
       setCurrentMatchIndex(0);
-      setSearchAttempts(0);
       return;
     }
 
@@ -72,47 +82,45 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
 
     setMatchingMessageIds(matchingIds);
     setCurrentMatchIndex(0);
-    setSearchAttempts(0);
 
     // If no matches found and we have more messages, try to fetch more
-    if (matchingIds.length === 0 && hasMoreMessages && searchAttempts < 3) {
+    if (
+      matchingIds.length === 0 &&
+      hasMoreMessages &&
+      searchAttemptsRef.current < 3
+    ) {
       fetchMoreMessagesForSearch();
     }
-  }, [debouncedSearchQuery, allMessages, hasMoreMessages, searchAttempts]);
+  }, [debouncedSearchQuery, allMessages, hasMoreMessages]);
 
   // Fetch more messages for search
   const fetchMoreMessagesForSearch = async () => {
-    if (isLoadingMore || searchAttempts >= 3 || !hasMoreMessages || !nextCursor) {
+    if (isLoadingMore || searchAttemptsRef.current >= 3 || !hasMoreMessages || !nextCursor) {
       return;
     }
 
     setIsLoadingMore(true);
-    setSearchAttempts(prev => prev + 1);
+    searchAttemptsRef.current += 1;
 
     try {
-      const response = await axios.get(`/api/whatsapp/messages/conversation/${conversation.id}?cursor=${nextCursor}&limit=50`);
+      const response = await axios.get(`/api/whatsapp/messages/conversation/${currentConversation.id}?cursor=${nextCursor}&limit=20`);
       const newConversation = response.data;
-      
       // Update messages with new ones
       const updatedMessages = [...allMessages, ...newConversation.messages];
       setAllMessages(updatedMessages);
-      
       // Update conversation data
       setNextCursor(newConversation.nextCursor);
       setHasMoreMessages(newConversation.hasMore);
-
       // Search in the new messages
       const newMatchingIds = updatedMessages
         .filter((message) =>
           message.message.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
         )
         .map((message) => message.id);
-
       setMatchingMessageIds(newMatchingIds);
       setCurrentMatchIndex(0);
-
       // If still no matches and we can fetch more, try again
-      if (newMatchingIds.length === 0 && newConversation.hasMore && searchAttempts < 3) {
+      if (newMatchingIds.length === 0 && newConversation.hasMore && searchAttemptsRef.current < 3) {
         setTimeout(() => {
           fetchMoreMessagesForSearch();
         }, 500); // Small delay to prevent too many rapid requests
@@ -154,7 +162,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
         setDebouncedSearchQuery("");
         setMatchingMessageIds([]);
         setCurrentMatchIndex(0);
-        setSearchAttempts(0);
+        searchAttemptsRef.current = 0;
       }
     };
 
@@ -180,7 +188,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
       setDebouncedSearchQuery("");
       setMatchingMessageIds([]);
       setCurrentMatchIndex(0);
-      setSearchAttempts(0);
+      searchAttemptsRef.current = 0;
     }
   };
 
@@ -193,7 +201,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
     setDebouncedSearchQuery("");
     setMatchingMessageIds([]);
     setCurrentMatchIndex(0);
-    setSearchAttempts(0);
+    searchAttemptsRef.current = 0;
     setShowSearch(false);
   };
 
@@ -212,6 +220,9 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
       );
     }
   };
+
+  // Use currentConversation for name and phoneNumber
+  const { name, phoneNumber } = currentConversation;
 
   return (
     <div className="flex flex-col h-full">
@@ -285,7 +296,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
                             </button>
                           </div>
                         </div>
-                      ) : searchAttempts >= 3 ? (
+                      ) : searchAttemptsRef.current >= 3 ? (
                         <div className="text-sm text-gray-500">
                           No messages found
                         </div>
