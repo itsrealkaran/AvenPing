@@ -56,21 +56,18 @@ export async function POST(request: NextRequest) {
     await writeFile(filePath, buffer);
 
     // Prepare form-data for WhatsApp API
-    const waForm = new FormData();
-    waForm.append("file", fs.createReadStream(filePath), {
-      filename: originalName,
-      contentType: file.type,
-    });
-    waForm.append("type", file.type);
-    waForm.append("messaging_product", "whatsapp");
+    const form = new FormData();
+    form.append('file', fs.createReadStream(filePath));
+    form.append('type', file.type);
+    form.append('messaging_product', 'whatsapp');
 
     // Send to WhatsApp API
     const mediaId = await axios.post(
       `https://graph.facebook.com/v23.0/${phoneNumberId}/media`,
-      waForm,
+      form,
       {
         headers: {
-          ...waForm.getHeaders(),
+          ...form.getHeaders(),
           Authorization: `Bearer ${account.accessToken}`,
         },
       }

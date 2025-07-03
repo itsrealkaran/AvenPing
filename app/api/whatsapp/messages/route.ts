@@ -306,7 +306,7 @@ export async function POST(request: Request) {
               ],
             },
           }
-        : (media && media[0].type == "image") || media[0].type == "video"
+        : (media && media[0].type == "image") || media[0].type == "video" || media[0].type == "document" || media[0].type == "audio"
         ? {
             messaging_product: "whatsapp",
             recipient_type: "individual",
@@ -314,7 +314,10 @@ export async function POST(request: Request) {
             type: media[0].type,
             [media[0].type]: {
               id: media[0].mediaId,
-              caption: message,
+              ...(media[0].type != "audio" && {caption: message}),
+              ...(media[0].type == "document" && {
+                filename: media[0].name,
+              }), 
             },
           }
         : {

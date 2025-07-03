@@ -159,7 +159,7 @@ const MessageInput = ({ onSendMessage }: MessageInputProps) => {
       formData.append("phoneNumberId", userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId || "");
 
       // Create preview URL for images and videos
-      if (attachmentType === "image" || attachmentType === "video") {
+      if (attachmentType === "image" || attachmentType === "video" || attachmentType === "document" || attachmentType === "audio") {
 
         const mediaId = await axios.post("/api/whatsapp/upload-file", formData,  {
           headers: {
@@ -172,7 +172,7 @@ const MessageInput = ({ onSendMessage }: MessageInputProps) => {
           throw new Error("Failed to upload file");
         }
 
-        setAttachment({ name: file.name, type: file.type, size: file.size, mediaId: mediaId.data.mediaId });
+        setAttachment({ name: file.name, type: attachmentType, size: file.size, mediaId: mediaId.data.mediaId });
         setAttachmentType(attachmentType);
         setAttachmentPreview(URL.createObjectURL(file));
       }
@@ -222,13 +222,17 @@ const MessageInput = ({ onSendMessage }: MessageInputProps) => {
         }
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, {
           type: "audio/mp3",
         });
         const audioUrl = URL.createObjectURL(audioBlob);
 
-        // Set as attachment
+        const formData = new FormData();
+        formData.append("file", audioBlob, "voice-message.mp3");
+        formData.append("phoneNumberId", userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId || "");
+
+        // Set as attachment (optional, for preview/UI)
         setAttachment({ name: "voice-message.mp3", type: "audio/mp3", size: audioBlob.size, url: audioUrl });
         setAttachmentType("audio");
         setAttachmentPreview(audioUrl);
@@ -242,6 +246,26 @@ const MessageInput = ({ onSendMessage }: MessageInputProps) => {
 
         // Stop all tracks from the stream
         stream.getTracks().forEach((track) => track.stop());
+
+        // Upload the audio file to the backend
+        const mediaId = await axios.post("/api/whatsapp/upload-file", formData,  {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        if (mediaId.status !== 200) {
+          toast.error("Failed to upload file");
+          throw new Error("Failed to upload file");
+        }
+
+        // Send the WhatsApp message with the uploaded audio
+        await onSendMessage("", { type: "audio", mediaId: mediaId.data.mediaId });
+
+        // Optionally reset attachment state if needed
+        setAttachment(null);
+        setAttachmentType("");
+        setAttachmentPreview("");
 
         if (timerRef.current) {
           clearInterval(timerRef.current);
@@ -502,6 +526,7 @@ const MessageInput = ({ onSendMessage }: MessageInputProps) => {
             {(message.trim() || attachment) ? (
               <button
                 type="submit"
+                onClick={handleSubmit}
                 className="p-2 text-white bg-primary rounded-full hover:bg-primary/80"
               >
                 <SendHorizontal size={20} />
