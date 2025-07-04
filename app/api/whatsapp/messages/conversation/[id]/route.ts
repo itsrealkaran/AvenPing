@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
+import axios from "axios";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -12,6 +13,18 @@ export async function GET(
         
         if (!session?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const account = await prisma.whatsAppAccount.findFirst({
+            where: {
+                user: {
+                    email: session?.email
+                }
+            }
+        });
+
+        if (!account) {
+            return NextResponse.json({ error: 'Account not found' }, { status: 404 });
         }
 
         // Get pagination parameters from URL
@@ -78,7 +91,38 @@ export async function GET(
 
         // Check if there are more results
         const hasMore = conversation.messages.length > take;
-        const messages = hasMore ? conversation.messages.slice(0, take) : conversation.messages;
+        let messages = hasMore ? conversation.messages.slice(0, take) : conversation.messages;
+
+        messages = await Promise.all(messages.map(async (item: any) => ({
+            ...item,
+                media: item.media.length > 0 ? await (async () => {
+                try {
+                  const mediaResponse = await axios.get(`https://graph.facebook.com/v23.0/${item.media[0].mediaId}`, {
+                    headers: {
+                      'Authorization': `Bearer ${account.accessToken}`
+                    }
+                  });
+                  
+                  // Download the actual media file
+                  const mediaFile = await axios.get(mediaResponse.data.url, {
+                    headers: {
+                      'Authorization': `Bearer ${account.accessToken}`
+                    },
+                    responseType: 'arraybuffer'
+                  });
+                  
+                  // Convert to base64 for frontend display
+                  const base64 = Buffer.from(mediaFile.data).toString('base64');
+                  const dataUrl = `data:${mediaResponse.data.mime_type};base64,${base64}`;
+                  
+                  return [{type: mediaResponse.data.mime_type, mediaId: dataUrl}];
+                } catch (error) {
+                  console.error('Failed to fetch media:', error instanceof Error ? error.message : 'Unknown error');
+                  // Return empty array if media fetch fails
+                  return [];
+                }
+              })() : []
+          })));
 
         // Get the cursor for the next page
         const nextCursor = hasMore ? messages[messages.length - 1].id : null;

@@ -26,14 +26,17 @@ export type Message = {
   createdAt: string;
   status: "SENT" | "DELIVERED" | "READ";
   isOutbound: boolean;
+  media?: { type: string; mediaId: string }[];
 };
 
 export type Conversation = {
-  id: string;
-  phoneNumber: string;
-  name: string;
-  messages: Message[];
-  unreadCount?: number;
+    id: string;
+    phoneNumber: string;
+    name: string;
+    messages: Message[];
+    unreadCount?: number;
+    nextCursor?: string | null;
+    hasMore?: boolean;
 };
 
 type FilterType = "all" | "unread" | "label";
@@ -65,6 +68,7 @@ const MessagesInterface = () => {
         createdAt: message.createdAt || new Date().toISOString(),
         status: message.status || "DELIVERED",
         isOutbound: false, // Incoming messages are not outbound
+        media: message.media,
       };
       
       // Add the message to the appropriate conversation
@@ -90,7 +94,7 @@ const MessagesInterface = () => {
   }, []);
 
   // WebSocket integration
-  const { isConnected } = useWebSocket({
+  const { isConnected, connectionStatus } = useWebSocket({
     onMessage: handleWebSocketMessage,
     onConnect: handleWebSocketConnect,
     onDisconnect: handleWebSocketDisconnect,
@@ -114,15 +118,16 @@ const MessagesInterface = () => {
     }
   }, [conversations, selectedConversationId]);
 
-  const handleSendMessage = async (message: string) => {
-    if (!selectedConversationId || !message.trim() || !conversations) return;
+  const handleSendMessage = async (message: string, media?: { type: string; mediaId: string }) => {
+    if (!selectedConversationId || (!message.trim() && !media) || !conversations) return;
 
     const newMessage: Message = {
       id: `m${Date.now()}`,
-      message,
+      message: message || "",
       createdAt: new Date().toISOString(),
       isOutbound: true,
       status: "SENT",
+      media: media ? [{ type: media.type, mediaId: media.mediaId }] : undefined,
     };
 
     await sendMessage(newMessage, selectedConversationId);
@@ -174,15 +179,25 @@ const MessagesInterface = () => {
           {/* WebSocket Connection Status */}
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center space-x-1 text-xs">
-              {isWebSocketConnected ? (
+              {connectionStatus === 'connected' ? (
                 <>
                   <Wifi className="h-3 w-3 text-green-500" />
                   <span className="text-green-600">Real-time active</span>
                 </>
+              ) : connectionStatus === 'connecting' ? (
+                <>
+                  <Loader2 className="h-3 w-3 text-blue-500 animate-spin" />
+                  <span className="text-blue-600">Connecting...</span>
+                </>
+              ) : connectionStatus === 'reconnecting' ? (
+                <>
+                  <Loader2 className="h-3 w-3 text-orange-500 animate-spin" />
+                  <span className="text-orange-600">Reconnecting...</span>
+                </>
               ) : (
                 <>
                   <WifiOff className="h-3 w-3 text-gray-400" />
-                  <span className="text-gray-500">Connecting...</span>
+                  <span className="text-gray-500">Disconnected</span>
                 </>
               )}
             </div>

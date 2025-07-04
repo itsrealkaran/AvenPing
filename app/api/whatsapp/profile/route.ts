@@ -35,7 +35,7 @@ export async function GET(request: Request) {
             `https://graph.facebook.com/v22.0/${phoneNumberId}/whatsapp_business_profile`,
             {
                 params: {
-                    fields: 'about,address,description,email,profile_picture_url,websites',
+                    fields: 'about,address,description,email,profile_picture_url,websites,vertical',
                     access_token: account.accessToken
                 }
             }
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Phone number ID is required' }, { status: 400 });
     }
     const body = await request.json();
-    const { about, address, description, email, profile_picture_url, websites  } = body;
+    const { about, address, description, email, profile_picture_url, websites, vertical } = body;
 
     const account = await prisma.whatsAppAccount.findFirst({
         where: {
@@ -96,6 +96,7 @@ export async function POST(request: Request) {
             email,
             profile_picture_url,
             websites,
+            vertical,
             messaging_product: 'whatsapp',
         },
         {

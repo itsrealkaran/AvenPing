@@ -32,13 +32,39 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'WhatsApp account not found' }, { status: 404 });
     }
 
-    console.log(whatsappAccount.accessToken, 'access token');
+    console.log(typeof pin, 'pin');
+    console.log(typeof Number(pin), 'pin');
 
-    const response = await axios.post(`https://graph.facebook.com/v23.0/${phoneNumberId}/register?access_token=${whatsappAccount.accessToken}`, {
-      pin,
+    const response = await axios.post(`https://graph.facebook.com/v22.0/${phoneNumberId}/register?access_token=${whatsappAccount.accessToken}`, {
+      pin: Number(pin),
       messaging_product: "whatsapp",
     });
-    console.log(response.data, 'response from register phone number');
+
+    if (response.status !== 200) {
+      return NextResponse.json({ error: 'Failed to register phone number' }, { status: 500 });
+    }
+
+    // First find the phone number record
+    const phoneNumberRecord = await prisma.whatsAppPhoneNumber.findFirst({
+      where: {
+        phoneNumberId: phoneNumberId,
+        accountId: whatsappAccount.id,
+      },
+    });
+
+    if (!phoneNumberRecord) {
+      return NextResponse.json({ error: 'Phone number not found' }, { status: 404 });
+    }
+
+    // Update the phone number record
+    await prisma.whatsAppPhoneNumber.update({
+      where: {
+        id: phoneNumberRecord.id,
+      },
+      data: {
+        isRegistered: true,
+      },
+    });
 
     return NextResponse.json(response.data, { status: 200 });
 
@@ -46,7 +72,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error registering phone number:', error);
     return NextResponse.json(
-      { error: 'Failed to register phone number' },
+      { error },
       { status: 500 }
     );
   }

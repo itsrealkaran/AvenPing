@@ -5,9 +5,12 @@ import MessageBubble from "./message-bubble";
 
 interface MessageListProps {
   messages: Message[];
+  searchQuery?: string;
+  currentMatchIndex?: number;
+  matchingMessageIds?: string[];
 }
 
-const MessageList = ({ messages }: MessageListProps) => {
+const MessageList = ({ messages, searchQuery, currentMatchIndex = 0, matchingMessageIds = [] }: MessageListProps) => {
   // Group messages by date
   const groupedMessages: { [key: string]: Message[] } = {};
 
@@ -53,9 +56,22 @@ const MessageList = ({ messages }: MessageListProps) => {
           </div>
 
           <div className="space-y-1">
-            {dateMessages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
-            ))}
+            {dateMessages.map((message) => {
+              const isCurrentMatch = matchingMessageIds[currentMatchIndex] === message.id;
+              return (
+                <div 
+                  key={message.id} 
+                  id={`message-${message.id}`}
+                  className={isCurrentMatch ? 'rounded-lg' : ''}
+                >
+                  <MessageBubble 
+                    message={message} 
+                    searchQuery={searchQuery}
+                    isCurrentMatch={isCurrentMatch}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       ))}

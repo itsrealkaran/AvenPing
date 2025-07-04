@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useUser } from '@/context/user-context';
 
 interface WebSocketMessage {
@@ -18,8 +18,10 @@ export const useWebSocket = ({ onMessage, onConnect, onDisconnect, onError }: Us
   const { userInfo } = useUser();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 5;
+  const maxReconnectAttempts = 10; // Increased from 5 to 10
   const isConnectingRef = useRef(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'reconnecting'>('disconnected');
 
   // Store callbacks in refs to prevent dependency changes
   const callbacksRef = useRef({
@@ -45,6 +47,7 @@ export const useWebSocket = ({ onMessage, onConnect, onDisconnect, onError }: Us
     }
 
     isConnectingRef.current = true;
+    setConnectionStatus('connecting');
 
     try {
       const ws = new WebSocket('ws://localhost:3002');
@@ -54,6 +57,8 @@ export const useWebSocket = ({ onMessage, onConnect, onDisconnect, onError }: Us
         console.log('WebSocket connected');
         isConnectingRef.current = false;
         reconnectAttemptsRef.current = 0;
+        setIsConnected(true);
+        setConnectionStatus('connected');
         
         // Register the user with the WebSocket server
         ws.send(JSON.stringify({
@@ -73,29 +78,39 @@ export const useWebSocket = ({ onMessage, onConnect, onDisconnect, onError }: Us
         }
       };
 
-      ws.onclose = () => {
-        console.log('WebSocket disconnected');
+      ws.onclose = (event) => {
+        console.log('WebSocket disconnected', event.code, event.reason);
         isConnectingRef.current = false;
+        setIsConnected(false);
+        setConnectionStatus('disconnected');
         callbacksRef.current.onDisconnect?.();
         
-        // Only attempt to reconnect if this wasn't a manual disconnect
-        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+        // Only attempt to reconnect if this wasn't a manual disconnect and we haven't exceeded max attempts
+        if (reconnectAttemptsRef.current < maxReconnectAttempts && event.code !== 1000) {
+          setConnectionStatus('reconnecting');
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000); // Cap at 30 seconds
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttemptsRef.current++;
             console.log(`Attempting to reconnect... (${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
             connect();
-          }, 1000 * Math.pow(2, reconnectAttemptsRef.current)); // Exponential backoff
+          }, delay);
+        } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+          console.log('Max reconnection attempts reached');
         }
       };
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
         isConnectingRef.current = false;
+        setIsConnected(false);
+        setConnectionStatus('disconnected');
         callbacksRef.current.onError?.(error);
       };
     } catch (error) {
       console.error('Error creating WebSocket connection:', error);
       isConnectingRef.current = false;
+      setIsConnected(false);
+      setConnectionStatus('disconnected');
     }
   }, [userInfo?.whatsappAccount?.id]);
 
@@ -108,9 +123,12 @@ export const useWebSocket = ({ onMessage, onConnect, onDisconnect, onError }: Us
     reconnectAttemptsRef.current = maxReconnectAttempts; // Prevent reconnection
     
     if (wsRef.current) {
-      wsRef.current.close();
+      wsRef.current.close(1000, 'Manual disconnect'); // Use code 1000 for normal closure
       wsRef.current = null;
     }
+    
+    setIsConnected(false);
+    setConnectionStatus('disconnected');
   }, []);
 
   const sendMessage = useCallback((message: WebSocketMessage) => {
@@ -121,9 +139,12 @@ export const useWebSocket = ({ onMessage, onConnect, onDisconnect, onError }: Us
     }
   }, []);
 
+  // Auto-reconnect when user info becomes available
   useEffect(() => {
     if (userInfo?.whatsappAccount?.id) {
       connect();
+    } else {
+      disconnect();
     }
 
     return () => {
@@ -133,7 +154,8 @@ export const useWebSocket = ({ onMessage, onConnect, onDisconnect, onError }: Us
 
   return {
     sendMessage,
-    isConnected: wsRef.current?.readyState === WebSocket.OPEN,
+    isConnected,
+    connectionStatus,
     disconnect
   };
 }; 

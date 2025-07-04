@@ -1,67 +1,90 @@
-import { NextRequest, NextResponse } from 'next/server';
-import axios from 'axios';
-import { getSession } from '@/lib/jwt';
-import { prisma } from '@/lib/prisma';
+import { getSession } from "@/lib/jwt";
+import { NextRequest, NextResponse } from "next/server";
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
+import { existsSync, unlinkSync } from "fs";
+import { prisma } from "@/lib/prisma";
+import axios from "axios";
+import FormData from "form-data";
+import fs from "fs";
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const type = formData.get('type') as string;
+    const session = await getSession();
 
-    if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      );
-    }
-
-    const user = await getSession();
-
-    if (!user) {
+    if (!session || !session.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get the base URL from the request
-    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-    const host = request.headers.get('host');
-    const baseUrl = `${protocol}://${host}`;
-
-    // First, get the upload session
-    const uploadSession = await axios.post(`${baseUrl}/api/whatsapp/upload-session`, {
-      file_name: file.name,
-      file_length: file.size,
-      file_type: file.type,
-      userId: user.userId as string,
+    const account = await prisma.whatsAppAccount.findFirst({
+      where: {
+        user: {
+          email: session.email,
+        },
+      },
     });
 
-    const uploadSessionId = uploadSession.data.id;
-    const accessToken = uploadSession.data.accessToken;
-    console.log(accessToken, "accessToken");
-    console.log(uploadSessionId, "uploadSessionId");
+    if (!account) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    // Convert the file to buffer
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const formData = await request.formData();
+    const file = formData.get("file") as File;
+    const phoneNumberId = formData.get("phoneNumberId") as string;
+    console.log(phoneNumberId, "phoneNumberId");
 
-    // Upload the file to WhatsApp Business API
-    const uploadResponse = await axios.post(
-      `https://graph.facebook.com/v23.0/upload:${uploadSessionId}`,
-      buffer,
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+
+    // Create uploads directory if it doesn't exist
+    const uploadsDir = join(process.cwd(), "public", "uploads");
+    if (!existsSync(uploadsDir)) {
+      await mkdir(uploadsDir, { recursive: true });
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const originalName = file.name;
+    const extension = originalName.split('.').pop();
+    const filename = `${timestamp}_${originalName}`;
+    const filePath = join(uploadsDir, filename);
+
+    // Convert file to buffer and save
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    await writeFile(filePath, buffer);
+
+    // Prepare form-data for WhatsApp API
+    const form = new FormData();
+    form.append('file', fs.createReadStream(filePath));
+    form.append('type', file.type);
+    form.append('messaging_product', 'whatsapp');
+
+    // Send to WhatsApp API
+    const mediaId = await axios.post(
+      `https://graph.facebook.com/v23.0/${phoneNumberId}/media`,
+      form,
       {
         headers: {
-          'Authorization': `OAuth ${accessToken}`,
-          'file_offset': '0',
+          ...form.getHeaders(),
+          Authorization: `Bearer ${account.accessToken}`,
         },
       }
     );
-    console.log(uploadResponse.data);
 
-    return NextResponse.json(uploadResponse.data);
+    // Clean up: delete the file from server
+    try {
+      unlinkSync(filePath);
+    } catch (e) {
+      console.warn("Failed to delete uploaded file after WhatsApp upload", e);
+    }
+
+    return NextResponse.json({ 
+      mediaId: mediaId.data.id,
+    });
   } catch (error) {
-    console.error('Error in upload-file:', error);
-    return NextResponse.json(
-      { error: 'Failed to upload file' },
-      { status: 500 }
-    );
+    console.error("File upload error:", error);
+    return NextResponse.json({ error: "File upload failed", message: error }, { status: 500 });
   }
 } 
