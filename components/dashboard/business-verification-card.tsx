@@ -26,6 +26,9 @@ export default function BusinessVerificationCardContent({
               Verify your Meta Business Account to prevent messaging limits and
               unlock all WhatsApp Business features.
             </p>
+            <Button variant="outline" size="sm">
+              Verify Now
+            </Button>
           </div>
         </div>
       )}
