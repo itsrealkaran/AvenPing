@@ -21,7 +21,7 @@ export default function DashboardPage() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
 
-  const { userInfo } = useUser()
+  const { userInfo } = useUser();
 
   useEffect(() => {
     if (userInfo?.whatsappAccount?.phoneNumbers?.length > 0) {
@@ -36,7 +36,10 @@ export default function DashboardPage() {
       setIsRegistered(false);
     }
 
-    if (userInfo?.whatsappAccount?.activePhoneNumber?.codeVerificationStatus === 'VERIFIED') {
+    if (
+      userInfo?.whatsappAccount?.activePhoneNumber?.codeVerificationStatus ===
+      "VERIFIED"
+    ) {
       setIsVerified(true);
     } else {
       setIsVerified(false);
@@ -167,15 +170,7 @@ export default function DashboardPage() {
           headerInfo="Verify your business with WhatsApp to avoid account bans and unlock all features. Without verification, your WhatsApp Business account may be restricted or banned."
           className="md:col-span-2 !p-0"
         >
-          <BusinessVerificationCardContent
-            isVerified={isVerified}
-            onVerify={() => {
-              window.open(
-                "https://business.facebook.com/latest/settings/security_center/",
-                "_blank"
-              );
-            }}
-          />
+          <BusinessVerificationCardContent isVerified={isVerified} />
         </Card>
       </div>
       {/* Modals */}
