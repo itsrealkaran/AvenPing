@@ -63,7 +63,7 @@ export const useWebSocket = ({ onMessage, onConnect, onDisconnect, onError }: Us
         // Register the user with the WebSocket server
         ws.send(JSON.stringify({
           type: 'register',
-          userId: userInfo.whatsappAccount.id
+          userId: userInfo?.whatsappAccount?.id
         }));
         
         callbacksRef.current.onConnect?.();

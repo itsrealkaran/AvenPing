@@ -44,7 +44,7 @@ export default function ProfilePage() {
         return {
           displayName: prev.displayName,
           phoneNumber:
-            userInfo.whatsappAccount.activePhoneNumber?.phoneNumberId ||
+            userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId ||
             prev.phoneNumber,
           about: profileDetails.about || "",
           description: profileDetails.description || "",

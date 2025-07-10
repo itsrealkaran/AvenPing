@@ -6,6 +6,9 @@ import { getSession } from "@/lib/jwt";
 const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password"];
 const privatePaths = ["/dashboard", "/api", "/messages", "/campaigns", "/templates", "/contacts", "/flows", "/aibot", "/analytics", "/settings"];
 
+// Paths that require WhatsApp account
+const whatsappRequiredPaths = ["/messages", "/campaigns", "/templates", "/contacts", "/flows", "/aibot", "/analytics", "/settings", "/profile"];
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -28,7 +31,20 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
       }
 
-      // If session exists, allow the request
+      console.log(session, "session from our middleware outside");
+      // Check if the current path requires WhatsApp account
+      if (whatsappRequiredPaths.includes(pathname)) {
+        console.log(session, "session");
+        // Check WhatsApp account status from JWT token (no API call needed)
+        const hasWhatsAppAccount = session.hasWhatsAppAccount === true;
+        
+        // If user doesn't have WhatsApp account, redirect to dashboard
+        if (!hasWhatsAppAccount) {
+          return NextResponse.redirect(new URL("/dashboard?whatsapp=false", request.url));
+        }
+      }
+
+      // If session exists and WhatsApp check passes, allow the request
       return NextResponse.next();
     } catch (error) {
       // If there's an error checking the session, redirect to login

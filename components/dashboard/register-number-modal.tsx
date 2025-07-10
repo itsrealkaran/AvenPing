@@ -43,7 +43,7 @@ export default function RegisterNumberModal({ isOpen, onClose, onRegister }: Reg
       setError("PIN must be at least 4 digits")
       return
     }
-    onRegister(pin, userInfo.whatsappAccount.activePhoneNumber?.phoneNumberId!)
+    onRegister(pin, userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId!)
     onClose()
   }
 
@@ -51,7 +51,7 @@ export default function RegisterNumberModal({ isOpen, onClose, onRegister }: Reg
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-md p-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium">{step === 1 ? "Register Your Number " + userInfo.whatsappAccount.activePhoneNumber?.phoneNumber : "Create PIN"}</h3>
+          <h3 className="text-lg font-medium">{step === 1 ? "Register Your Number " + userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumber : "Create PIN"}</h3>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X size={20} />
           </button>

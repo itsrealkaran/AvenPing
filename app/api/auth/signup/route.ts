@@ -46,11 +46,12 @@ export async function POST(request: Request) {
       }
     });
 
-    // Create JWT token
+    // Create JWT token (new users don't have WhatsApp account yet)
     const token = await createToken({
       userId: user.id,
       email: user.email,
-      name: user.name
+      name: user.name,
+      hasWhatsAppAccount: false,
     });
 
     // Set cookie

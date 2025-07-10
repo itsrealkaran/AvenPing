@@ -58,15 +58,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           logo: "/logo-black.svg",
         }}
         navigationItems={navigationItems}
-        accountInfo={userInfo && userInfo.whatsappAccount.phoneNumbers.length > 0 ? userInfo.whatsappAccount.phoneNumbers.map((phone: any) => {
+        accountInfo={userInfo && userInfo.whatsappAccount && userInfo.whatsappAccount.phoneNumbers.length > 0 ? userInfo.whatsappAccount.phoneNumbers.map((phone: any) => {
           return {
             name: phone.name,
             number: phone.phoneNumber,
           }
         }) : []}
         userProfile={{
-          name: userInfo && userInfo.whatsappAccount.name,
-          email: userInfo && userInfo.whatsappAccount.email,
+          name: userInfo && userInfo.whatsappAccount && userInfo.whatsappAccount.name || '',
+          email: userInfo && userInfo.whatsappAccount && userInfo.whatsappAccount.email || '',
         }}
       />
       <div className="flex flex-col flex-1 relative overflow-hidden bg-white rounded-xl mr-2 border-[#E0DADA] border-5">

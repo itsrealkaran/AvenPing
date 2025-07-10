@@ -25,7 +25,11 @@ export async function POST(request: Request) {
         }
        },
       include: {
-        whatsAppAccount: true,
+        whatsAppAccount: {
+          include: {
+            phoneNumbers: true,
+          },
+        },
       }
     });
 
@@ -46,12 +50,22 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if user has WhatsApp account with phone numbers
+    const hasWhatsAppAccount = Boolean(
+      user.whatsAppAccount?.id && 
+      user.whatsAppAccount.phoneNumbers && 
+      user.whatsAppAccount.phoneNumbers.length > 0
+    );
+
+    console.log(hasWhatsAppAccount, "hasWhatsAppAccount");
+
     // Create JWT token
     const token = await createToken({
       userId: user.id,
       email: user.email,
       name: user.name,
       accessToken: user.whatsAppAccount?.accessToken,
+      hasWhatsAppAccount: hasWhatsAppAccount,
     });
 
     // Set cookie

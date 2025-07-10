@@ -14,6 +14,9 @@ import { sampleMetrics } from "@/components/analytics/data";
 import Link from "next/link";
 import axios from "axios";
 import { useUser } from "@/context/user-context";
+import { getSession } from "@/lib/jwt";
+import { WhatsAppAccountRequired } from "@/components/ui/whatsapp-account-required";
+import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   // Register Number state
@@ -21,22 +24,22 @@ export default function DashboardPage() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
 
-  const { userInfo } = useUser()
+  const { userInfo, hasWhatsAppAccount } = useUser();
 
   useEffect(() => {
-    if (userInfo?.whatsappAccount?.phoneNumbers?.length > 0) {
+    if (userInfo?.whatsappAccount?.phoneNumbers && userInfo?.whatsappAccount?.phoneNumbers?.length > 0) {
       setIsConnected(true);
     } else {
       setIsConnected(false);
     }
 
-    if (userInfo?.whatsappAccount?.activePhoneNumber?.isRegistered) {
+    if (userInfo?.whatsappAccount?.activePhoneNumber && userInfo?.whatsappAccount?.activePhoneNumber?.isRegistered) {
       setIsRegistered(true);
     } else {
       setIsRegistered(false);
     }
 
-    if (userInfo?.whatsappAccount?.activePhoneNumber?.codeVerificationStatus === 'VERIFIED') {
+    if (userInfo?.whatsappAccount?.activePhoneNumber && userInfo?.whatsappAccount?.activePhoneNumber?.codeVerificationStatus === 'VERIFIED') {
       setIsVerified(true);
     } else {
       setIsVerified(false);
@@ -99,7 +102,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <Body title="Dashboard">
+    <Body title="Dashboard" className={cn(hasWhatsAppAccount ? 'relative overflow-hidden' : '')}>
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-3">
         {sampleMetrics.map((metric, index) => (
@@ -176,6 +179,7 @@ export default function DashboardPage() {
         onClose={() => setShowRegisterModal(false)}
         onRegister={handleRegister}
       />
-    </Body>
-  );
+      <WhatsAppAccountRequired />
+      </Body>
+    );
 }

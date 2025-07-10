@@ -61,7 +61,12 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const messageCache = useRef<Map<string, Message[]>>(new Map());
 
   useEffect(() => {
-    if (user?.whatsappAccount?.phoneNumbers[0].id) {
+    console.log(user);
+    if (user && 
+        user.whatsappAccount && 
+        user.whatsappAccount.phoneNumbers && 
+        user.whatsappAccount.phoneNumbers.length > 0 && 
+        user.whatsappAccount.phoneNumbers[0]?.id) {
       const newPhoneNumberId = user.whatsappAccount.phoneNumbers[0].id;
       
       // Only update if the phone number ID has actually changed
