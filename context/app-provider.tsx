@@ -6,6 +6,7 @@ import { MessagesProvider } from "./messages-context";
 import { ProfileProvider } from "./profile-provider";
 import { Providers as TanStackQueryProvider } from "@/lib/providers";
 import { ContactProvider } from "./contact-provider";
+import { FlowProvider } from "./flow-provider";
 
 export function AppProvider({ children }: { children: ReactNode }) {
   return (
@@ -13,7 +14,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       <UserProvider>
         <MessagesProvider>
           <ProfileProvider>
-            <ContactProvider>{children}</ContactProvider>
+            <ContactProvider>
+              <FlowProvider>{children}</FlowProvider>
+            </ContactProvider>
           </ProfileProvider>
         </MessagesProvider>
       </UserProvider>

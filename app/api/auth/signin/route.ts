@@ -57,8 +57,6 @@ export async function POST(request: Request) {
       user.whatsAppAccount.phoneNumbers.length > 0
     );
 
-    console.log(hasWhatsAppAccount, "hasWhatsAppAccount");
-
     // Create JWT token
     const token = await createToken({
       userId: user.id,
