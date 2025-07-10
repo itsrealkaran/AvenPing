@@ -105,6 +105,8 @@ model WhatsAppRecipient {
 
   lastCheckedTime DateTime @default(now())
 
+  isOptedOut Boolean @default(false)
+
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
   messages  WhatsAppMessage[]
@@ -122,7 +124,7 @@ model WhatsAppCampaign {
   type           String // TEXT, IMAGE, TEMPLATE
   message        String?
   mediaUrl       String?
-  templateId     String?
+  templateName   String?
   templateParams Json? // Stored as JSON object
   accountId      String
   account        WhatsAppAccount  @relation(fields: [accountId], references: [id])

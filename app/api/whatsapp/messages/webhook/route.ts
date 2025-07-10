@@ -116,6 +116,10 @@ export async function POST(req: NextRequest) {
                 const recipient = whatsAppPhoneNumber.recipients.find(
                   (recipient) => recipient.phoneNumber === message.from
                 );
+                let isOptedOut = false;
+                if (message.text.body.toLowerCase().replace(/\s/g, "") === "stop") {
+                  isOptedOut = true;
+                }
                 let newMessage;
 
                 if (recipient) {
@@ -129,6 +133,7 @@ export async function POST(req: NextRequest) {
                       },
                       data: {
                         name: change.value.contacts[0].profile.name,
+                        isOptedOut,
                       },
                     });
                   }
@@ -161,6 +166,7 @@ export async function POST(req: NextRequest) {
                         phoneNumber: message.from,
                         name: change.value.contacts[0].profile.name || null,
                         whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
+                        isOptedOut,
                       },
                     });
                     newMessage = await tx.whatsAppMessage.create({
