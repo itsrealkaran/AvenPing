@@ -2,84 +2,80 @@
 
 import Body from "@/components/layout/body";
 import { FileText, Edit, Trash, Copy, Plus } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Table, { ActionMenuItem } from "@/components/ui/table";
 import { MRT_ColumnDef } from "material-react-table";
+import { CreateTemplateModal } from "@/components/templates/create-template-modal";
+import { useTemplates } from "@/context/template-provider";
+import { useUser } from "@/context/user-context";
 
 type Template = {
   id: string;
   name: string;
-  type: string;
+  language: string;
   category: string;
-  variables: string[];
-  createdAt: string;
-  updatedAt: string;
+  status: string;
+  components: any[];
+  created_at?: string;
+  updated_at?: string;
 };
 
 export default function TemplatesPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [templates, setTemplates] = useState<Template[]>([
-    {
-      id: "1",
-      name: "Welcome Message",
-      type: "SMS",
-      category: "Onboarding",
-      variables: ["name", "company"],
-      createdAt: "2023-05-15T10:30:00Z",
-      updatedAt: "2023-05-15T10:30:00Z",
-    },
-    {
-      id: "2",
-      name: "Order Confirmation",
-      type: "WhatsApp",
-      category: "Transactional",
-      variables: ["name", "order_id", "amount"],
-      createdAt: "2023-05-16T11:20:00Z",
-      updatedAt: "2023-06-01T09:15:00Z",
-    },
-    {
-      id: "3",
-      name: "Appointment Reminder",
-      type: "SMS",
-      category: "Notification",
-      variables: ["name", "date", "time", "location"],
-      createdAt: "2023-05-17T09:15:00Z",
-      updatedAt: "2023-05-17T09:15:00Z",
-    },
-    {
-      id: "4",
-      name: "Promotional Offer",
-      type: "WhatsApp",
-      category: "Marketing",
-      variables: ["name", "discount", "expiry_date"],
-      createdAt: "2023-05-18T14:45:00Z",
-      updatedAt: "2023-07-10T16:30:00Z",
-    },
-  ]);
+  const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] = useState(false);
+  const { userInfo } = useUser();
+  const { 
+    templates, 
+    isLoading, 
+    error, 
+    selectedWhatsAppAccountId,
+    setSelectedWhatsAppAccountId,
+    fetchTemplates,
+    createTemplate,
+    deleteTemplate,
+    updateTemplate 
+  } = useTemplates();
 
-  const handleDeleteTemplate = (template: Template) => {
-    setTemplates(templates.filter((t) => t.id !== template.id));
+  // Set the selected WhatsApp account ID when user info is available
+  useEffect(() => {
+    if (userInfo?.whatsappAccount?.id) {
+      setSelectedWhatsAppAccountId(userInfo.whatsappAccount.id);
+    }
+  }, [userInfo, setSelectedWhatsAppAccountId]);
+
+  const handleDeleteTemplate = async (template: Template) => {
+    if (!selectedWhatsAppAccountId) {
+      console.error('No WhatsApp account selected');
+      return;
+    }
+    console.log(template, "template");
+    await deleteTemplate(selectedWhatsAppAccountId, template.name);
   };
 
   const handleAddTemplate = () => {
-    console.log("Add template");
-    // Implement your add template logic here
+    setIsCreateTemplateModalOpen(true);
   };
 
   const handleEditTemplate = (template: Template) => {
     console.log("Edit template", template);
-    // Implement your edit template logic here
+    // Note: WhatsApp API doesn't support template updates
+    // This would typically involve creating a new template
   };
 
-  const handleDuplicateTemplate = (template: Template) => {
-    const newTemplate = {
-      ...template,
-      id: `${template.id}-copy-${Date.now()}`,
-      name: `${template.name} (Copy)`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+  const handleDuplicateTemplate = async (template: Template) => {
+    if (!selectedWhatsAppAccountId) {
+      console.error('No WhatsApp account selected');
+      return;
+    }
+
+    // Create a new template based on the existing one
+    const newTemplateData = {
+      name: `${template.name}_copy`,
+      language: template.language,
+      category: template.category,
+      components: template.components,
     };
-    setTemplates([...templates, newTemplate]);
+
+    await createTemplate(selectedWhatsAppAccountId, newTemplateData);
   };
 
   const columns: MRT_ColumnDef<Template>[] = [
@@ -88,40 +84,48 @@ export default function TemplatesPage() {
       header: "Template Name",
     },
     {
-      accessorKey: "type",
-      header: "Type",
-      Cell: ({ row }) => {
-        const value = row.original.type;
-        return (
-          <span
-            className={`px-2 py-1 text-xs font-medium rounded-full ${
-              value === "SMS"
-                ? "bg-blue-100 text-blue-800"
-                : "bg-green-100 text-green-800"
-            }`}
-          >
-            {value}
-          </span>
-        );
-      },
+      accessorKey: "language",
+      header: "Language",
     },
     {
       accessorKey: "category",
       header: "Category",
     },
     {
-      accessorKey: "variables",
-      header: "Variables",
+      accessorKey: "status",
+      header: "Status",
       Cell: ({ row }) => {
-        const variables = row.original.variables;
+        const status = row.original.status;
+        return (
+          <span
+            className={`px-2 py-1 text-xs font-medium rounded-full ${
+              status === 'APPROVED'
+                ? "bg-green-100 text-green-800"
+                : status === 'PENDING'
+                ? "bg-yellow-100 text-yellow-800"
+                : status === 'REJECTED'
+                ? "bg-red-100 text-red-800"
+                : "bg-gray-100 text-gray-800"
+            }`}
+          >
+            {status}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "components",
+      header: "Components",
+      Cell: ({ row }) => {
+        const components = row.original.components;
         return (
           <div className="flex flex-wrap gap-1">
-            {variables.map((variable, index) => (
+            {components?.map((component, index) => (
               <span
                 key={index}
                 className="px-2 py-0.5 text-xs bg-gray-100 rounded-full"
               >
-                {variable}
+                {component.type}
               </span>
             ))}
           </div>
@@ -129,11 +133,13 @@ export default function TemplatesPage() {
       },
     },
     {
-      accessorKey: "updatedAt",
+      accessorKey: "updated_at",
       header: "Last Updated",
       Cell: ({ row }) => {
-        const date = new Date(row.original.updatedAt);
-        return date.toLocaleString("en-US", {
+        const date = row.original.updated_at || row.original.created_at;
+        if (!date) return '-';
+        
+        return new Date(date).toLocaleString("en-US", {
           year: "numeric",
           month: "short",
           day: "numeric",
@@ -156,8 +162,8 @@ export default function TemplatesPage() {
       key: "duplicate",
       label: "Duplicate",
       icon: <Copy className="size-4" />,
-      onClick: (template, closeMenu) => {
-        handleDuplicateTemplate(template);
+      onClick: async (template, closeMenu) => {
+        await handleDuplicateTemplate(template);
         closeMenu();
       },
     },
@@ -165,16 +171,32 @@ export default function TemplatesPage() {
       key: "delete",
       label: "Delete",
       icon: <Trash className="text-red-600 size-4" />,
-      onClick: (template, closeMenu) => {
-        handleDeleteTemplate(template);
+      onClick: async (template, closeMenu) => {
+        await handleDeleteTemplate(template);
         closeMenu();
       },
       className: "text-red-600",
     },
   ];
 
+  const handleCreateTemplate = async () => {
+    if (!selectedWhatsAppAccountId) {
+      console.error('No WhatsApp account selected');
+      return;
+    }
+
+    // The template data will be passed from the modal
+    setIsCreateTemplateModalOpen(false);
+  };
+
   return (
     <Body title="Templates">
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-800 text-sm">{error}</p>
+        </div>
+      )}
+
       <Table
         data={templates}
         columns={columns}
@@ -183,6 +205,12 @@ export default function TemplatesPage() {
         onAddItem={handleAddTemplate}
         addButtonLabel="Create Template"
         searchPlaceholder="Search templates..."
+      />
+
+      <CreateTemplateModal
+        open={isCreateTemplateModalOpen}
+        onClose={() => setIsCreateTemplateModalOpen(false)}
+        onCreateTemplate={handleCreateTemplate}
       />
     </Body>
   );
