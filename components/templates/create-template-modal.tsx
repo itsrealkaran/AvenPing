@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Info, Plus, Trash2, X } from 'lucide-react';
+import { Info, Plus, Trash2, X, Upload, Image, Video, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,8 @@ interface CreateTemplateModalProps {
   editingTemplate?: any;
 }
 
+type HeaderFormat = 'TEXT' | 'IMAGE' | 'VIDEO' | 'DOCUMENT';
+
 export function CreateTemplateModal({
   open,
   onClose,
@@ -29,12 +31,20 @@ export function CreateTemplateModal({
   const [name, setName] = useState(editingTemplate?.name || '');
   const [language, setLanguage] = useState(editingTemplate?.language || 'en_US');
   const [category, setCategory] = useState(editingTemplate?.category || 'MARKETING');
+  
+  // Header state
+  const [headerFormat, setHeaderFormat] = useState<HeaderFormat>('TEXT');
   const [headerText, setHeaderText] = useState(
     editingTemplate?.components?.find((c: any) => c.type === 'HEADER')?.text || ''
   );
   const [headerExamples, setHeaderExamples] = useState<string[]>(
     editingTemplate?.components?.find((c: any) => c.type === 'HEADER')?.example?.header_text || []
   );
+  const [headerMediaFile, setHeaderMediaFile] = useState<File | null>(null);
+  const [headerMediaId, setHeaderMediaId] = useState<string>('');
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  
+  // Body state
   const [bodyText, setBodyText] = useState(
     editingTemplate?.components?.find((c: any) => c.type === 'BODY')?.text || ''
   );
@@ -51,6 +61,48 @@ export function CreateTemplateModal({
     return text.replace(/{{(\d+)}}/g, () => `{{${counter++}}}`);
   };
 
+  const uploadMediaFile = async (file: File): Promise<string> => {
+    if (!userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId) {
+      throw new Error('No active phone number found');
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('phoneNumberId', userInfo.whatsappAccount.activePhoneNumber.phoneNumberId);
+
+    const response = await fetch('/api/whatsapp/upload-file', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to upload media');
+    }
+
+    const data = await response.json();
+    return data.mediaId; // Return the mediaId directly for WhatsApp templates
+  };
+
+  const handleHeaderMediaUpload = async () => {
+    if (!headerMediaFile) {
+      toast.error('Please select a file first');
+      return;
+    }
+
+    setIsUploadingMedia(true);
+    try {
+      const mediaId = await uploadMediaFile(headerMediaFile);
+      setHeaderMediaId(mediaId);
+      toast.success('Media uploaded successfully!');
+    } catch (error) {
+      console.error('Media upload error:', error);
+      toast.error('Failed to upload media');
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!name || !language || !category || !bodyText) {
       toast.error('Please fill in all required fields');
@@ -62,7 +114,18 @@ export function CreateTemplateModal({
       return;
     }
 
-    // Fix variable numbering in both components
+    // Validate header based on format
+    if (headerFormat === 'TEXT' && !headerText.trim()) {
+      toast.error('Please enter header text');
+      return;
+    }
+
+    if (headerFormat !== 'TEXT' && !headerMediaId) {
+      toast.error('Please upload media for header');
+      return;
+    }
+
+    // Fix variable numbering in text components
     const fixedHeaderText = headerText ? fixVariableNumbering(headerText) : '';
     const fixedBodyText = fixVariableNumbering(bodyText);
 
@@ -74,10 +137,6 @@ export function CreateTemplateModal({
       parseInt(match.match(/\d+/)![0])
     );
 
-    console.log('Header variables:', headerVariables);
-    console.log('Body variables:', bodyVariables);
-    console.log('Body text:', fixedBodyText);
-
     // Check if variables start from 1 and are sequential
     const isHeaderSequential =
       headerVariables.length === 0 ||
@@ -87,9 +146,6 @@ export function CreateTemplateModal({
       bodyVariables.length === 0 ||
       (bodyVariables[0] === 1 &&
         bodyVariables.every((val: number, idx: number) => val === idx + 1));
-
-    console.log('Is header sequential:', isHeaderSequential);
-    console.log('Is body sequential:', isBodySequential);
 
     if (!isHeaderSequential && headerVariables.length > 0) {
       toast.error(
@@ -110,7 +166,7 @@ export function CreateTemplateModal({
     const bodyVarCount = bodyVariables.length;
 
     // Validate examples match variables
-    if (headerText && headerExamples.length !== headerVarCount) {
+    if (headerFormat === 'TEXT' && headerText && headerExamples.length !== headerVarCount) {
       toast.error(
         `Please provide ${headerVarCount} example${headerVarCount !== 1 ? 's' : ''} for the header variables`
       );
@@ -132,7 +188,7 @@ export function CreateTemplateModal({
         language,
         category,
         components: [
-          ...(fixedHeaderText
+          ...(headerFormat === 'TEXT' && fixedHeaderText
             ? [
                 {
                   type: 'HEADER',
@@ -140,6 +196,16 @@ export function CreateTemplateModal({
                   text: fixedHeaderText,
                   example: {
                     header_text: headerExamples,
+                  },
+                },
+              ]
+            : headerFormat !== 'TEXT' && headerMediaId
+            ? [
+                {
+                  type: 'HEADER',
+                  format: headerFormat,
+                  example: {
+                    header_handle: [headerMediaId], // This should be the mediaId from WhatsApp
                   },
                 },
               ]
@@ -236,8 +302,11 @@ export function CreateTemplateModal({
       setName('');
       setLanguage('en_US');
       setCategory('MARKETING');
+      setHeaderFormat('TEXT');
       setHeaderText('');
       setHeaderExamples([]);
+      setHeaderMediaFile(null);
+      setHeaderMediaId('');
       setBodyText('');
       setBodyExamples([]);
     }
@@ -350,62 +419,133 @@ export function CreateTemplateModal({
 
                 {/* Header Section */}
                 <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="header" className="text-sm font-medium text-gray-700">
-                      Header (Optional)
-                    </Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Optional header text for your template</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <Input
-                    id="header"
-                    value={headerText}
-                    onChange={(e) => setHeaderText(e.target.value)}
-                    placeholder="e.g., Our {{1}} is on!"
-                    className="font-mono"
-                  />
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium text-gray-600">Variable Examples</Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={addHeaderExample}
-                        className="h-8"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Example
-                      </Button>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="header" className="text-sm font-medium text-gray-700">
+                        Header (Optional)
+                      </Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-gray-400" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Optional header text or media for your template</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
-                    {headerExamples.map((example, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          value={example}
-                          onChange={(e) => handleHeaderExampleChange(index, e.target.value)}
-                          placeholder={`Example ${index + 1}`}
-                          className="flex-1"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeHeaderExample(index)}
-                          className="h-10 w-10 text-red-500 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                    
+                    {/* Header Format Selector */}
+                    <div className="flex items-center gap-2">
+                      <Label className="text-sm text-gray-600">Format:</Label>
+                      <select
+                        value={headerFormat}
+                        onChange={(e) => setHeaderFormat(e.target.value as HeaderFormat)}
+                        className="text-sm border border-gray-300 rounded px-2 py-1"
+                      >
+                        <option value="TEXT">Text</option>
+                        <option value="IMAGE">Image</option>
+                        <option value="VIDEO">Video</option>
+                        <option value="DOCUMENT">Document</option>
+                      </select>
+                    </div>
                   </div>
+
+                  {/* Text Header */}
+                  {headerFormat === 'TEXT' && (
+                    <>
+                      <Input
+                        id="header"
+                        value={headerText}
+                        onChange={(e) => setHeaderText(e.target.value)}
+                        placeholder="e.g., Our {{1}} is on!"
+                        className="font-mono"
+                      />
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium text-gray-600">Variable Examples</Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={addHeaderExample}
+                            className="h-8"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Example
+                          </Button>
+                        </div>
+                        {headerExamples.map((example, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={example}
+                              onChange={(e) => handleHeaderExampleChange(index, e.target.value)}
+                              placeholder={`Example ${index + 1}`}
+                              className="flex-1"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeHeaderExample(index)}
+                              className="h-10 w-10 text-red-500 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Media Header */}
+                  {headerFormat !== 'TEXT' && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        {headerFormat === 'IMAGE' && <Image className="h-4 w-4" />}
+                        {headerFormat === 'VIDEO' && <Video className="h-4 w-4" />}
+                        {headerFormat === 'DOCUMENT' && <FileText className="h-4 w-4" />}
+                        <span className="text-sm text-gray-600">
+                          Upload {headerFormat.toLowerCase()} for header
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <input
+                          type="file"
+                          accept={
+                            headerFormat === 'IMAGE' 
+                              ? 'image/*' 
+                              : headerFormat === 'VIDEO' 
+                              ? 'video/*' 
+                              : '.pdf,.doc,.docx,.txt'
+                          }
+                          onChange={(e) => setHeaderMediaFile(e.target.files?.[0] || null)}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#D3F8FF] file:text-[#30CFED] hover:file:bg-[#D3F8FF]/80"
+                        />
+                        
+                        {headerMediaFile && (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleHeaderMediaUpload}
+                              disabled={isUploadingMedia}
+                              className="text-[#30CFED] border-[#30CFED] hover:bg-[#D3F8FF]"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              {isUploadingMedia ? 'Uploading...' : 'Upload Media'}
+                            </Button>
+                            {headerMediaId && (
+                              <span className="text-sm text-green-600">✓ Uploaded</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Body Section */}
@@ -534,6 +674,19 @@ export function CreateTemplateModal({
                     </p>
                     <p className="text-sm text-gray-600">
                       • Too many variables in a short message may be rejected
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-gray-900">Media Headers</h4>
+                    <p className="text-sm text-gray-600">
+                      • Supported formats: Image, Video, Document (PDF)
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      • Media files are uploaded to WhatsApp servers
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      • Media must be approved by WhatsApp before use
                     </p>
                   </div>
                 </div>
