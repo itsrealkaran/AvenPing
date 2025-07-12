@@ -1,13 +1,14 @@
 "use client";
 
 import Body from "@/components/layout/body";
-import { Edit, Trash, Pause, Play, FileUp, Send } from "lucide-react";
+import { Edit, Trash, Pause, Play, FileUp, Send, Download } from "lucide-react";
 import React, { useState } from "react";
 import Table, { ActionMenuItem, ToolbarAction } from "@/components/ui/table";
 import { MRT_ColumnDef, MRT_Row } from "material-react-table";
 import { useContacts, Contact } from "@/context/contact-provider";
 import { useUser } from "@/context/user-context";
 import AddContactModal from "@/components/contacts/add-contact-modal";
+import ImportContactsModal from "@/components/contacts/import-contacts-modal";
 
 // Utility function to convert contacts to CSV format
 const exportContactsToCSV = (contacts: Contact[]) => {
@@ -58,6 +59,7 @@ export default function ContactsPage() {
   const { contacts, isLoading, error, createContact, updateContact, deleteContacts, isCreating, isUpdating, isDeleting, createError, updateError, deleteError, attributes } = useContacts();
   const { userInfo } = useUser();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
 
   const handleDeleteContact = (contact: Contact) => {
@@ -114,6 +116,14 @@ export default function ContactsPage() {
   const handleCloseModal = () => {
     setShowAddModal(false);
     setEditingContact(null);
+  };
+
+  const handleImportContacts = () => {
+    setShowImportModal(true);
+  };
+
+  const handleCloseImportModal = () => {
+    setShowImportModal(false);
   };
 
   const handleExportContacts = () => {
@@ -229,6 +239,14 @@ export default function ContactsPage() {
 
   const toolbarActions: ToolbarAction<Contact>[] = [
     {
+      key: "import",
+      label: "Import",
+      icon: Download,
+      onClick: () => {
+        handleImportContacts();
+      },
+    },
+    {
       key: "export",
       label: "Export",
       icon: FileUp,
@@ -261,6 +279,11 @@ export default function ContactsPage() {
         onSubmit={handleCreateContact}
         isLoading={editingContact ? isUpdating : isCreating}
         editContact={editingContact}
+      />
+      
+      <ImportContactsModal
+        isOpen={showImportModal}
+        onClose={handleCloseImportModal}
       />
     </>
   );

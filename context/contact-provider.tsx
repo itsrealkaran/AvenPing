@@ -57,6 +57,7 @@ interface ContactContextType {
   createContact: (data: CreateContactData) => Promise<Contact>;
   updateContact: (data: UpdateContactData) => Promise<Contact>;
   deleteContacts: (ids: string[]) => Promise<void>;
+  bulkImportContacts: (contacts: CreateContactData[]) => Promise<{ success: number; failed: number; errors?: Array<{ index: number; error: string }> }>;
   attributes: ContactAttribute[] | undefined;
   isLoadingAttributes: boolean;
   errorAttributes: Error | null;
@@ -66,9 +67,11 @@ interface ContactContextType {
   isCreating: boolean;
   isUpdating: boolean;
   isDeleting: boolean;
+  isImporting: boolean;
   createError: Error | null;
   updateError: Error | null;
   deleteError: Error | null;
+  importError: Error | null;
   isCreatingAttribute: boolean;
   isUpdatingAttribute: boolean;
   isDeletingAttribute: boolean;
@@ -160,6 +163,18 @@ export function ContactProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Bulk import contacts mutation
+  const bulkImportContactsMutation = useMutation({
+    mutationFn: async (contacts: CreateContactData[]) => {
+      const response = await axios.post('/api/contacts/bulk-import', { contacts });
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate and refetch contacts data
+      queryClient.invalidateQueries({ queryKey: ['contacts', phoneNumberId] });
+    },
+  });
+
   // Get attributes
   const { data: attributes } = useQuery({
     queryKey: ['attributes'],
@@ -218,12 +233,17 @@ export function ContactProvider({ children }: { children: ReactNode }) {
     deleteContacts: async (ids: string[]) => {
       await deleteContactsMutation.mutateAsync(ids);
     },
+    bulkImportContacts: async (contacts: CreateContactData[]) => {
+      return await bulkImportContactsMutation.mutateAsync(contacts);
+    },
     isCreating: createContactMutation.isPending,
     isUpdating: updateContactMutation.isPending,
     isDeleting: deleteContactsMutation.isPending,
+    isImporting: bulkImportContactsMutation.isPending,
     createError: createContactMutation.error as Error | null,
     updateError: updateContactMutation.error as Error | null,
     deleteError: deleteContactsMutation.error as Error | null,
+    importError: bulkImportContactsMutation.error as Error | null,
 
     // Attributes
     attributes,

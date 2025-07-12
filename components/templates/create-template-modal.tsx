@@ -219,7 +219,7 @@ export function CreateTemplateModal({
           },
           {
             type: 'FOOTER',
-            text: 'Message was sent using AvenCRM',
+            text: 'Sent using AvenPing. Reply STOP to opt-out.',
           },
         ],
       };
