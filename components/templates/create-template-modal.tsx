@@ -62,15 +62,15 @@ export function CreateTemplateModal({
   };
 
   const uploadMediaFile = async (file: File): Promise<string> => {
-    if (!userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId) {
-      throw new Error('No active phone number found');
+    if (!userInfo?.whatsappAccount?.id) {
+      throw new Error('WhatsApp account not found');
     }
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('phoneNumberId', userInfo.whatsappAccount.activePhoneNumber.phoneNumberId);
+    formData.append('userId', userInfo.whatsappAccount.id);
 
-    const response = await fetch('/api/whatsapp/upload-file', {
+    const response = await fetch('/api/whatsapp/upload-session', {
       method: 'POST',
       body: formData,
     });
@@ -81,7 +81,7 @@ export function CreateTemplateModal({
     }
 
     const data = await response.json();
-    return data.mediaId; // Return the mediaId directly for WhatsApp templates
+    return data.fileHandle; // Return the file handle for WhatsApp templates
   };
 
   const handleHeaderMediaUpload = async () => {
