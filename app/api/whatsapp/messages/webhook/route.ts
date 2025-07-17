@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendMessageToUser } from "@/websocket-server.cjs";
+import { flowRunner } from "@/lib/flow-runner";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -193,6 +194,34 @@ export async function POST(req: NextRequest) {
                     }
                     return { newRecipient, newMessage };
                   });
+
+                  // Process flow automation for new recipient
+                  if (whatsAppPhoneNumber.account.user?.id && !isOptedOut) {
+                    try {
+                      await flowRunner.processMessage(
+                        whatsAppPhoneNumber.account.user.id,
+                        newData.newRecipient.id,
+                        message.text.body,
+                        whatsAppPhoneNumber.id
+                      );
+                    } catch (flowError) {
+                      console.error('Error processing flow:', flowError);
+                    }
+                  }
+                }
+
+                // Process flow automation for existing recipient
+                if (recipient && whatsAppPhoneNumber.account.user?.id && !isOptedOut) {
+                  try {
+                    await flowRunner.processMessage(
+                      whatsAppPhoneNumber.account.user.id,
+                      recipient.id,
+                      message.text.body,
+                      whatsAppPhoneNumber.id
+                    );
+                  } catch (flowError) {
+                    console.error('Error processing flow:', flowError);
+                  }
                 }
 
                 // Emit new message event

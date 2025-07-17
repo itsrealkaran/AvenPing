@@ -21,18 +21,19 @@ type Template = {
 };
 
 export default function TemplatesPage() {
-  const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] = useState(false);
+  const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] =
+    useState(false);
   const { userInfo } = useUser();
-  const { 
-    templates, 
-    isLoading, 
-    error, 
+  const {
+    templates,
+    isLoading,
+    error,
     selectedWhatsAppAccountId,
     setSelectedWhatsAppAccountId,
     fetchTemplates,
     createTemplate,
     deleteTemplate,
-    updateTemplate 
+    updateTemplate,
   } = useTemplates();
 
   // Set the selected WhatsApp account ID when user info is available
@@ -44,7 +45,7 @@ export default function TemplatesPage() {
 
   const handleDeleteTemplate = async (template: Template) => {
     if (!selectedWhatsAppAccountId) {
-      console.error('No WhatsApp account selected');
+      console.error("No WhatsApp account selected");
       return;
     }
     console.log(template, "template");
@@ -63,7 +64,7 @@ export default function TemplatesPage() {
 
   const handleDuplicateTemplate = async (template: Template) => {
     if (!selectedWhatsAppAccountId) {
-      console.error('No WhatsApp account selected');
+      console.error("No WhatsApp account selected");
       return;
     }
 
@@ -99,11 +100,11 @@ export default function TemplatesPage() {
         return (
           <span
             className={`px-2 py-1 text-xs font-medium rounded-full ${
-              status === 'APPROVED'
+              status === "APPROVED"
                 ? "bg-green-100 text-green-800"
-                : status === 'PENDING'
+                : status === "PENDING"
                 ? "bg-yellow-100 text-yellow-800"
-                : status === 'REJECTED'
+                : status === "REJECTED"
                 ? "bg-red-100 text-red-800"
                 : "bg-gray-100 text-gray-800"
             }`}
@@ -123,7 +124,15 @@ export default function TemplatesPage() {
             {components?.map((component, index) => (
               <span
                 key={index}
-                className="px-2 py-0.5 text-xs bg-gray-100 rounded-full"
+                className={`px-2 py-0.5 text-xs bg-gray-100 rounded-full ${
+                  component.type === "HEADER"
+                    ? "bg-blue-100 text-blue-800"
+                    : component.type === "BODY"
+                    ? "bg-green-100 text-green-800"
+                    : component.type === "FOOTER"
+                    ? "bg-teal-400/20 text-gray-800"
+                    : "bg-gray-100 text-gray-800"
+                }`}
               >
                 {component.type}
               </span>
@@ -137,8 +146,8 @@ export default function TemplatesPage() {
       header: "Last Updated",
       Cell: ({ row }) => {
         const date = row.original.updated_at || row.original.created_at;
-        if (!date) return '-';
-        
+        if (!date) return "-";
+
         return new Date(date).toLocaleString("en-US", {
           year: "numeric",
           month: "short",
@@ -181,7 +190,7 @@ export default function TemplatesPage() {
 
   const handleCreateTemplate = async () => {
     if (!selectedWhatsAppAccountId) {
-      console.error('No WhatsApp account selected');
+      console.error("No WhatsApp account selected");
       return;
     }
 

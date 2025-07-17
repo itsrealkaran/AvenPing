@@ -95,6 +95,9 @@ importers:
       framer-motion:
         specifier: ^12.19.2
         version: 12.19.2(@emotion/is-prop-valid@1.3.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      ioredis:
+        specifier: ^5.6.1
+        version: 5.6.1
       jose:
         specifier: ^6.0.10
         version: 6.0.10
@@ -131,6 +134,9 @@ importers:
       recharts:
         specifier: ^2.15.3
         version: 2.15.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      redis:
+        specifier: ^5.6.0
+        version: 5.6.0
       sonner:
         specifier: ^2.0.3
         version: 2.0.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -579,6 +585,9 @@ packages:
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [win32]
+
+  '@ioredis/commands@1.2.0':
+    resolution: {integrity: sha512-Sx1pU8EM64o2BrqNpEO1CNLtKQwyhuXuqyfH7oGKCk+1a33d2r5saW8zNwm3j6BTExtjrv2BxTgzzkMwts6vGg==}
 
   '@jridgewell/gen-mapping@0.3.8':
     resolution: {integrity: sha512-imAbBGkb+ebQyxKgzv5Hu2nmROxoDOXHh80evxdoXNOrvAnVx7zimzc1Oo5h9RlfV4vPXaE2iM5pOFbvOCClWA==}
@@ -1253,6 +1262,34 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
 
+  '@redis/bloom@5.6.0':
+    resolution: {integrity: sha512-l13/d6BaZDJzogzZJEphIeZ8J0hpQpjkMiozomTm6nJiMNYkoPsNOBOOQua4QsG0fFjyPmLMDJFPAp5FBQtTXg==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      '@redis/client': ^5.6.0
+
+  '@redis/client@5.6.0':
+    resolution: {integrity: sha512-wmP9kCFElCSr4MM4+1E4VckDuN4wLtiXSM/J0rKVQppajxQhowci89RGZr2OdLualowb8SRJ/R6OjsXrn9ZNFA==}
+    engines: {node: '>= 18'}
+
+  '@redis/json@5.6.0':
+    resolution: {integrity: sha512-YQN9ZqaSDpdLfJqwzcF4WeuJMGru/h4WsV7GeeNtXsSeyQjHTyDxrd48xXfRRJGv7HitA7zGnzdHplNeKOgrZA==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      '@redis/client': ^5.6.0
+
+  '@redis/search@5.6.0':
+    resolution: {integrity: sha512-sLgQl92EyMVNHtri5K8Q0j2xt9c0cO9HYurXz667Un4xeUYR+B/Dw5lLG35yqO7VvVxb9amHJo9sAWumkKZYwA==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      '@redis/client': ^5.6.0
+
+  '@redis/time-series@5.6.0':
+    resolution: {integrity: sha512-tXABmN1vu4aTNL3WI4Iolpvx/5jgil2Bs31ozvKblT+jkUoRkk8ykmYo9Pv/Mp7Gk6/Qkr/2rMgVminrt/4BBQ==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      '@redis/client': ^5.6.0
+
   '@swc/counter@0.1.3':
     resolution: {integrity: sha512-e2BR4lsJkkRlKZ/qCHPw9ZaSxc0MVUd7gtbtaB7aMvHeJVYe8sOB8DBZkP2DtISHGSku9sCK6T6cnY0CtXrOCQ==}
 
@@ -1523,6 +1560,10 @@ packages:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
 
+  cluster-key-slot@1.1.2:
+    resolution: {integrity: sha512-RMr0FhtfXemyinomL4hrWcYJxmX6deFdCxpJzhDttxgO1+bcCnkk+9drydLVDmAMG7NE6aN/fl4F7ucU/90gAA==}
+    engines: {node: '>=0.10.0'}
+
   color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
     engines: {node: '>=7.0.0'}
@@ -1638,6 +1679,10 @@ packages:
   delayed-stream@1.0.0:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
+
+  denque@2.1.0:
+    resolution: {integrity: sha512-HVQE3AAb/pxF8fQAoiqpvg9i3evqug3hoiwakOyZAwJm+6vZehbkYXZ0l4JxS+I3QxM97v5aaRNhj8v5oBhekw==}
+    engines: {node: '>=0.10'}
 
   detect-libc@2.0.3:
     resolution: {integrity: sha512-bwy0MGW55bG41VqxxypOsdSdGqLwXPI/focwgTYCFMbdUiBAxLg9CFzG08sz2aqzknwiX7Hkl0bQENjg8iLByw==}
@@ -1788,6 +1833,10 @@ packages:
     resolution: {integrity: sha512-5Hh7Y1wQbvY5ooGgPbDaL5iYLAPzMTUrjMulskHLH6wnv/A+1q5rgEaiuqEjB+oxGXIVZs1FF+R/KPN3ZSQYYg==}
     engines: {node: '>=12'}
 
+  ioredis@5.6.1:
+    resolution: {integrity: sha512-UxC0Yv1Y4WRJiGQxQkP0hfdL0/5/6YvdfOOClRgJ0qppSarkhneSa6UvkMkms0AkdGimSH3Ikqm+6mkMmX7vGA==}
+    engines: {node: '>=12.22.0'}
+
   is-arrayish@0.2.1:
     resolution: {integrity: sha512-zz06S8t0ozoDXMG+ube26zeCTNXcKIPJZJi8hBrF4idCLms4CG9QtK7qBl1boi5ODzFpjswb5JPmHCbMpjaYzg==}
 
@@ -1897,6 +1946,12 @@ packages:
   locomotive-scroll@5.0.0-beta.21:
     resolution: {integrity: sha512-UrvuBVxI9rX7b0SkLzZwlzUqZ22Oybj6c6jBflqvH6bdQEb+OcsOpQg65cFJPY0IYBNGnaHkLHr/EDDW6y6scQ==}
     engines: {node: '>=20'}
+
+  lodash.defaults@4.2.0:
+    resolution: {integrity: sha512-qjxPLHd3r5DnsdGacqOMU6pb/avJzdh9tFX2ymgoZE27BmjXrNy/y4LoaiTeAb+O3gL8AfpJGtqfX/ae2leYYQ==}
+
+  lodash.isarguments@3.1.0:
+    resolution: {integrity: sha512-chi4NHZlZqZD18a0imDHnZPrDeBbTtVN7GXMwuGdRH9qotxAjYs3aVLKc7zNOG9eddR5Ksd8rvFEBc9SsggPpg==}
 
   lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
@@ -2102,6 +2157,18 @@ packages:
       react: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
+  redis-errors@1.2.0:
+    resolution: {integrity: sha512-1qny3OExCf0UvUV/5wpYKf2YwPcOqXzkwKKSmKHiE6ZMQs5heeE/c8eXK+PNllPvmjgAbfnsbpkGZWy8cBpn9w==}
+    engines: {node: '>=4'}
+
+  redis-parser@3.0.0:
+    resolution: {integrity: sha512-DJnGAeenTdpMEH6uAJRK/uiyEIH9WVsUmoLwzudwGJUwZPp80PDBWPHXSAGNPwNvIXAbe7MSUB1zQFugFml66A==}
+    engines: {node: '>=4'}
+
+  redis@5.6.0:
+    resolution: {integrity: sha512-0x3pM3SlYA5azdNwO8qgfMBzoOqSqr9M+sd1hojbcn0ZDM5zsmKeMM+zpTp6LIY+mbQomIc/RTTQKuBzr8QKzQ==}
+    engines: {node: '>= 18'}
+
   regenerator-runtime@0.14.1:
     resolution: {integrity: sha512-dYnhHh0nJoMfnkZs6GmmhFknAGRrLznOu5nc9ML+EJxGvrx6H7teuevqVqCuPcPK//3eDrrjQhehXVx9cnkGdw==}
 
@@ -2145,6 +2212,9 @@ packages:
   source-map@0.5.7:
     resolution: {integrity: sha512-LbrmJOMUSdEVxIKvdcJzQC+nQhe8FUZQTXQy6+I75skNgn3OoQ0DZA8YnFa7gp8tqtL3KPf1kmo0R5DoApeSGQ==}
     engines: {node: '>=0.10.0'}
+
+  standard-as-callback@2.1.0:
+    resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
 
   streamsearch@1.1.0:
     resolution: {integrity: sha512-Mcc5wHehp9aXz1ax6bZUyY5afg9u2rv5cqQI3mRrYkGC8rW2hM02jWuwjtL++LS5qinSyhj2QfLyNsuc+VsExg==}
@@ -2621,6 +2691,8 @@ snapshots:
 
   '@img/sharp-win32-x64@0.34.1':
     optional: true
+
+  '@ioredis/commands@1.2.0': {}
 
   '@jridgewell/gen-mapping@0.3.8':
     dependencies:
@@ -3216,6 +3288,26 @@ snapshots:
     dependencies:
       react: 19.1.0
 
+  '@redis/bloom@5.6.0(@redis/client@5.6.0)':
+    dependencies:
+      '@redis/client': 5.6.0
+
+  '@redis/client@5.6.0':
+    dependencies:
+      cluster-key-slot: 1.1.2
+
+  '@redis/json@5.6.0(@redis/client@5.6.0)':
+    dependencies:
+      '@redis/client': 5.6.0
+
+  '@redis/search@5.6.0(@redis/client@5.6.0)':
+    dependencies:
+      '@redis/client': 5.6.0
+
+  '@redis/time-series@5.6.0(@redis/client@5.6.0)':
+    dependencies:
+      '@redis/client': 5.6.0
+
   '@swc/counter@0.1.3': {}
 
   '@swc/helpers@0.5.15':
@@ -3476,6 +3568,8 @@ snapshots:
 
   clsx@2.1.1: {}
 
+  cluster-key-slot@1.1.2: {}
+
   color-convert@2.0.1:
     dependencies:
       color-name: 1.1.4
@@ -3587,6 +3681,8 @@ snapshots:
   decimal.js-light@2.5.1: {}
 
   delayed-stream@1.0.0: {}
+
+  denque@2.1.0: {}
 
   detect-libc@2.0.3: {}
 
@@ -3746,6 +3842,20 @@ snapshots:
 
   internmap@2.0.3: {}
 
+  ioredis@5.6.1:
+    dependencies:
+      '@ioredis/commands': 1.2.0
+      cluster-key-slot: 1.1.2
+      debug: 4.4.0
+      denque: 2.1.0
+      lodash.defaults: 4.2.0
+      lodash.isarguments: 3.1.0
+      redis-errors: 1.2.0
+      redis-parser: 3.0.0
+      standard-as-callback: 2.1.0
+    transitivePeerDependencies:
+      - supports-color
+
   is-arrayish@0.2.1: {}
 
   is-arrayish@0.3.2:
@@ -3825,6 +3935,10 @@ snapshots:
     transitivePeerDependencies:
       - react
       - react-dom
+
+  lodash.defaults@4.2.0: {}
+
+  lodash.isarguments@3.1.0: {}
 
   lodash@4.17.21: {}
 
@@ -4031,6 +4145,20 @@ snapshots:
       tiny-invariant: 1.3.3
       victory-vendor: 36.9.2
 
+  redis-errors@1.2.0: {}
+
+  redis-parser@3.0.0:
+    dependencies:
+      redis-errors: 1.2.0
+
+  redis@5.6.0:
+    dependencies:
+      '@redis/bloom': 5.6.0(@redis/client@5.6.0)
+      '@redis/client': 5.6.0
+      '@redis/json': 5.6.0(@redis/client@5.6.0)
+      '@redis/search': 5.6.0(@redis/client@5.6.0)
+      '@redis/time-series': 5.6.0(@redis/client@5.6.0)
+
   regenerator-runtime@0.14.1: {}
 
   remove-accents@0.5.0: {}
@@ -4089,6 +4217,8 @@ snapshots:
   source-map-js@1.2.1: {}
 
   source-map@0.5.7: {}
+
+  standard-as-callback@2.1.0: {}
 
   streamsearch@1.1.0: {}
 
