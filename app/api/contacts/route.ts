@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     const contact = await prisma.whatsAppRecipient.create({
       data: {
         name,
-        phoneNumber,
+        phoneNumber: phoneNumber.replace(/[^\d]/g, ''),
         whatsAppPhoneNumber: {
           connect: {
             id: phoneNumberId,
@@ -128,7 +128,7 @@ export async function PUT(request: NextRequest) {
       where: { id },
       data: {
         name,
-        phoneNumber,
+        phoneNumber: phoneNumber.replace(/[^\d]/g, ''),
         attributeValues: attributeValues,
       },
     });

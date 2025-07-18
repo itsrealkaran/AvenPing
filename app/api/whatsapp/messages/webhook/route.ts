@@ -83,13 +83,43 @@ export async function POST(req: NextRequest) {
                     data: {
                       status: statusValue.toUpperCase(),
                       deliveredAt:
-                        statusValue === "delivered" ? new Date() : undefined,
+                      statusValue === "delivered" ? new Date() : undefined,
                       readAt: statusValue === "read" ? new Date() : undefined,
                       errorMessage: status.errors
                         ? JSON.stringify(status.errors)
                         : null,
                     },
                   });
+
+                  const recipient = whatsAppPhoneNumber.recipients.find(
+                    (recipient) => recipient.phoneNumber === phoneNumber
+                  );
+
+                  if (recipient && recipient.activeCampaignId) {
+                    await prisma.whatsAppRecipient.updateMany({
+                      where: {
+                        id: recipient.id,
+                      },
+                      data: {
+                        status: statusValue === "sent" ? "UNREAD" : statusValue.toUpperCase(),
+                      },
+                    })
+                    await prisma.whatsAppCampaign.update({
+                      where: {
+                        id: recipient.activeCampaignId,
+                      },
+                      data: {
+                        recipientStats: {
+                          push: {
+                            id: recipient.id,
+                            name: recipient.name || "",
+                            phoneNumber: recipient.phoneNumber,
+                            status: statusValue === "sent" ? "UNREAD" : statusValue.toUpperCase(),
+                          }
+                        }
+                      }
+                    });
+                  }
                 }
 
                 // Emit status update event
@@ -209,6 +239,31 @@ export async function POST(req: NextRequest) {
                     }
                   }
                 }
+
+                if (recipient && recipient.activeCampaignId) {
+                  await prisma.whatsAppRecipient.update({
+                    where: {
+                      id: recipient.id,
+                    },
+                    data: {
+                      status: "REPLIED",
+                    },
+                  });
+                  await prisma.whatsAppCampaign.update({
+                    where: {
+                      id: recipient.activeCampaignId,
+                    },
+                    data: {
+                      recipientStats: {
+                        push: {
+                          id: recipient.id,
+                          name: recipient.name || "",
+                          phoneNumber: recipient.phoneNumber,
+                          status: "REPLIED",
+                        }
+                      }
+                    }});
+                  }
 
                 // Process flow automation for existing recipient
                 if (recipient && whatsAppPhoneNumber.account.user?.id && !isOptedOut) {
