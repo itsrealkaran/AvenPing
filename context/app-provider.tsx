@@ -8,6 +8,7 @@ import { Providers as TanStackQueryProvider } from "@/lib/providers";
 import { ContactProvider } from "./contact-provider";
 import { FlowProvider } from "./flow-provider";
 import { TemplateProvider } from "./template-provider";
+import { CampaignProvider } from "./campaign-provider";
 
 export function AppProvider({ children }: { children: ReactNode }) {
   return (
@@ -18,7 +19,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             <ContactProvider>
               <FlowProvider>
                 <TemplateProvider>
-                  {children}
+                  <CampaignProvider>
+                    {children}
+                  </CampaignProvider>
                 </TemplateProvider>
               </FlowProvider>
             </ContactProvider>

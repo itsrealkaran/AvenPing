@@ -60,6 +60,7 @@ export type TableProps<T extends Record<string, any>> = {
   density?: "compact" | "comfortable" | "spacious";
   Add?: LucideIcon;
   Delete?: LucideIcon;
+  onRowClick?: (row: T) => void;
 };
 
 export default function Table<T extends Record<string, any>>({
@@ -86,6 +87,7 @@ export default function Table<T extends Record<string, any>>({
   density = "compact",
   Add,
   Delete,
+  onRowClick,
 }: TableProps<T>) {
   const [tableHeight, setTableHeight] = useState(propTableHeight || "450px");
 
@@ -269,6 +271,12 @@ export default function Table<T extends Record<string, any>>({
               </MenuItem>
             ))
         : undefined,
+    muiTableBodyRowProps: onRowClick
+      ? ({ row }) => ({
+          onClick: () => onRowClick(row.original),
+          style: { cursor: 'pointer' },
+        })
+      : undefined,
     state: {
       isLoading,
     },

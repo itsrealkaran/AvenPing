@@ -89,7 +89,7 @@ export class FlowRunner {
   async saveFlowSession(session: FlowSession): Promise<void> {
     try {
       const sessionKey = this.getSessionKey(session.userId, session.recipientId);
-      await this.redis.setex(sessionKey, 86400, JSON.stringify(session)); // 24 hours TTL
+      await this.redis.setex(sessionKey, 900, JSON.stringify(session)); // 15 minutes TTL
     } catch (error) {
       console.error('Error saving flow session:', error);
     }

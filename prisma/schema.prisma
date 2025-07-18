@@ -31,6 +31,13 @@ enum ContactAttributeType {
   NUMBER
 }
 
+enum RecipientStatus {
+  UNDELIVERED
+  UNREAD
+  READ
+  REPLIED
+}
+
 // Unified User Model
 model User {
   id          String    @id @default(cuid())
@@ -104,6 +111,10 @@ model WhatsAppRecipient {
 
   hasConversation Boolean @default(false)
 
+  status RecipientStatus @default(UNDELIVERED)
+
+  activeCampaignId String?
+
   lastCheckedTime DateTime @default(now())
 
   isOptedOut Boolean @default(false)
@@ -123,15 +134,19 @@ model WhatsAppCampaign {
   id             String           @id @default(cuid())
   name           String
   type           String // TEXT, IMAGE, TEMPLATE
+
   message        String?
   mediaUrl       String?
   templateName   String?
-  templateParams Json? // Stored as JSON object
+
+  recipientStats Json? // [ { id: string, name: string, recipientNumber: string, status: string } ]
   accountId      String
   account        WhatsAppAccount  @relation(fields: [accountId], references: [id])
   status         String           @default("COMPLETED") // DRAFT, SCHEDULED, ACTIVE, PAUSED, COMPLETED, FAILED
+  
   scheduledAt    DateTime?
   completedAt    DateTime?
+  
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 }

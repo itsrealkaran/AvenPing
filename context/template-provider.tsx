@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'sonner';
 
@@ -30,7 +31,7 @@ interface TemplateContextType {
   error: string | null;
   selectedWhatsAppAccountId: string | null;
   setSelectedWhatsAppAccountId: (id: string | null) => void;
-  fetchTemplates: (whatsAppAccountId: string) => Promise<void>;
+  fetchTemplates: (whatsAppAccountId: string) => Promise<Template[]>;
   createTemplate: (whatsAppAccountId: string, templateData: any) => Promise<void>;
   deleteTemplate: (whatsAppAccountId: string, templateId: string) => Promise<void>;
   updateTemplate: (whatsAppAccountId: string, templateId: string, templateData: any) => Promise<void>;
@@ -44,18 +45,11 @@ interface TemplateProviderProps {
 }
 
 export function TemplateProvider({ children }: TemplateProviderProps) {
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [selectedWhatsAppAccountId, setSelectedWhatsAppAccountId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const clearError = () => setError(null);
-
-  const fetchTemplates = async (whatsAppAccountId: string) => {
-    if (!whatsAppAccountId) return;
-
-    setIsLoading(true);
-    setError(null);
+  const fetchTemplates = async (whatsAppAccountId: string): Promise<Template[]> => {
+    if (!whatsAppAccountId) return [];
 
     try {
       const response = await fetch(`/api/whatsapp/templates`);
@@ -79,23 +73,23 @@ export function TemplateProvider({ children }: TemplateProviderProps) {
         updated_at: template.updated_at,
       })) || [];
 
-      setTemplates(transformedTemplates);
+      return transformedTemplates;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch templates';
-      setError(errorMessage);
       toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
+      return [];
     }
   };
 
-  const createTemplate = async (whatsAppAccountId: string, templateData: any) => {
-    if (!whatsAppAccountId) return;
+  const { data: templates = [], isLoading, error } = useQuery({
+    queryKey: ['templates', selectedWhatsAppAccountId],
+    queryFn: () => fetchTemplates(selectedWhatsAppAccountId!),
+    enabled: !!selectedWhatsAppAccountId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
+  const createTemplateMutation = useMutation({
+    mutationFn: async ({ whatsAppAccountId, templateData }: { whatsAppAccountId: string; templateData: any }) => {
       const response = await fetch(`/api/whatsapp/templates`, {
         method: 'POST',
         headers: {
@@ -109,28 +103,19 @@ export function TemplateProvider({ children }: TemplateProviderProps) {
         throw new Error(errorData.error || 'Failed to create template');
       }
 
-      const data = await response.json();
-      
-      // Refresh templates after creation
-      await fetchTemplates(whatsAppAccountId);
-      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
       toast.success('Template created successfully! Please wait for approval from Meta.');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create template';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create template');
+    },
+  });
 
-  const deleteTemplate = async (whatsAppAccountId: string, templateName: string) => {
-    if (!whatsAppAccountId) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
+  const deleteTemplateMutation = useMutation({
+    mutationFn: async ({ whatsAppAccountId, templateName }: { whatsAppAccountId: string; templateName: string }) => {
       const response = await fetch(`/api/whatsapp/templates?name=${templateName}`, {
         method: 'DELETE',
         headers: {
@@ -143,26 +128,19 @@ export function TemplateProvider({ children }: TemplateProviderProps) {
         throw new Error(errorData.error || 'Failed to delete template');
       }
 
-      // Remove template from local state
-      setTemplates(prev => prev.filter(template => template.name !== templateName));
-      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
       toast.success('Template deleted successfully');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete template';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete template');
+    },
+  });
 
-  const updateTemplate = async (whatsAppAccountId: string, templateId: string, templateData: any) => {
-    if (!whatsAppAccountId) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
+  const updateTemplateMutation = useMutation({
+    mutationFn: async ({ whatsAppAccountId, templateId, templateData }: { whatsAppAccountId: string; templateId: string; templateData: any }) => {
       const response = await fetch(`/api/whatsapp/templates/${whatsAppAccountId}`, {
         method: 'PUT',
         headers: {
@@ -176,30 +154,37 @@ export function TemplateProvider({ children }: TemplateProviderProps) {
         throw new Error(errorData.error || 'Failed to update template');
       }
 
-      // Refresh templates after update
-      await fetchTemplates(whatsAppAccountId);
-      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
       toast.success('Template updated successfully');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update template';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update template');
+    },
+  });
+
+  const createTemplate = async (whatsAppAccountId: string, templateData: any) => {
+    await createTemplateMutation.mutateAsync({ whatsAppAccountId, templateData });
   };
 
-  // Auto-fetch templates when selectedWhatsAppAccountId changes
-  useEffect(() => {
-    if (selectedWhatsAppAccountId) {
-      fetchTemplates(selectedWhatsAppAccountId);
-    }
-  }, [selectedWhatsAppAccountId]);
+  const deleteTemplate = async (whatsAppAccountId: string, templateName: string) => {
+    await deleteTemplateMutation.mutateAsync({ whatsAppAccountId, templateName });
+  };
+
+  const updateTemplate = async (whatsAppAccountId: string, templateId: string, templateData: any) => {
+    await updateTemplateMutation.mutateAsync({ whatsAppAccountId, templateId, templateData });
+  };
+
+  const clearError = () => {
+    // This would need to be implemented if you want to clear errors
+  };
 
   const value: TemplateContextType = {
     templates,
     isLoading,
-    error,
+    error: error?.message || null,
     selectedWhatsAppAccountId,
     setSelectedWhatsAppAccountId,
     fetchTemplates,

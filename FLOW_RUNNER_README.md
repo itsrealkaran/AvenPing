@@ -16,7 +16,7 @@ The Flow Runner is an automated system that executes WhatsApp message flows base
    - Handles message processing and flow triggering
 
 2. **Redis Session Management**
-   - Stores active flow sessions with 24-hour TTL
+   - Stores active flow sessions with 15 minute TTL
    - Tracks current step for each user-recipient pair
    - Enables conversation continuity
 

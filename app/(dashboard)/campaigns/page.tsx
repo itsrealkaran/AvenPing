@@ -2,92 +2,66 @@
 
 import Body from "@/components/layout/body";
 import { Send, Edit, Trash, Pause, Play, Plus, BarChart } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Table, { ActionMenuItem } from "@/components/ui/table";
 import { MRT_ColumnDef } from "material-react-table";
-
-type Campaign = {
-  id: string;
-  name: string;
-  type: string;
-  status: string;
-  sent: number;
-  delivered: number;
-  opened: number;
-  createdAt: string;
-};
+import { CreateCampaignModal } from "@/components/campaigns/create-campaign-modal";
+import { useCampaigns, Campaign } from "@/context/campaign-provider";
+import { useUser } from "@/context/user-context";
+import { toast } from "sonner";
+import { RecipientStatsModal } from "@/components/campaigns/recipient-stats-modal";
 
 export default function CampaignsPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([
-    {
-      id: "1",
-      name: "Welcome Message",
-      type: "SMS",
-      status: "Active",
-      sent: 1250,
-      delivered: 1200,
-      opened: 980,
-      createdAt: "2023-05-15T10:30:00Z",
-    },
-    {
-      id: "2",
-      name: "Promotional Offer",
-      type: "WhatsApp",
-      status: "Active",
-      sent: 2500,
-      delivered: 2450,
-      opened: 1800,
-      createdAt: "2023-05-16T11:20:00Z",
-    },
-    {
-      id: "3",
-      name: "Event Reminder",
-      type: "SMS",
-      status: "Inactive",
-      sent: 500,
-      delivered: 490,
-      opened: 320,
-      createdAt: "2023-05-17T09:15:00Z",
-    },
-    {
-      id: "4",
-      name: "Customer Feedback",
-      type: "WhatsApp",
-      status: "Active",
-      sent: 1800,
-      delivered: 1750,
-      opened: 1200,
-      createdAt: "2023-05-18T14:45:00Z",
-    },
-  ]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const { campaigns, isLoading, error, setSelectedWhatsAppAccountId, createCampaign } = useCampaigns();
+  const { userInfo } = useUser();
+
+  const [selectedRecipientStats, setSelectedRecipientStats] = useState(null);
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+
+  // Set the selected WhatsApp account ID when user info is available
+  useEffect(() => {
+    if (userInfo?.whatsappAccount?.id) {
+      setSelectedWhatsAppAccountId(userInfo.whatsappAccount.id);
+    }
+  }, [userInfo, setSelectedWhatsAppAccountId]);
 
   const handleDeleteCampaign = (campaign: Campaign) => {
-    setCampaigns(campaigns.filter((c) => c.id !== campaign.id));
+    console.log("Delete campaign", campaign);
+    // TODO: Implement delete campaign logic
+    toast.info("Delete campaign functionality coming soon");
   };
 
   const handleAddCampaign = () => {
-    console.log("Add campaign");
-    // Implement your add campaign logic here
+    setShowCreateModal(true);
+  };
+
+  const handleCreateCampaign = async (campaignData: any) => {
+    try {
+      await createCampaign(campaignData);
+      toast.success("Campaign created successfully!");
+    } catch (error) {
+      console.error("Error creating campaign:", error);
+      toast.error("Failed to create campaign");
+    }
   };
 
   const handleEditCampaign = (campaign: Campaign) => {
     console.log("Edit campaign", campaign);
-    // Implement your edit campaign logic here
-  };
-
-  const handleToggleStatus = (campaign: Campaign) => {
-    const newStatus = campaign.status === "Active" ? "Inactive" : "Active";
-    setCampaigns(
-      campaigns.map((c) =>
-        c.id === campaign.id ? { ...c, status: newStatus } : c
-      )
-    );
+    // TODO: Implement your edit campaign logic here
+    toast.info("Edit campaign functionality coming soon");
   };
 
   const handleViewAnalytics = (campaign: Campaign) => {
     console.log("View analytics for", campaign.name);
     // Implement your analytics view logic here
+  };
+
+  const handleRowClick = (campaign: any) => {
+    if (campaign.recipientStats && campaign.recipientStats.length > 0) {
+      setSelectedRecipientStats(campaign.recipientStats);
+      setIsStatsModalOpen(true);
+    }
   };
 
   const columns: MRT_ColumnDef<Campaign>[] = [
@@ -107,35 +81,17 @@ export default function CampaignsPage() {
         return (
           <span
             className={`px-2 py-1 text-xs font-medium rounded-full ${
-              value === "Active"
+                value === "COMPLETED"
                 ? "bg-green-100 text-green-800"
+                : value === "SCHEDULED"
+                ? "bg-blue-100 text-blue-800"
+                : value === "PENDING"
+                ? "bg-gray-100 text-gray-800"
                 : "bg-red-100 text-red-800"
             }`}
           >
             {value}
           </span>
-        );
-      },
-    },
-    {
-      accessorKey: "sent",
-      header: "Sent",
-    },
-    {
-      accessorKey: "delivered",
-      header: "Delivered",
-    },
-    {
-      accessorKey: "opened",
-      header: "Opened",
-      Cell: ({ row }) => {
-        const { opened, sent } = row.original;
-        const openRate = sent > 0 ? Math.round((opened / sent) * 100) : 0;
-        return (
-          <div className="flex items-center gap-2">
-            <span>{opened}</span>
-            <span className="text-xs text-gray-500">({openRate}%)</span>
-          </div>
         );
       },
     },
@@ -173,21 +129,6 @@ export default function CampaignsPage() {
       },
     },
     {
-      key: "toggle",
-      label: (row: Campaign) =>
-        row.status === "Active" ? "Pause Campaign" : "Activate Campaign",
-      icon: (row: Campaign) =>
-        row.status === "Active" ? (
-          <Pause className="size-4" />
-        ) : (
-          <Play className="size-4" />
-        ),
-      onClick: (campaign, closeMenu) => {
-        handleToggleStatus(campaign);
-        closeMenu();
-      },
-    },
-    {
       key: "delete",
       label: "Delete",
       icon: <Trash className="text-red-600 size-4" />,
@@ -200,16 +141,30 @@ export default function CampaignsPage() {
   ];
 
   return (
-    <Body title="Campaigns">
-      <Table
-        data={campaigns}
-        columns={columns}
-        isLoading={isLoading}
-        actionMenuItems={actionMenuItems}
-        onAddItem={handleAddCampaign}
-        addButtonLabel="Create Campaign"
-        searchPlaceholder="Search campaigns..."
+    <>
+      <Body title="Campaigns">
+        <Table
+          data={campaigns}
+          columns={columns}
+          isLoading={isLoading}
+          actionMenuItems={actionMenuItems}
+          onAddItem={handleAddCampaign}
+          addButtonLabel="Create Campaign"
+          searchPlaceholder="Search campaigns..."
+          onRowClick={handleRowClick}
+        />
+      </Body>
+      
+      <CreateCampaignModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreateCampaign}
       />
-    </Body>
+      <RecipientStatsModal
+        open={isStatsModalOpen}
+        onClose={() => setIsStatsModalOpen(false)}
+        stats={selectedRecipientStats}
+      />
+    </>
   );
 }

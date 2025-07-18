@@ -30,10 +30,8 @@ export default function TemplatesPage() {
     error,
     selectedWhatsAppAccountId,
     setSelectedWhatsAppAccountId,
-    fetchTemplates,
     createTemplate,
     deleteTemplate,
-    updateTemplate,
   } = useTemplates();
 
   // Set the selected WhatsApp account ID when user info is available
