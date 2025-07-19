@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { getSession } from "@/lib/jwt";
 
 // Add paths that should be accessible without authentication
-const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password"];
+const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/"];
 const privatePaths = ["/dashboard", "/api", "/messages", "/campaigns", "/templates", "/contacts", "/flows", "/aibot", "/analytics", "/settings"];
 
 // Paths that require WhatsApp account
@@ -28,7 +28,9 @@ export async function middleware(request: NextRequest) {
       if (!session) {
         const url = new URL("/login", request.url);
         url.searchParams.set("callbackUrl", pathname);
-        return NextResponse.redirect(url);
+        const response = NextResponse.redirect(url);
+        response.headers.set("x-middleware-cache", "no-cache");
+        return response;
       }
 
       // Check if the current path requires WhatsApp account
@@ -38,7 +40,9 @@ export async function middleware(request: NextRequest) {
         
         // If user doesn't have WhatsApp account, redirect to dashboard
         if (!hasWhatsAppAccount) {
-          return NextResponse.redirect(new URL("/dashboard?whatsapp=false", request.url));
+          const response = NextResponse.redirect(new URL("/dashboard?whatsapp=false", request.url));
+          response.headers.set("x-middleware-cache", "no-cache");
+          return response;
         }
       }
 
@@ -48,7 +52,9 @@ export async function middleware(request: NextRequest) {
       // If there's an error checking the session, redirect to login
       const url = new URL("/login", request.url);
       url.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(url);
+      const response = NextResponse.redirect(url);
+      response.headers.set("x-middleware-cache", "no-cache");
+      return response;
     }
   }
 
