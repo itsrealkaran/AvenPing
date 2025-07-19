@@ -1,14 +1,19 @@
 import React from "react";
 import Card from "@/components/ui/card";
-import {
-  FLOW_FILTER_OPTIONS,
-  FLOW_FILTER_DATA_MAP,
-  getFlowFilterLabel,
-  FlowData,
-} from "../analytics/data";
 import { cx } from "@/lib/utils";
 import { BarChart, TooltipProps } from "@/components/charts/bar-chart";
 import { DropdownButton } from "../ui/dropdown-button";
+import { FLOW_FILTER_OPTIONS, getFlowFilterLabel } from "../analytics/data";
+
+interface FlowData {
+  name: string;
+  completed: number;
+  dropped: number;
+}
+
+interface FlowChartProps {
+  data: FlowData[];
+}
 
 interface Issue {
   status: "completed" | "dropped";
@@ -65,15 +70,14 @@ const Tooltip = ({ payload, active, label }: TooltipProps) => {
   );
 };
 
-export default function FlowChart() {
+export default function FlowChart({ data }: FlowChartProps) {
   const [selected, setSelected] = React.useState("30");
-  const chartData = FLOW_FILTER_DATA_MAP[selected];
   const selectedLabel = getFlowFilterLabel(selected);
 
   // Determine categories dynamically from the first data row, fallback to []
   const categories =
-    chartData && chartData.length > 0
-      ? Object.keys(chartData[0]).filter((k) => k !== "name")
+    data && data.length > 0
+      ? Object.keys(data[0]).filter((k) => k !== "name")
       : [];
 
   return (
@@ -94,7 +98,7 @@ export default function FlowChart() {
       <div className="p-4">
         <BarChart
           className="hidden h-72 sm:block"
-          data={chartData}
+          data={data}
           index="name"
           categories={categories}
           colors={["blue", "emerald"]}
@@ -104,8 +108,8 @@ export default function FlowChart() {
         />
         <BarChart
           className="h-80 sm:hidden"
-          data={chartData}
-          index="date"
+          data={data}
+          index="name"
           categories={categories}
           colors={["blue", "emerald"]}
           showYAxis={false}

@@ -3,13 +3,20 @@ import React from "react";
 import Card from "@/components/ui/card";
 import { cx } from "@/lib/utils";
 import { AreaChart, TooltipProps } from "@/components/charts/area-chart";
-import {
-  CampaignData,
-  FILTER_OPTIONS,
-  FILTER_DATA_MAP,
-  getFilterLabel,
-} from "./data";
 import { DropdownButton } from "@/components/ui/dropdown-button";
+import { FILTER_OPTIONS, getFilterLabel } from "./data";
+import { filterCampaignData, getPeriodDays } from "@/lib/analytics-utils";
+
+interface CampaignData {
+  date: string;
+  sent: number;
+  delivered: number;
+  opened: number;
+}
+
+interface CampaignChartProps {
+  data: CampaignData[];
+}
 
 interface Issue {
   status: "sent" | "delivered" | "opened";
@@ -111,10 +118,12 @@ function AreaChartCustomTooltipExample({ data }: { data: CampaignData[] }) {
   );
 }
 
-export default function CampaignChart() {
+export default function CampaignChart({ data }: CampaignChartProps) {
   const [selected, setSelected] = React.useState("30");
-  const chartData = FILTER_DATA_MAP[selected];
   const selectedLabel = getFilterLabel(selected);
+  
+  // Filter data based on selected period
+  const filteredData = filterCampaignData(data, getPeriodDays(selected));
 
   return (
     <Card
@@ -132,7 +141,7 @@ export default function CampaignChart() {
       }
     >
       <div className="p-4">
-        <AreaChartCustomTooltipExample data={chartData} />
+        <AreaChartCustomTooltipExample data={filteredData} />
       </div>
     </Card>
   );

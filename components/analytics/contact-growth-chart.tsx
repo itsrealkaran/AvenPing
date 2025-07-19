@@ -4,13 +4,18 @@ import React from "react";
 import Card from "@/components/ui/card";
 import { cx } from "@/lib/utils";
 import { AreaChart, TooltipProps } from "@/components/charts/area-chart";
-import {
-  CONTACT_FILTER_OPTIONS,
-  CONTACT_FILTER_DATA_MAP,
-  getContactFilterLabel,
-  ContactGrowthData,
-} from "./data";
-import { DropdownButton } from "@/components/ui/dropdown-button";
+import { DropdownButton } from "../ui/dropdown-button";
+import { CONTACT_FILTER_OPTIONS, getContactFilterLabel } from "./data";
+import { filterContactGrowthData, getPeriodDays } from "@/lib/analytics-utils";
+
+interface ContactGrowthData {
+  name: string;
+  contacts: number;
+}
+
+interface ContactGrowthChartProps {
+  data: ContactGrowthData[];
+}
 
 const valueFormatter = (number: number) => {
   return Intl.NumberFormat("us").format(number).toString();
@@ -49,10 +54,12 @@ const Tooltip = ({ payload, active, label }: TooltipProps) => {
   );
 };
 
-export default function ContactGrowthChart() {
+export default function ContactGrowthChart({ data }: ContactGrowthChartProps) {
   const [selected, setSelected] = React.useState("30");
-  const chartData = CONTACT_FILTER_DATA_MAP[selected];
   const selectedLabel = getContactFilterLabel(selected);
+  
+  // Filter data based on selected period
+  const filteredData = filterContactGrowthData(data, getPeriodDays(selected));
 
   return (
     <Card
@@ -73,7 +80,7 @@ export default function ContactGrowthChart() {
         <div>
           <AreaChart
             className="hidden h-72 sm:block"
-            data={chartData}
+            data={filteredData}
             index="name"
             categories={["contacts"]}
             type="default"
@@ -88,7 +95,7 @@ export default function ContactGrowthChart() {
           />
           <AreaChart
             className="h-80 sm:hidden"
-            data={chartData}
+            data={filteredData}
             index="name"
             categories={["contacts"]}
             type="default"
