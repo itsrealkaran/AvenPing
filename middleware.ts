@@ -35,6 +35,7 @@ export async function middleware(request: NextRequest) {
 
       // Check if the current path requires WhatsApp account
       if (whatsappRequiredPaths.includes(pathname)) {
+        console.log("Session from middleware", session);
         // Check WhatsApp account status from JWT token (no API call needed)
         const hasWhatsAppAccount = session.hasWhatsAppAccount === true;
         
