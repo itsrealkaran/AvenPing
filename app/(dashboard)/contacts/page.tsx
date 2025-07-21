@@ -161,6 +161,14 @@ export default function ContactsPage() {
       header: "Group",
     },
     {
+      accessorKey: "source",
+      header: "Source",
+      Cell: ({ row }) => {
+        const value = row.original.source?.replace(/_/g, ' ');
+        return value || "N/A";
+      },
+    },
+    {
       accessorKey: "status",
       header: "Status",
       Cell: ({ row }) => {
@@ -168,12 +176,18 @@ export default function ContactsPage() {
         return (
           <span
             className={`px-2 py-1 text-xs font-medium rounded-full ${
-              value === "Active"
+              value === "UNDELIVERED"
+                ? "bg-red-100 text-red-800"
+                : value === "UNREAD"
+                ? "bg-amber-100 text-amber-800" 
+                : value === "READ"
                 ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
+                : value === "REPLIED"
+                ? "bg-blue-100 text-blue-800"
+                : "bg-gray-100 text-gray-800"
             }`}
           >
-            {value}
+            {value || "Unknown"}
           </span>
         );
       },

@@ -139,41 +139,9 @@ export default function TemplatesPage() {
         );
       },
     },
-    {
-      accessorKey: "updated_at",
-      header: "Last Updated",
-      Cell: ({ row }) => {
-        const date = row.original.updated_at || row.original.created_at;
-        if (!date) return "-";
-
-        return new Date(date).toLocaleString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        });
-      },
-    },
   ];
 
   const actionMenuItems: ActionMenuItem[] = [
-    {
-      key: "edit",
-      label: "Edit",
-      icon: <Edit className="size-4" />,
-      onClick: (template, closeMenu) => {
-        handleEditTemplate(template);
-        closeMenu();
-      },
-    },
-    {
-      key: "duplicate",
-      label: "Duplicate",
-      icon: <Copy className="size-4" />,
-      onClick: async (template, closeMenu) => {
-        await handleDuplicateTemplate(template);
-        closeMenu();
-      },
-    },
     {
       key: "delete",
       label: "Delete",

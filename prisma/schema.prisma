@@ -38,6 +38,12 @@ enum RecipientStatus {
   REPLIED
 }
 
+enum RecipientSource {
+  MANUAL
+  IMPORT
+  AI_SYNC
+}
+
 // Unified User Model
 model User {
   id          String    @id @default(cuid())
@@ -116,6 +122,7 @@ model WhatsAppRecipient {
   activeCampaignId String?
 
   lastCheckedTime DateTime @default(now())
+  source RecipientSource @default(MANUAL)
 
   isOptedOut Boolean @default(false)
 

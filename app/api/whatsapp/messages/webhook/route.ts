@@ -198,6 +198,7 @@ export async function POST(req: NextRequest) {
                         name: change.value.contacts[0].profile.name || null,
                         whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
                         isOptedOut,
+                        source: "AI_SYNC",
                       },
                     });
                     newMessage = await tx.whatsAppMessage.create({

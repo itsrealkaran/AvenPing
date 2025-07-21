@@ -18,6 +18,7 @@ export interface Contact {
   group?: string;
   labels?: Label[];
   attributeValues?: ContactAttribute[];
+  source?: string;
 }
 
 interface ContactAttribute {

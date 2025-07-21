@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useContacts } from "@/context/contact-provider";
 import { useUser } from "@/context/user-context";
+import * as XLSX from "xlsx";
 
 interface ImportContactsModalProps {
   isOpen: boolean;
@@ -49,62 +50,101 @@ const ImportContactsModal = ({ isOpen, onClose }: ImportContactsModalProps) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      setError("Please upload a CSV file");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const text = e.target?.result as string;
-        const lines = text.split('\n').filter(line => line.trim());
-        
-        if (lines.length < 2) {
-          setError("CSV file must have at least a header row and one data row");
-          return;
-        }
-
-        // Parse headers
-        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-        setCsvHeaders(headers);
-
-        // Parse data rows
-        const data: CSVRow[] = [];
-        for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-          const row: CSVRow = {};
-          headers.forEach((header, index) => {
-            row[header] = values[index] || '';
-          });
-          data.push(row);
-        }
-
-        setCsvData(data);
-        
-        // Auto-map common fields
-        const autoMappings: FieldMapping[] = [];
-        headers.forEach(header => {
-          const lowerHeader = header.toLowerCase();
-          if (lowerHeader.includes('name') || lowerHeader === 'name') {
-            autoMappings.push({ csvColumn: header, databaseField: 'name' });
-          } else if (lowerHeader.includes('phone') || lowerHeader.includes('number') || lowerHeader.includes('mobile')) {
-            autoMappings.push({ csvColumn: header, databaseField: 'phoneNumber' });
-          } else if (lowerHeader.includes('group')) {
-            autoMappings.push({ csvColumn: header, databaseField: 'group' });
-          } else if (lowerHeader.includes('status')) {
-            autoMappings.push({ csvColumn: header, databaseField: 'status' });
+    const fileName = file.name.toLowerCase();
+    if (fileName.endsWith('.csv')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const text = e.target?.result as string;
+          const lines = text.split('\n').filter(line => line.trim());
+          if (lines.length < 2) {
+            setError("CSV file must have at least a header row and one data row");
+            return;
           }
-        });
-        
-        setFieldMappings(autoMappings);
-        setError("");
-        setSuccess(`Successfully loaded ${data.length} contacts from CSV`);
-      } catch (err) {
-        setError("Error parsing CSV file. Please check the format.");
-      }
-    };
-    reader.readAsText(file);
+          // Parse headers
+          const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+          setCsvHeaders(headers);
+          // Parse data rows
+          const data: CSVRow[] = [];
+          for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+            const row: CSVRow = {};
+            headers.forEach((header, index) => {
+              row[header] = values[index] || '';
+            });
+            data.push(row);
+          }
+          setCsvData(data);
+          // Auto-map common fields
+          const autoMappings: FieldMapping[] = [];
+          headers.forEach(header => {
+            const lowerHeader = header.toLowerCase();
+            if (lowerHeader.includes('name') || lowerHeader === 'name') {
+              autoMappings.push({ csvColumn: header, databaseField: 'name' });
+            } else if (lowerHeader.includes('phone') || lowerHeader.includes('number') || lowerHeader.includes('mobile')) {
+              autoMappings.push({ csvColumn: header, databaseField: 'phoneNumber' });
+            } else if (lowerHeader.includes('group')) {
+              autoMappings.push({ csvColumn: header, databaseField: 'group' });
+            } else if (lowerHeader.includes('status')) {
+              autoMappings.push({ csvColumn: header, databaseField: 'status' });
+            }
+          });
+          setFieldMappings(autoMappings);
+          setError("");
+          setSuccess(`Successfully loaded ${data.length} contacts from CSV`);
+        } catch (err) {
+          setError("Error parsing CSV file. Please check the format.");
+        }
+      };
+      reader.readAsText(file);
+    } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = e.target?.result;
+          const workbook = XLSX.read(data, { type: "array" });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const json: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          if (json.length < 2) {
+            setError("XLSX file must have at least a header row and one data row");
+            return;
+          }
+          const headers = json[0].map((h: any) => String(h).trim());
+          setCsvHeaders(headers);
+          const dataRows: CSVRow[] = json.slice(1).map(rowArr => {
+            const row: CSVRow = {};
+            headers.forEach((header: string, idx: number) => {
+              row[header] = rowArr[idx] !== undefined ? String(rowArr[idx]) : '';
+            });
+            return row;
+          });
+          setCsvData(dataRows);
+          // Auto-map common fields
+          const autoMappings: FieldMapping[] = [];
+          headers.forEach(header => {
+            const lowerHeader = header.toLowerCase();
+            if (lowerHeader.includes('name') || lowerHeader === 'name') {
+              autoMappings.push({ csvColumn: header, databaseField: 'name' });
+            } else if (lowerHeader.includes('phone') || lowerHeader.includes('number') || lowerHeader.includes('mobile')) {
+              autoMappings.push({ csvColumn: header, databaseField: 'phoneNumber' });
+            } else if (lowerHeader.includes('group')) {
+              autoMappings.push({ csvColumn: header, databaseField: 'group' });
+            } else if (lowerHeader.includes('status')) {
+              autoMappings.push({ csvColumn: header, databaseField: 'status' });
+            }
+          });
+          setFieldMappings(autoMappings);
+          setError("");
+          setSuccess(`Successfully loaded ${dataRows.length} contacts from XLSX`);
+        } catch (err) {
+          setError("Error parsing XLSX file. Please check the format.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      setError("Please upload a CSV or XLSX file");
+    }
   };
 
   const handleFieldMappingChange = (csvColumn: string, databaseField: string) => {
@@ -257,7 +297,7 @@ const ImportContactsModal = ({ isOpen, onClose }: ImportContactsModalProps) => {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv"
+                accept=".csv,.xlsx"
                 onChange={handleFileUpload}
                 className="hidden"
               />
@@ -273,7 +313,7 @@ const ImportContactsModal = ({ isOpen, onClose }: ImportContactsModalProps) => {
                   </button>
                   {" "}or drag and drop
                 </div>
-                <p className="text-xs text-gray-500">CSV files only</p>
+                <p className="text-xs text-gray-500">CSV and XLSX files only</p>
                 <button
                   type="button"
                   onClick={handleDownloadTemplate}
