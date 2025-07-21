@@ -3,7 +3,7 @@
 import Body from "@/components/layout/body";
 import { FileText, Edit, Trash, Copy, Plus } from "lucide-react";
 import React, { useState, useEffect } from "react";
-import Table, { ActionMenuItem } from "@/components/ui/table";
+import Table, { ActionMenuItem, ToolbarAction } from "@/components/ui/table";
 import { MRT_ColumnDef } from "material-react-table";
 import { CreateTemplateModal } from "@/components/templates/create-template-modal";
 import { useTemplates } from "@/context/template-provider";
@@ -41,13 +41,14 @@ export default function TemplatesPage() {
     }
   }, [userInfo, setSelectedWhatsAppAccountId]);
 
-  const handleDeleteTemplate = async (template: Template) => {
+  const handleDeleteTemplate = async (templatesToDelete: Template | Template[]) => {
     if (!selectedWhatsAppAccountId) {
       console.error("No WhatsApp account selected");
       return;
     }
-    console.log(template, "template");
-    await deleteTemplate(selectedWhatsAppAccountId, template.name);
+    const templateArray = Array.isArray(templatesToDelete) ? templatesToDelete : [templatesToDelete];
+    const names = templateArray.map(t => t.name);
+    await deleteTemplate(selectedWhatsAppAccountId, names);
   };
 
   const handleAddTemplate = () => {
@@ -122,14 +123,14 @@ export default function TemplatesPage() {
             {components?.map((component, index) => (
               <span
                 key={index}
-                className={`px-2 py-0.5 text-xs bg-gray-100 rounded-full ${
+                className={`px-2 py-0.5 text-xs bg-gray-50 rounded-full ${
                   component.type === "HEADER"
-                    ? "bg-blue-100 text-blue-800"
+                    ? "bg-sky-50 text-sky-700" 
                     : component.type === "BODY"
-                    ? "bg-green-100 text-green-800"
+                    ? "bg-emerald-50 text-emerald-700"
                     : component.type === "FOOTER"
-                    ? "bg-teal-400/20 text-gray-800"
-                    : "bg-gray-100 text-gray-800"
+                    ? "bg-violet-50 text-violet-700"
+                    : "bg-gray-50 text-gray-700"
                 }`}
               >
                 {component.type}
@@ -180,6 +181,8 @@ export default function TemplatesPage() {
         onAddItem={handleAddTemplate}
         addButtonLabel="Create Template"
         searchPlaceholder="Search templates..."
+        deleteButtonLabel="Delete Template"
+        onDelete={handleDeleteTemplate}
       />
 
       <CreateTemplateModal

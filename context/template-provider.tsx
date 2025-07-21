@@ -33,7 +33,7 @@ interface TemplateContextType {
   setSelectedWhatsAppAccountId: (id: string | null) => void;
   fetchTemplates: (whatsAppAccountId: string) => Promise<Template[]>;
   createTemplate: (whatsAppAccountId: string, templateData: any) => Promise<void>;
-  deleteTemplate: (whatsAppAccountId: string, templateId: string) => Promise<void>;
+  deleteTemplate: (whatsAppAccountId: string, templateNames: string[]) => Promise<void>; // updated
   updateTemplate: (whatsAppAccountId: string, templateId: string, templateData: any) => Promise<void>;
   clearError: () => void;
 }
@@ -115,27 +115,26 @@ export function TemplateProvider({ children }: TemplateProviderProps) {
   });
 
   const deleteTemplateMutation = useMutation({
-    mutationFn: async ({ whatsAppAccountId, templateName }: { whatsAppAccountId: string; templateName: string }) => {
-      const response = await fetch(`/api/whatsapp/templates?name=${templateName}`, {
+    mutationFn: async ({ whatsAppAccountId, templateNames }: { whatsAppAccountId: string; templateNames: string[] }) => {
+      const namesParam = templateNames.join(",");
+      const response = await fetch(`/api/whatsapp/templates?names=${encodeURIComponent(namesParam)}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
       });
-
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete template');
+        throw new Error(errorData.error || 'Failed to delete template(s)');
       }
-
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['templates'] });
-      toast.success('Template deleted successfully');
+      toast.success('Template(s) deleted successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete template');
+      toast.error(error.message || 'Failed to delete template(s)');
     },
   });
 
@@ -169,8 +168,8 @@ export function TemplateProvider({ children }: TemplateProviderProps) {
     await createTemplateMutation.mutateAsync({ whatsAppAccountId, templateData });
   };
 
-  const deleteTemplate = async (whatsAppAccountId: string, templateName: string) => {
-    await deleteTemplateMutation.mutateAsync({ whatsAppAccountId, templateName });
+  const deleteTemplate = async (whatsAppAccountId: string, templateNames: string[]) => {
+    await deleteTemplateMutation.mutateAsync({ whatsAppAccountId, templateNames });
   };
 
   const updateTemplate = async (whatsAppAccountId: string, templateId: string, templateData: any) => {

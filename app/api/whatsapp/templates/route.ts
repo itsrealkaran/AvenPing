@@ -105,8 +105,11 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
-        const name = searchParams.get('name');
-        console.log(name, "name");
+        const names = searchParams.get('names');
+
+        if (!names) {
+            return NextResponse.json({ error: "Names are required" }, { status: 400 });
+        }
 
         const user = await getSession();
 
@@ -126,13 +129,21 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ error: "Whatsapp account not found" }, { status: 404 });
         }
 
-        const template = await axios.delete(`https://graph.facebook.com/v23.0/${whatsappAccount.wabaid}/message_templates?name=${name}`, {
-            headers: {
-                'Authorization': `Bearer ${whatsappAccount.accessToken}`,
-            },
-        });
+        for (const name of names.split(',')) {
+            try {
+            const template = await axios.delete(`https://graph.facebook.com/v23.0/${whatsappAccount.wabaid}/message_templates?name=${name}`, {
+                headers: {
+                    'Authorization': `Bearer ${whatsappAccount.accessToken}`,
+                },
+            });
 
-        return NextResponse.json(template.data);
+            console.log(template.data, "template");
+            } catch (error) {
+                console.error(`Failed to delete template ${name}:`, error);
+            }
+        }
+
+        return NextResponse.json({ message: "Templates deleted successfully" });
     } catch (error) {
         return NextResponse.json({ error: "Failed to delete template", message: error }, { status: 500 });
     }
