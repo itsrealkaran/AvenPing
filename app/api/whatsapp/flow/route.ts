@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, trigger, automationJson, status = "INACTIVE" } = await req.json();
+    const { name, triggers, automationJson, status = "INACTIVE" } = await req.json();
 
     // Get the user's WhatsApp account
     const user = await prisma.user.findUnique({
@@ -60,10 +60,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No WhatsApp account found" }, { status: 404 });
     }
 
+    const existingFlows = await prisma.whatsAppFlow.findMany({
+      where: {
+        accountId: user.whatsAppAccount.id,
+      },
+    });
+    
+    if (existingFlows.find(flow => flow.automationJson.find((t: any) => t.triggers.find((t: any) => triggers.some((t: any) => t.trigger === t.trigger))))) {
+      return NextResponse.json({ error: "Trigger already exists" }, { status: 400 });
+    }
+
     const flow = await prisma.whatsAppFlow.create({
       data: {
         name,
-        trigger,
+        triggers,
         automationJson,
         recipientArray: [],
         status,
@@ -85,7 +95,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id, name, trigger, automationJson, status } = await req.json();
+    const { id, name, triggers, automationJson, status } = await req.json();
 
     // Get the user's WhatsApp account
     const user = await prisma.user.findUnique({
@@ -97,9 +107,19 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "No WhatsApp account found" }, { status: 404 });
     }
 
+    const existingFlows = await prisma.whatsAppFlow.findMany({
+      where: {
+        accountId: user.whatsAppAccount.id,
+      },
+    });
+
+    if (existingFlows.find(flow => flow.automationJson.find((t: any) => t.triggers.find((t: any) => triggers.some((t: any) => t.trigger === t.trigger))))) {
+      return NextResponse.json({ error: "Trigger already exists" }, { status: 400 });
+    }
+
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
-    if (trigger !== undefined) updateData.trigger = trigger;
+    if (triggers !== undefined) updateData.triggers = triggers;
     if (automationJson !== undefined) updateData.automationJson = automationJson;
     if (status !== undefined) updateData.status = status;
 

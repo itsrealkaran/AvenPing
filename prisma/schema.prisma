@@ -211,7 +211,7 @@ model WhatsAppFlow {
   id String @id @default(cuid())
   name String
 
-  trigger        String
+  triggers       String[]
   automationJson Json[]
   recipientArray Json[] // { [recipientNumber: string, automationTime: string] }
 

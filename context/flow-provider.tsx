@@ -16,7 +16,7 @@ export interface Flow {
 export interface DatabaseFlow {
   id: string;
   name: string;
-  trigger: string;
+  triggers: string[];
   automationJson: any[];
   recipientArray: any[];
   status: string;
@@ -75,7 +75,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
   const convertFlowToDatabaseFormat = (flow: Flow): Partial<DatabaseFlow> => {
     return {
       name: flow.name,
-      trigger: flow.triggers.join(','),
+      triggers: flow.triggers,
       automationJson: [{
         triggers: flow.triggers,
         steps: flow.steps,

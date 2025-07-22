@@ -179,9 +179,9 @@ export async function GET(request: NextRequest) {
       const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
 
-      let daySent = 0;
-      let dayDelivered = 0;
-      let dayOpened = 0;
+      let dayUnread = 0;
+      let dayRead = 0;
+      let dayReplied = 0;
 
       // Find campaigns created on this day and sum their recipientStats
       account.campaigns.forEach(campaign => {
@@ -189,21 +189,15 @@ export async function GET(request: NextRequest) {
         if (campaignDate >= startOfDay && campaignDate < endOfDay) {
           if (campaign.recipientStats && Array.isArray(campaign.recipientStats)) {
             campaign.recipientStats.forEach((recipient: any) => {
-              daySent++;
-              
               switch (recipient.status) {
-                case 'UNDELIVERED':
-                  break;
                 case 'UNREAD':
-                  dayDelivered++;
+                  dayUnread++;
                   break;
                 case 'READ':
-                  dayDelivered++;
-                  dayOpened++;
+                  dayRead++;
                   break;
                 case 'REPLIED':
-                  dayDelivered++;
-                  dayOpened++;
+                  dayReplied++;
                   break;
               }
             });
@@ -213,9 +207,9 @@ export async function GET(request: NextRequest) {
 
       campaignData.push({
         date: startOfDay.toISOString().slice(0, 10),
-        sent: daySent,
-        delivered: dayDelivered,
-        opened: dayOpened
+        unread: dayUnread,
+        read: dayRead,
+        replied: dayReplied
       });
     }
 

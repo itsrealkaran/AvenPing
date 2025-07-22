@@ -88,7 +88,7 @@ function AreaChartCustomTooltipExample({ data }: { data: CampaignData[] }) {
         className="hidden h-72 sm:block"
         data={data}
         index="date"
-        categories={["sent", "delivered", "opened"]}
+        categories={["unread", "read", "replied"]}
         type="stacked"
         colors={["blue", "cyan", "violet"]}
         valueFormatter={valueFormatter}
@@ -103,7 +103,7 @@ function AreaChartCustomTooltipExample({ data }: { data: CampaignData[] }) {
         className="h-80 sm:hidden"
         data={data}
         index="date"
-        categories={["sent", "delivered", "opened"]}
+        categories={["unread", "read", "replied"]}
         type="stacked"
         colors={["blue", "cyan", "violet"]}
         valueFormatter={valueFormatter}
