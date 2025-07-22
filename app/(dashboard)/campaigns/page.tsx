@@ -6,10 +6,14 @@ import React, { useState, useEffect } from "react";
 import Table, { ActionMenuItem } from "@/components/ui/table";
 import { MRT_ColumnDef } from "material-react-table";
 import { CreateCampaignModal } from "@/components/campaigns/create-campaign-modal";
-import { useCampaigns, Campaign } from "@/context/campaign-provider";
+import { useCampaigns, Campaign as BaseCampaign } from "@/context/campaign-provider";
 import { useUser } from "@/context/user-context";
 import { toast } from "sonner";
 import { RecipientStatsModal } from "@/components/campaigns/recipient-stats-modal";
+
+type Campaign = BaseCampaign & {
+  recipientStats?: Array<{ id: string; name: string; phoneNumber: string; status: string }>;
+};
 
 export default function CampaignsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -93,6 +97,39 @@ export default function CampaignsPage() {
             {value}
           </span>
         );
+      },
+    },
+    {
+      accessorKey: "readCount",
+      header: "Read",
+      Cell: ({ row }) => {
+        const stats = row.original.recipientStats || [];
+        const total = stats.length;
+        const count = stats.filter((r: any) => r.status === "READ").length;
+        const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+        return `${percent}%`;
+      },
+    },
+    {
+      accessorKey: "repliedCount",
+      header: "Replied",
+      Cell: ({ row }) => {
+        const stats = row.original.recipientStats || [];
+        const total = stats.length;
+        const count = stats.filter((r: any) => r.status === "REPLIED").length;
+        const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+        return `${percent}%`;
+      },
+    },
+    {
+      accessorKey: "unreadCount",
+      header: "Unread",
+      Cell: ({ row }) => {
+        const stats = row.original.recipientStats || [];
+        const total = stats.length;
+        const count = stats.filter((r: any) => r.status === "UNREAD").length;
+        const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+        return `${percent}%`;
       },
     },
     {

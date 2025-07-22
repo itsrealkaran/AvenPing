@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Card from "@/components/ui/card";
+import { AreaChart } from "@/components/charts/area-chart";
+import { BarChart } from "@/components/charts/bar-chart";
 
 const FILTERS = [
   { key: "UNDELIVERED", label: "Undelivered", color: "#EF4444" },
@@ -12,6 +14,21 @@ const FILTERS = [
 export function RecipientStatsModal({ open, onClose, stats }: { open: boolean, onClose: () => void, stats?: { id: string, name: string, phoneNumber: string, status: string }[] | null }) {
   const [activeFilter, setActiveFilter] = useState("UNDELIVERED");
   if (!open) return null;
+
+  const chartData = FILTERS.map(f => ({
+    Status: f.label,
+    Count: stats?.filter((r) => r.status?.toUpperCase() === f.key).length || 0,
+  }));
+  const chartCategories = ["Count"];
+  const chartColors = FILTERS.map(f => {
+    switch (f.key) {
+      case "UNDELIVERED": return "red";
+      case "UNREAD": return "yellow";
+      case "READ": return "green";
+      case "REPLIED": return "blue";
+      default: return "gray";
+    }
+  });
   const filtered = stats?.filter((r: any) => r.status?.toUpperCase() === activeFilter) || [];
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -29,6 +46,21 @@ export function RecipientStatsModal({ open, onClose, stats }: { open: boolean, o
             </button>
           }
         >
+          {/* Bar Chart */}
+          <div className="mb-6 mt-2">
+            <BarChart
+              data={chartData}
+              index="Status"
+              categories={chartCategories}
+              colors={chartColors}
+              showLegend={false}
+              showXAxis={true}
+              showYAxis={true}
+              showGridLines={true}
+              valueFormatter={(v) => v.toString()}
+              className="h-80"
+            />
+          </div>
           <div className="flex flex-wrap gap-2 mb-6 mt-2">
             {FILTERS.map((f) => (
               <button
