@@ -30,6 +30,7 @@ export async function POST(request: Request) {
             phoneNumbers: true,
           },
         },
+        plan: true,
       }
     });
 
@@ -64,6 +65,8 @@ export async function POST(request: Request) {
       name: user.name,
       accessToken: user.whatsAppAccount?.accessToken,
       hasWhatsAppAccount: hasWhatsAppAccount,
+      plan: user.plan?.name,
+      expiresAt: user.expiresAt,
     });
 
     // Set cookie

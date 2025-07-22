@@ -13,11 +13,9 @@ import MetricCard from "@/components/analytics/metric-card";
 import Link from "next/link";
 import axios from "axios";
 import { useUser } from "@/context/user-context";
-import { getSession } from "@/lib/jwt";
 import { WhatsAppAccountRequired } from "@/components/ui/whatsapp-account-required";
 import { cn } from "@/lib/utils";
 import { useAnalytics } from "@/hooks/use-analytics";
-import { Loader2, BarChart3, TrendingUp, Users, MessageSquare } from "lucide-react";
 
 export default function DashboardPage() {
   // Register Number state

@@ -52,6 +52,8 @@ export async function POST(request: Request) {
       email: user.email,
       name: user.name,
       hasWhatsAppAccount: false,
+      plan: null,
+      expiresAt: null,
     });
 
     // Set cookie

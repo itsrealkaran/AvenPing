@@ -44,6 +44,12 @@ enum RecipientSource {
   AI_SYNC
 }
 
+
+enum PlanPeriod {
+  MONTHLY
+  YEARLY
+}
+
 // Unified User Model
 model User {
   id          String    @id @default(cuid())
@@ -56,6 +62,11 @@ model User {
 
   whatsAppAccount WhatsAppAccount? @relation("UserWhatsAppAccount", fields: [whatsAppAccountId], references: [id])
   whatsAppAccountId String? @unique
+
+  planId String?
+  plan   Plan? @relation(fields: [planId], references: [id])
+
+  expiresAt DateTime?
 
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -221,4 +232,18 @@ model WhatsAppFlow {
 
   accountId String
   account   WhatsAppAccount @relation(fields: [accountId], references: [id])
+}
+
+model Plan {
+  id String @id @default(cuid())
+  name String
+
+  priceJson Json // { amount: number, currency: string }
+  period PlanPeriod
+  features String[]
+
+  users User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
