@@ -128,7 +128,7 @@ model WhatsAppRecipient {
 
   hasConversation Boolean @default(false)
 
-  status RecipientStatus @default(UNDELIVERED)
+  status RecipientStatus @default(UNREAD)
 
   activeCampaignId String?
 

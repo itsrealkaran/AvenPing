@@ -11,14 +11,10 @@ const FILTERS = [
   { key: "REPLIED", label: "Replied", color: "#3B82F6" },
 ];
 
-export function RecipientStatsModal({ open, onClose, stats }: { open: boolean, onClose: () => void, stats?: { id: string, name: string, phoneNumber: string, status: string }[] | null }) {
+export function RecipientStatsModal({ open, onClose, stats, chartData }: { open: boolean, onClose: () => void, stats?: { id: string, name: string, phoneNumber: string, status: string }[] | null, chartData?: { Status: string, Count: number }[] }) {
   const [activeFilter, setActiveFilter] = useState("UNDELIVERED");
   if (!open) return null;
 
-  const chartData = FILTERS.map(f => ({
-    Status: f.label,
-    Count: stats?.filter((r) => r.status?.toUpperCase() === f.key).length || 0,
-  }));
   const chartCategories = ["Count"];
   const chartColors = FILTERS.map(f => {
     switch (f.key) {
@@ -49,7 +45,7 @@ export function RecipientStatsModal({ open, onClose, stats }: { open: boolean, o
           {/* Bar Chart */}
           <div className="mb-6 mt-2">
             <BarChart
-              data={chartData}
+              data={chartData || []}
               index="Status"
               categories={chartCategories}
               colors={chartColors}

@@ -63,7 +63,8 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         throw new Error('Failed to fetch campaigns');
       }
-      return response.json();
+      const data = await response.json();
+      return data.campaigns;
     },
     enabled: !!selectedWhatsAppAccountId,
   });

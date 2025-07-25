@@ -9,9 +9,9 @@ import { filterCampaignData, getPeriodDays } from "@/lib/analytics-utils";
 
 interface CampaignData {
   date: string;
-  sent: number;
-  delivered: number;
-  opened: number;
+  unread: number;
+  read: number;
+  replied: number;
 }
 
 interface CampaignChartProps {
@@ -19,7 +19,7 @@ interface CampaignChartProps {
 }
 
 interface Issue {
-  status: "sent" | "delivered" | "opened";
+  status: "unread" | "read" | "replied";
   value: number;
   percentage: number;
 }
@@ -29,9 +29,9 @@ const valueFormatter = (number: number) => {
 };
 
 const status = {
-  sent: "bg-blue-500",
-  delivered: "bg-cyan-500",
-  opened: "bg-violet-500",
+  unread: "bg-blue-500",
+  read: "bg-cyan-500",
+  replied: "bg-violet-500",
 };
 
 const Tooltip = ({ payload, active, label }: TooltipProps) => {
@@ -42,9 +42,9 @@ const Tooltip = ({ payload, active, label }: TooltipProps) => {
     value: item.value,
     percentage: (
       (item.value /
-        (item.payload.sent +
-          item.payload["delivered"] +
-          item.payload["opened"])) *
+        (item.payload.unread +
+          item.payload.read +
+          item.payload.replied)) *
       100
     ).toFixed(2),
   }));

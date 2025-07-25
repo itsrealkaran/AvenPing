@@ -1,8 +1,8 @@
 export interface CampaignData {
   date: string;
-  sent: number;
-  delivered: number;
-  opened: number;
+  unread: number;
+  read: number;
+  replied: number;
 }
 
 export interface ContactGrowthData {

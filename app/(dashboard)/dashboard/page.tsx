@@ -13,7 +13,6 @@ import MetricCard from "@/components/analytics/metric-card";
 import Link from "next/link";
 import axios from "axios";
 import { useUser } from "@/context/user-context";
-import { WhatsAppAccountRequired } from "@/components/ui/whatsapp-account-required";
 import { cn } from "@/lib/utils";
 import { useAnalytics } from "@/hooks/use-analytics";
 
@@ -192,7 +191,6 @@ export default function DashboardPage() {
           onClose={() => setShowRegisterModal(false)}
           onRegister={handleRegister}
         />
-        <WhatsAppAccountRequired />
       </Body>
     );
   }
@@ -301,7 +299,6 @@ export default function DashboardPage() {
         onClose={() => setShowRegisterModal(false)}
         onRegister={handleRegister}
       />
-      <WhatsAppAccountRequired />
       </Body>
     );
 }

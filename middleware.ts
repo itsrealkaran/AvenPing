@@ -4,7 +4,7 @@ import { getSession } from "@/lib/jwt";
 
 // Add paths that should be accessible without authentication
 const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/"];
-const privatePaths = ["/dashboard", "/api", "/messages", "/campaigns", "/templates", "/contacts", "/flows", "/aibot", "/analytics", "/settings"];
+const privatePaths = ["/dashboard", "/api", "/messages", "/campaigns", "/templates", "/contacts", "/flows", "/aibot", "/analytics", "/settings", "/profile"];
 
 // Paths that require WhatsApp account
 const whatsappRequiredPaths = ["/messages", "/campaigns", "/templates", "/contacts", "/flows", "/aibot", "/analytics", "/settings", "/profile"];

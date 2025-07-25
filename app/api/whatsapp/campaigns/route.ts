@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "No id provided" }, { status: 400 });
     }
 
-    const campaigns = await prisma.whatsAppCampaign.findMany({
+    let campaigns = await prisma.whatsAppCampaign.findMany({
       where: {
         account: {
           id: id as string,
@@ -29,7 +29,30 @@ export async function GET(request: Request) {
       },
     });
 
-    return NextResponse.json(campaigns);
+    const FILTERS = [
+      { key: "UNDELIVERED", label: "Undelivered", color: "#EF4444" },
+      { key: "UNREAD", label: "Unread", color: "#F59E0B" },
+      { key: "READ", label: "Read", color: "#10B981" },
+      { key: "REPLIED", label: "Replied", color: "#3B82F6" },
+    ];
+
+    // Add chart data to each campaign
+    campaigns.map((c: any) => {
+      c.chartData = FILTERS.map(f => ({
+        Status: f.label,
+        Count: c.recipientStats?.filter((r: any) => r.status?.toUpperCase() === f.key).length || 0,
+      }));
+    });
+
+    // If user is not an enterprise user, set recipient stats to null for all campaigns
+    if (session.plan !== "ENTERPRISE") {
+      campaigns = campaigns.map((c: any) => ({
+        ...c,
+        recipientStats: null,
+      }));
+    }
+
+    return NextResponse.json({ campaigns });
   } catch (error) {
     console.error("Error fetching campaigns:", error);
     return NextResponse.json(
@@ -53,6 +76,10 @@ export async function POST(request: Request) {
     if (!session?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    if (!session.plan) {
+      return NextResponse.json({ error: "You are not authorized to create campaigns" }, { status: 400 });
+    }
+
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
 
@@ -92,6 +119,32 @@ export async function POST(request: Request) {
 
     if (!account) {
       return NextResponse.json({ error: "Account not found" }, { status: 404 });
+    }
+
+    if (session.plan === "BASIC") {
+      const existingCampaigns = await prisma.whatsAppCampaign.findMany({
+        where: {
+          accountId: id,
+          createdAt: {
+            gte: new Date(new Date().setDate(new Date().getDate() - 30)),
+          },
+        },
+      });
+      // Count total recipients in the last 30 days
+      let totalRecipients = 0;
+      for (const campaign of existingCampaigns) {
+        if (Array.isArray(campaign.recipientStats)) {
+          totalRecipients += campaign.recipientStats.length;
+        }
+      }
+
+      const newTotal = totalRecipients + selectedContacts.length;
+      if (newTotal > 2500) {
+        const remaining = Math.max(0, 2500 - totalRecipients);
+        return NextResponse.json({
+          error: `Basic plan limit reached. You can only send to ${remaining} more recipients this month. Upgrade to Premium to send more messages.`
+        }, { status: 400 });
+      }
     }
 
     // Create campaign in database

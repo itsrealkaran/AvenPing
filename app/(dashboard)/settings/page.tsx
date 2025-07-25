@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Settings, User, Bell, Tag, ShoppingCart, Phone, Users, Trash2, Link, Plus, Edit, X } from "lucide-react"
+import { Settings, User, Bell, Tag, ShoppingCart, Phone, Users, Trash2, Link, Plus, Edit, X, CreditCard, FileText, CheckCircle, AlertCircle } from "lucide-react"
 import Body from "@/components/layout/body"
 
 const settingsNavigation = [
@@ -16,6 +16,9 @@ const settingsNavigation = [
   { id: "notifications", title: "Notifications", icon: Bell },
   { id: "labels", title: "Label Settings", icon: Tag },
   { id: "catalog", title: "Catalog", icon: ShoppingCart },
+  { id: "subscription", title: "Subscription", icon: CreditCard },
+  { id: "paymentHistory", title: "Payment History", icon: FileText },
+  { id: "blueTick", title: "Blue Tick Request", icon: CheckCircle },
 ]
 
 export default function SettingsPage() {
@@ -35,6 +38,8 @@ export default function SettingsPage() {
   ])
   const [newLabelName, setNewLabelName] = React.useState("")
   const [newLabelColor, setNewLabelColor] = React.useState("#3b82f6")
+  const [optOutStatus, setOptOutStatus] = React.useState(false)
+  const [optOutKeywords, setOptOutKeywords] = React.useState("STOP, UNSUBSCRIBE, CANCEL")
 
   const addLabel = () => {
     if (newLabelName.trim()) {
@@ -61,16 +66,28 @@ export default function SettingsPage() {
         <div className="space-y-8 px-8 py-8 overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 'calc(100vh - 120px)' }}>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label className="text-base font-semibold">Opt-in Status</Label>
-              <p className="text-sm text-gray-500">Allow receiving promotional messages and updates</p>
+              <Label className="text-base font-semibold">Opt-out Status</Label>
+              <p className="text-sm text-gray-500">Enable to allow users to opt out of receiving messages. If enabled, users can reply with any of the defined keywords to stop receiving messages.</p>
             </div>
             <input
               type="checkbox"
-              checked={optInStatus}
-              onChange={e => setOptInStatus(e.target.checked)}
+              checked={optOutStatus}
+              onChange={e => setOptOutStatus(e.target.checked)}
               className="w-5 h-5 accent-cyan-500 rounded border border-gray-300 focus:ring-2 focus:ring-cyan-300 transition"
             />
           </div>
+          {optOutStatus && (
+            <div className="flex items-center gap-4 mt-4">
+              <Label className="font-semibold">Opt-out Keywords</Label>
+              <Input
+                value={optOutKeywords}
+                onChange={e => setOptOutKeywords(e.target.value)}
+                placeholder="e.g. STOP, UNSUBSCRIBE, CANCEL"
+                className="rounded-md border-gray-200 focus:ring-cyan-300 w-96"
+              />
+              <span className="text-xs text-gray-500">Comma-separated keywords</span>
+            </div>
+          )}
           <hr className="my-6 border-gray-100" />
           <div className="space-y-4">
             <Label className="text-base font-semibold">WhatsApp Connection</Label>
@@ -117,51 +134,28 @@ export default function SettingsPage() {
     <div className="">
       <Card title="Contact Settings" headerIcon={<User className="h-6 w-6 text-cyan-500" />} className="bg-white border border-gray-200 rounded-xl p-0 flex-1 flex flex-col min-h-0">
         <div className="space-y-8 px-8 py-8 overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+            <h3 className="text-base font-semibold">Attributes</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="font-semibold">First Name</Label>
-              <Input placeholder="Enter attribute name" className="rounded-md border-gray-200 focus:ring-cyan-300" />
+            <div className="space-y-2 flex items-center justify-between p-4 border border-gray-100 rounded-lg bg-gray-50">
+              <p className="font-semibold">Name</p>
+              <p className="text-gray-500">Type: Text</p>
             </div>
-            <div className="space-y-2">
-              <Label className="font-semibold">Last Name</Label>
-              <Input placeholder="Enter attribute name" className="rounded-md border-gray-200 focus:ring-cyan-300" />
+            <div className="space-y-2 flex items-center justify-between p-4 border border-gray-100 rounded-lg bg-gray-50">
+              <p className="font-semibold">Address</p>
+              <p className="text-gray-500">Type: Text</p>
             </div>
-            <div className="space-y-2">
-              <Label className="font-semibold">Email</Label>
-              <Input placeholder="Enter attribute name" className="rounded-md border-gray-200 focus:ring-cyan-300" />
+            <div className="space-y-2 flex items-center justify-between p-4 border border-gray-100 rounded-lg bg-gray-50">
+              <p className="font-semibold">Email</p>
+              <p className="text-gray-500">Type: Text</p>
             </div>
-            <div className="space-y-2">
-              <Label className="font-semibold">Phone</Label>
-              <Input placeholder="Enter attribute name" className="rounded-md border-gray-200 focus:ring-cyan-300" />
+            <div className="space-y-2 flex items-center justify-between p-4 border border-gray-100 rounded-lg bg-gray-50">
+              <p className="font-semibold">Name</p>
+              <p className="text-gray-500">Type: Text</p>
             </div>
           </div>
           <Button className="w-full rounded-md py-2 text-sm font-medium bg-cyan-500 text-white hover:bg-cyan-600">
             <Plus className="h-5 w-5 mr-2" />
             Add Custom Attribute
-          </Button>
-          <hr className="my-6 border-gray-100" />
-          <Label className="text-base font-semibold">Contact Groups</Label>
-          <div className="space-y-3">
-            {["VIP Customers", "Newsletter Subscribers", "Product Updates"].map((group, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg bg-gray-50">
-                <div>
-                  <p className="font-medium text-base">{group}</p>
-                  <p className="text-sm text-gray-500">{Math.floor(Math.random() * 500) + 50} contacts</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="rounded-md">
-                    <Edit className="h-5 w-5" />
-                  </Button>
-                  <Button variant="outline" size="sm" className="rounded-md">
-                    <Trash2 className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <Button className="w-full rounded-md py-2 text-sm font-medium bg-cyan-500 text-white hover:bg-cyan-600">
-            <Plus className="h-5 w-5 mr-2" />
-            Create New Group
           </Button>
         </div>
       </Card>
@@ -325,6 +319,154 @@ export default function SettingsPage() {
     </div>
   )
 
+  // --- Subscription Section ---
+  const [currentPlan, setCurrentPlan] = React.useState("Professional")
+  const [planStatus, setPlanStatus] = React.useState("Active")
+  const plans = [
+    {
+      name: "Starter",
+      price: "$29",
+      period: "per month",
+      description: "Perfect for small businesses getting started",
+      features: [
+        "Up to 1,000 messages/month",
+        "Basic automation",
+        "Contact management",
+        "Email support",
+        "WhatsApp integration",
+      ],
+      popular: false,
+    },
+    {
+      name: "Professional",
+      price: "$79",
+      period: "per month",
+      description: "Ideal for growing businesses",
+      features: [
+        "Up to 10,000 messages/month",
+        "Advanced automation",
+        "Team collaboration",
+        "Analytics dashboard",
+        "Priority support",
+        "Custom templates",
+        "API access",
+      ],
+      popular: true,
+    },
+    {
+      name: "Enterprise",
+      price: "$199",
+      period: "per month",
+      description: "For large organizations with complex needs",
+      features: [
+        "Unlimited messages",
+        "Advanced AI features",
+        "Multi-team management",
+        "Custom integrations",
+        "Dedicated support",
+        "White-label options",
+        "Advanced security",
+        "Custom reporting",
+      ],
+      popular: false,
+    },
+  ]
+  const renderSubscriptionSettings = () => (
+    <div className="h-full flex-1 flex flex-col">
+      <Card title="Subscription" headerIcon={<CreditCard className="h-6 w-6 text-cyan-500" />} className="bg-white border border-gray-200 rounded-xl p-0 flex-1 flex flex-col min-h-0">
+        <div className="space-y-8 px-8 py-8 overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+          <div className="mb-8">
+            <div className="flex items-center gap-4">
+              <span className="text-lg font-semibold">Current Plan:</span>
+              <span className="px-3 py-1 rounded-full bg-cyan-100 text-cyan-700 font-medium">{currentPlan}</span>
+              <span className={`px-3 py-1 rounded-full font-medium ${planStatus === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{planStatus}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {plans.map((plan) => (
+              <div key={plan.name} className={`bg-white rounded-2xl p-6 border-2 flex flex-col h-full ${plan.popular ? 'border-cyan-500 relative' : 'border-gray-200 hover:border-cyan-200'}`}> 
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-cyan-500 text-white px-4 py-2 rounded-full text-sm font-medium">Most Popular</span>
+                  </div>
+                )}
+                <div className="text-center mb-4">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{plan.name}</h3>
+                  <p className="text-gray-600 mb-2">{plan.description}</p>
+                  <div className="mb-2">
+                    <span className="text-3xl font-bold text-gray-900">{plan.price}</span>
+                    <span className="text-gray-600 ml-2">{plan.period}</span>
+                  </div>
+                </div>
+                <ul className="space-y-2 mb-4">
+                  {plan.features.map((feature, i) => (
+                    <li key={i} className="flex items-start text-gray-700"><CheckCircle className="text-cyan-500 mr-2 mt-0.5" size={18} />{feature}</li>
+                  ))}
+                </ul>
+                <Button className="w-full mt-auto" variant={currentPlan === plan.name ? "outline" : "default"} disabled={currentPlan === plan.name}>{currentPlan === plan.name ? "Current Plan" : "Choose Plan"}</Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+
+  // --- Payment History Section ---
+  const paymentHistoryData = [
+    { id: 1, date: "2024-05-01", amount: "$79", method: "Credit Card", status: "Paid", invoice: "INV-1001" },
+    { id: 2, date: "2024-04-01", amount: "$79", method: "Credit Card", status: "Paid", invoice: "INV-1000" },
+    { id: 3, date: "2024-03-01", amount: "$79", method: "Credit Card", status: "Paid", invoice: "INV-0999" },
+    { id: 4, date: "2024-02-01", amount: "$79", method: "Credit Card", status: "Paid", invoice: "INV-0998" },
+  ]
+  const paymentHistoryColumns = [
+    { accessorKey: "date", header: "Date" },
+    { accessorKey: "amount", header: "Amount" },
+    { accessorKey: "method", header: "Method" },
+    { accessorKey: "status", header: "Status" },
+    { accessorKey: "invoice", header: "Invoice #" },
+  ]
+  const Table = require("@/components/ui/table").default
+  const renderPaymentHistorySettings = () => (
+    <div className="h-full flex-1 flex flex-col">
+      <Card title="Payment History" headerIcon={<FileText className="h-6 w-6 text-cyan-500" />} className="bg-white border border-gray-200 rounded-xl p-0 flex-1 flex flex-col min-h-0">
+        <div className="space-y-8 px-8 py-8 overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+          <Table data={paymentHistoryData} columns={paymentHistoryColumns} enableRowSelection={false} enableRowActions={false} enableColumnResizing={false} enableColumnOrdering={false} enableGlobalFilter={false} enableColumnFilters={false} enablePagination={false} enableSorting={true} />
+        </div>
+      </Card>
+    </div>
+  )
+
+  // --- Blue Tick Request Section ---
+  const [isVerified, setIsVerified] = React.useState(false)
+  const renderBlueTickRequestSettings = () => (
+    <div className="h-full flex-1 flex flex-col">
+      <Card title="Blue Tick Request" headerIcon={<CheckCircle className="h-6 w-6 text-cyan-500" />} className="bg-white border border-gray-200 rounded-xl p-0 flex-1 flex flex-col min-h-0">
+        <div className="space-y-8 px-8 py-8 overflow-y-auto flex-1 min-h-0 flex flex-col items-center justify-center" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+          <div className="w-full max-w-xl mx-auto">
+            {isVerified ? (
+              <div className="flex items-center gap-3 text-green-600 mb-6 justify-center">
+                <CheckCircle className="w-8 h-8" />
+                <p className="font-medium text-lg">Your Meta Business Account is successfully verified, enabling full access to the WhatsApp Business Platform.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-6">
+                <div className="flex items-center gap-3 text-amber-600">
+                  <AlertCircle className="w-8 h-8" />
+                  <p className="font-medium text-lg">Verify your Meta Business Account to prevent messaging limits and unlock all WhatsApp Business features.</p>
+                </div>
+                <Button className="mt-4" onClick={() => setIsVerified(true)}>
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  Request Blue Tick
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+
   const renderContent = () => {
     switch (activeSection) {
       case "general":
@@ -337,6 +479,12 @@ export default function SettingsPage() {
         return renderLabelSettings()
       case "catalog":
         return renderCatalogSettings()
+      case "subscription":
+        return renderSubscriptionSettings()
+      case "paymentHistory":
+        return renderPaymentHistorySettings()
+      case "blueTick":
+        return renderBlueTickRequestSettings()
       default:
         return renderGeneralSettings()
     }

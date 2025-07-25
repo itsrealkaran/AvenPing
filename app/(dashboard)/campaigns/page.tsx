@@ -13,6 +13,7 @@ import { RecipientStatsModal } from "@/components/campaigns/recipient-stats-moda
 
 type Campaign = BaseCampaign & {
   recipientStats?: Array<{ id: string; name: string; phoneNumber: string; status: string }>;
+  chartData?: Array<{ Status: string; Count: number }>;
 };
 
 export default function CampaignsPage() {
@@ -22,7 +23,7 @@ export default function CampaignsPage() {
 
   const [selectedRecipientStats, setSelectedRecipientStats] = useState(null);
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
-
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   // Set the selected WhatsApp account ID when user info is available
   useEffect(() => {
     if (userInfo?.whatsappAccount?.id) {
@@ -64,6 +65,7 @@ export default function CampaignsPage() {
   const handleRowClick = (campaign: any) => {
     if (campaign.recipientStats && campaign.recipientStats.length > 0) {
       setSelectedRecipientStats(campaign.recipientStats);
+      setSelectedCampaign(campaign);
       setIsStatsModalOpen(true);
     }
   };
@@ -176,7 +178,7 @@ export default function CampaignsPage() {
       className: "text-red-600",
     },
   ];
-
+  console.log(campaigns, "campaings");
   return (
     <>
       <Body title="Campaigns">
@@ -201,6 +203,7 @@ export default function CampaignsPage() {
         open={isStatsModalOpen}
         onClose={() => setIsStatsModalOpen(false)}
         stats={selectedRecipientStats}
+        chartData={selectedCampaign?.chartData}
       />
     </>
   );
