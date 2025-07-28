@@ -3,13 +3,17 @@
 import React from "react";
 import Card from "@/components/ui/card";
 import { DonutChart } from "@/components/charts/donut-chart";
-import {
-  RESPONSE_FILTER_OPTIONS,
-  RESPONSE_FILTER_DATA_MAP,
-  getResponseFilterLabel,
-  ResponseTimeData,
-} from "./data";
 import { DropdownButton } from "@/components/ui/dropdown-button";
+import { RESPONSE_FILTER_OPTIONS, getResponseFilterLabel } from "./data";
+
+interface ResponseTimeData {
+  name: string;
+  value: number;
+}
+
+interface ResponseTimeChartProps {
+  data: ResponseTimeData[];
+}
 
 const colors: ("blue" | "violet" | "cyan" | "emerald")[] = [
   "blue",
@@ -41,9 +45,8 @@ export const DonutChartHero = ({ data }: { data: ResponseTimeData[] }) => (
   </div>
 );
 
-export default function ResponseTimeChart() {
+export default function ResponseTimeChart({ data }: ResponseTimeChartProps) {
   const [selected, setSelected] = React.useState("30");
-  const chartData = RESPONSE_FILTER_DATA_MAP[selected];
   const selectedLabel = getResponseFilterLabel(selected);
 
   return (
@@ -61,7 +64,7 @@ export default function ResponseTimeChart() {
         </DropdownButton>
       }
     >
-      <DonutChartHero data={chartData} />
+      <DonutChartHero data={data} />
     </Card>
   );
 }

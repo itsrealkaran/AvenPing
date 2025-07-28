@@ -3,12 +3,17 @@
 import React from "react";
 import Card from "@/components/ui/card";
 import { LineChart, TooltipProps } from "@/components/charts/line-chart";
-import {
-  TEMPLATE_FILTER_OPTIONS,
-  TEMPLATE_FILTER_DATA_MAP,
-  getTemplateFilterLabel,
-} from "./data";
 import { DropdownButton } from "@/components/ui/dropdown-button";
+import { TEMPLATE_FILTER_OPTIONS, getTemplateFilterLabel } from "./data";
+
+interface TemplateData {
+  name: string;
+  success: number;
+}
+
+interface TemplateChartProps {
+  data: TemplateData[];
+}
 
 const valueFormatter = (number: number) => {
   return `${Intl.NumberFormat("us").format(number)}%`;
@@ -45,9 +50,8 @@ const Tooltip = ({ payload, active, label }: TooltipProps) => {
   );
 };
 
-export default function TemplateChart() {
+export default function TemplateChart({ data }: TemplateChartProps) {
   const [selected, setSelected] = React.useState("30");
-  const chartData = TEMPLATE_FILTER_DATA_MAP[selected];
   const selectedLabel = getTemplateFilterLabel(selected);
 
   return (
@@ -69,7 +73,7 @@ export default function TemplateChart() {
         <div>
           <LineChart
             className="hidden h-72 sm:block"
-            data={chartData}
+            data={data}
             index="name"
             categories={["success"]}
             colors={["emerald"]}
@@ -86,7 +90,7 @@ export default function TemplateChart() {
           />
           <LineChart
             className="h-80 sm:hidden"
-            data={chartData}
+            data={data}
             index="name"
             categories={["success"]}
             colors={["emerald"]}

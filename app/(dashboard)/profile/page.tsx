@@ -19,6 +19,7 @@ import { Select } from "@/components/ui/select";
 import Card from "@/components/messages/message-card";
 import { useProfile } from "@/context/profile-provider";
 import { useUser } from "@/context/user-context";
+import { DropdownButton } from "@/components/ui/dropdown-button";
 
 export default function ProfilePage() {
   // Profile state
@@ -44,7 +45,7 @@ export default function ProfilePage() {
         return {
           displayName: prev.displayName,
           phoneNumber:
-            userInfo.whatsappAccount.activePhoneNumber?.phoneNumberId ||
+            userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId ||
             prev.phoneNumber,
           about: profileDetails.about || "",
           description: profileDetails.description || "",
@@ -88,6 +89,14 @@ export default function ProfilePage() {
         [name]: value,
       }));
     }
+  };
+
+  // Handle dropdown changes
+  const handleDropdownChange = (value: string) => {
+    setProfile((prev) => ({
+      ...prev,
+      vertical: value,
+    }));
   };
 
   // Handle profile picture upload
@@ -323,36 +332,39 @@ export default function ProfilePage() {
                     >
                       Category
                     </label>
-                    <Select
+                    <DropdownButton
                       id="vertical"
                       name="vertical"
-                      value={profile.vertical}
-                      onChange={handleChange}
+                      selected={profile.vertical}
+                      onChange={handleDropdownChange}
                       disabled={!isEditing}
+                      options={[
+                        { value: "", label: "Select a category" },
+                        { value: "ALCOHOL", label: "Alcoholic Beverages" },
+                        { value: "APPAREL", label: "Clothing and Apparel" },
+                        { value: "AUTO", label: "Automotive" },
+                        { value: "BEAUTY", label: "Beauty, Spa and Salon" },
+                        { value: "EDU", label: "Education" },
+                        { value: "ENTERTAIN", label: "Entertainment" },
+                        { value: "EVENT_PLAN", label: "Event Planning and Service" },
+                        { value: "FINANCE", label: "Finance and Banking" },
+                        { value: "GOVT", label: "Public Service" },
+                        { value: "GROCERY", label: "Food and Grocery" },
+                        { value: "HEALTH", label: "Medical and Health" },
+                        { value: "HOTEL", label: "Hotel and Lodging" },
+                        { value: "NONPROFIT", label: "Non-profit" },
+                        { value: "ONLINE_GAMBLING", label: "Online Gambling & Gaming" },
+                        { value: "OTC_DRUGS", label: "Over-the-Counter Drugs" },
+                        { value: "OTHER", label: "Other" },
+                        { value: "PHYSICAL_GAMBLING", label: "Non-Online Gambling & Gaming (E.g. Brick and mortar)" },
+                        { value: "PROF_SERVICES", label: "Professional Services" },
+                        { value: "RESTAURANT", label: "Restaurant" },
+                        { value: "RETAIL", label: "Shopping and Retail" },
+                        { value: "TRAVEL", label: "Travel and Transportation" },
+                      ]}
                     >
-                      <option value="">Select a category</option>
-                      <option value="ALCOHOL">Alcoholic Beverages</option>
-                      <option value="APPAREL">Clothing and Apparel</option>
-                      <option value="AUTO">Automotive</option>
-                      <option value="BEAUTY">Beauty, Spa and Salon</option>
-                      <option value="EDU">Education</option>
-                      <option value="ENTERTAIN">Entertainment</option>
-                      <option value="EVENT_PLAN">Event Planning and Service</option>
-                      <option value="FINANCE">Finance and Banking</option>
-                      <option value="GOVT">Public Service</option>
-                      <option value="GROCERY">Food and Grocery</option>
-                      <option value="HEALTH">Medical and Health</option>
-                      <option value="HOTEL">Hotel and Lodging</option>
-                      <option value="NONPROFIT">Non-profit</option>
-                      <option value="ONLINE_GAMBLING">Online Gambling & Gaming</option>
-                      <option value="OTC_DRUGS">Over-the-Counter Drugs</option>
-                      <option value="OTHER">Other</option>
-                      <option value="PHYSICAL_GAMBLING">Non-Online Gambling & Gaming (E.g. Brick and mortar)</option>
-                      <option value="PROF_SERVICES">Professional Services</option>
-                      <option value="RESTAURANT">Restaurant</option>
-                      <option value="RETAIL">Shopping and Retail</option>
-                      <option value="TRAVEL">Travel and Transportation</option>
-                    </Select>
+                      {profile.vertical ? getCategoryDisplayName(profile.vertical) : "Select a category"}
+                    </DropdownButton>
                   </div>
 
             {/* Section 4: Contact Info */}

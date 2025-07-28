@@ -137,7 +137,6 @@ export async function GET(request: Request) {
           media:
             message.media && message.media.length > 0
               ? await (async () => {
-                  console.log(message, "message");
                   try {
                     const mediaResponse = await axios.get(
                       `https://graph.facebook.com/v23.0/${message?.media?.[0]?.mediaId}`,
@@ -178,8 +177,6 @@ export async function GET(request: Request) {
         }))),
       }))
     );
-
-    console.log(items, "items");
 
     // Get the cursor for the next page
     const nextCursor = hasMore

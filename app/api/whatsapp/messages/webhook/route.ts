@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendMessageToUser } from "@/websocket-server.cjs";
+import { flowRunner } from "@/lib/flow-runner";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -82,13 +83,43 @@ export async function POST(req: NextRequest) {
                     data: {
                       status: statusValue.toUpperCase(),
                       deliveredAt:
-                        statusValue === "delivered" ? new Date() : undefined,
+                      statusValue === "delivered" ? new Date() : undefined,
                       readAt: statusValue === "read" ? new Date() : undefined,
                       errorMessage: status.errors
                         ? JSON.stringify(status.errors)
                         : null,
                     },
                   });
+
+                  const recipient = whatsAppPhoneNumber.recipients.find(
+                    (recipient) => recipient.phoneNumber === phoneNumber
+                  );
+
+                  if (recipient && recipient.activeCampaignId) {
+                    await prisma.whatsAppRecipient.updateMany({
+                      where: {
+                        id: recipient.id,
+                      },
+                      data: {
+                        status: statusValue === "sent" ? "UNREAD" : statusValue.toUpperCase(),
+                      },
+                    })
+                    await prisma.whatsAppCampaign.update({
+                      where: {
+                        id: recipient.activeCampaignId,
+                      },
+                      data: {
+                        recipientStats: {
+                          push: {
+                            id: recipient.id,
+                            name: recipient.name || "",
+                            phoneNumber: recipient.phoneNumber,
+                            status: statusValue === "sent" ? "UNREAD" : statusValue.toUpperCase(),
+                          }
+                        }
+                      }
+                    });
+                  }
                 }
 
                 // Emit status update event
@@ -116,6 +147,10 @@ export async function POST(req: NextRequest) {
                 const recipient = whatsAppPhoneNumber.recipients.find(
                   (recipient) => recipient.phoneNumber === message.from
                 );
+                let isOptedOut = false;
+                if (message.text.body.toLowerCase().replace(/\s/g, "") === "stop") {
+                  isOptedOut = true;
+                }
                 let newMessage;
 
                 if (recipient) {
@@ -129,6 +164,7 @@ export async function POST(req: NextRequest) {
                       },
                       data: {
                         name: change.value.contacts[0].profile.name,
+                        isOptedOut,
                       },
                     });
                   }
@@ -161,6 +197,8 @@ export async function POST(req: NextRequest) {
                         phoneNumber: message.from,
                         name: change.value.contacts[0].profile.name || null,
                         whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
+                        isOptedOut,
+                        source: "AI_SYNC",
                       },
                     });
                     newMessage = await tx.whatsAppMessage.create({
@@ -187,6 +225,59 @@ export async function POST(req: NextRequest) {
                     }
                     return { newRecipient, newMessage };
                   });
+
+                  // Process flow automation for new recipient
+                  if (whatsAppPhoneNumber.account.user?.id && !isOptedOut) {
+                    try {
+                      await flowRunner.processMessage(
+                        whatsAppPhoneNumber.account.user.id,
+                        newData.newRecipient.id,
+                        message.text.body,
+                        whatsAppPhoneNumber.id
+                      );
+                    } catch (flowError) {
+                      console.error('Error processing flow:', flowError);
+                    }
+                  }
+                }
+
+                if (recipient && recipient.activeCampaignId) {
+                  await prisma.whatsAppRecipient.update({
+                    where: {
+                      id: recipient.id,
+                    },
+                    data: {
+                      status: "REPLIED",
+                    },
+                  });
+                  await prisma.whatsAppCampaign.update({
+                    where: {
+                      id: recipient.activeCampaignId,
+                    },
+                    data: {
+                      recipientStats: {
+                        push: {
+                          id: recipient.id,
+                          name: recipient.name || "",
+                          phoneNumber: recipient.phoneNumber,
+                          status: "REPLIED",
+                        }
+                      }
+                    }});
+                  }
+
+                // Process flow automation for existing recipient
+                if (recipient && whatsAppPhoneNumber.account.user?.id && !isOptedOut) {
+                  try {
+                    await flowRunner.processMessage(
+                      whatsAppPhoneNumber.account.user.id,
+                      recipient.id,
+                      message.text.body,
+                      whatsAppPhoneNumber.id
+                    );
+                  } catch (flowError) {
+                    console.error('Error processing flow:', flowError);
+                  }
                 }
 
                 // Emit new message event

@@ -23,44 +23,58 @@ interface UserInfo {
         isRegistered: boolean;
         codeVerificationStatus: string;
       } | null;
-    };
+    } | null;
   };
   setUserInfo: (userInfo: UserInfo) => void;
   setActivePhoneNumber: (phoneNumber: string) => void;
+  hasWhatsAppAccount: boolean;
+  isLoading: boolean;
 }
 
 export const UserContext = createContext<UserInfo>({
   userInfo: {
-    whatsappAccount: {
-      id: "",
-      name: "",
-      email: "",
-      phoneNumbers: [],
-      activePhoneNumber: null,
-    },
+    whatsappAccount: null,
   },
   setUserInfo: () => {},
   setActivePhoneNumber: () => {},
+  hasWhatsAppAccount: false,
+  isLoading: true,
 });
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [userInfo, setUserInfo] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchUser = useCallback(async () => {
-    const response = await axios.get("/api/get-info");
-    
-    const phoneNumbers = response.data.userData.whatsappAccount.phoneNumbers || [];
-    const activePhoneNumber = phoneNumbers.length > 0 ? phoneNumbers[0] : null;
+    try {
+      setIsLoading(true);
+      const response = await axios.get("/api/get-info");
+      
+      if (response.data.userData.whatsappAccount) {
+        const phoneNumbers = response.data.userData.whatsappAccount.phoneNumbers || [];
+        const activePhoneNumber = phoneNumbers.length > 0 ? phoneNumbers[0] : null;
 
-    setUserInfo({
-      whatsappAccount: {
-        id: response.data.userData.whatsappAccount.id,
-        name: response.data.userData.whatsappAccount.name,
-        email: response.data.userData.whatsappAccount.email,
-        phoneNumbers: phoneNumbers,
-        activePhoneNumber: activePhoneNumber,
-      },
-    });
+        setUserInfo({
+          whatsappAccount: {
+            id: response.data.userData.whatsappAccount.id,
+            name: response.data.userData.whatsappAccount.name,
+            email: response.data.userData.whatsappAccount.email,
+            phoneNumbers: phoneNumbers,
+            activePhoneNumber: activePhoneNumber,
+          },
+        });
+      } else {
+        setUserInfo({
+          whatsappAccount: null,
+        });
+      }
+    } catch (error) {
+      setUserInfo({
+        whatsappAccount: null,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const setActivePhoneNumber = useCallback((phoneNumber: string) => {
@@ -81,8 +95,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     fetchUser();
   }, [fetchUser]);
 
+  const hasWhatsAppAccount = userInfo?.whatsappAccount?.id && 
+                            userInfo.whatsappAccount.phoneNumbers && 
+                            userInfo.whatsappAccount.phoneNumbers.length > 0;
+
   return (
-    <UserContext.Provider value={{ userInfo, setUserInfo, setActivePhoneNumber }}>{children}</UserContext.Provider>
+    <UserContext.Provider value={{ userInfo, setUserInfo, setActivePhoneNumber, hasWhatsAppAccount, isLoading }}>{children}</UserContext.Provider>
   );
 };
 

@@ -1,13 +1,14 @@
 "use client";
 
 import Body from "@/components/layout/body";
-import { Edit, Trash, Pause, Play, FileUp, Send } from "lucide-react";
+import { Edit, Trash, Pause, Play, FileUp, Send, Download } from "lucide-react";
 import React, { useState } from "react";
 import Table, { ActionMenuItem, ToolbarAction } from "@/components/ui/table";
 import { MRT_ColumnDef, MRT_Row } from "material-react-table";
 import { useContacts, Contact } from "@/context/contact-provider";
 import { useUser } from "@/context/user-context";
 import AddContactModal from "@/components/contacts/add-contact-modal";
+import ImportContactsModal from "@/components/contacts/import-contacts-modal";
 
 // Utility function to convert contacts to CSV format
 const exportContactsToCSV = (contacts: Contact[]) => {
@@ -58,6 +59,7 @@ export default function ContactsPage() {
   const { contacts, isLoading, error, createContact, updateContact, deleteContacts, isCreating, isUpdating, isDeleting, createError, updateError, deleteError, attributes } = useContacts();
   const { userInfo } = useUser();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
 
   const handleDeleteContact = (contact: Contact) => {
@@ -116,6 +118,14 @@ export default function ContactsPage() {
     setEditingContact(null);
   };
 
+  const handleImportContacts = () => {
+    setShowImportModal(true);
+  };
+
+  const handleCloseImportModal = () => {
+    setShowImportModal(false);
+  };
+
   const handleExportContacts = () => {
     if (contacts?.length === 0) {
       alert('Please select at least one contact to export.');
@@ -151,6 +161,14 @@ export default function ContactsPage() {
       header: "Group",
     },
     {
+      accessorKey: "source",
+      header: "Source",
+      Cell: ({ row }) => {
+        const value = row.original.source?.replace(/_/g, ' ');
+        return value || "N/A";
+      },
+    },
+    {
       accessorKey: "status",
       header: "Status",
       Cell: ({ row }) => {
@@ -158,12 +176,18 @@ export default function ContactsPage() {
         return (
           <span
             className={`px-2 py-1 text-xs font-medium rounded-full ${
-              value === "Active"
+              value === "UNDELIVERED"
+                ? "bg-red-100 text-red-800"
+                : value === "UNREAD"
+                ? "bg-amber-100 text-amber-800" 
+                : value === "READ"
                 ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
+                : value === "REPLIED"
+                ? "bg-blue-100 text-blue-800"
+                : "bg-gray-100 text-gray-800"
             }`}
           >
-            {value}
+            {value || "Unknown"}
           </span>
         );
       },
@@ -229,6 +253,14 @@ export default function ContactsPage() {
 
   const toolbarActions: ToolbarAction<Contact>[] = [
     {
+      key: "import",
+      label: "Import",
+      icon: Download,
+      onClick: () => {
+        handleImportContacts();
+      },
+    },
+    {
       key: "export",
       label: "Export",
       icon: FileUp,
@@ -261,6 +293,11 @@ export default function ContactsPage() {
         onSubmit={handleCreateContact}
         isLoading={editingContact ? isUpdating : isCreating}
         editContact={editingContact}
+      />
+      
+      <ImportContactsModal
+        isOpen={showImportModal}
+        onClose={handleCloseImportModal}
       />
     </>
   );

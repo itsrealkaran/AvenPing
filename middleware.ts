@@ -3,8 +3,11 @@ import type { NextRequest } from "next/server";
 import { getSession } from "@/lib/jwt";
 
 // Add paths that should be accessible without authentication
-const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password"];
-const privatePaths = ["/dashboard", "/api", "/messages", "/campaigns", "/templates", "/contacts", "/flows", "/aibot", "/analytics", "/settings"];
+const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/"];
+const privatePaths = ["/dashboard", "/api", "/messages", "/campaigns", "/templates", "/contacts", "/flows", "/aibot", "/analytics", "/settings", "/profile"];
+
+// Paths that require WhatsApp account
+const whatsappRequiredPaths = ["/messages", "/campaigns", "/templates", "/contacts", "/flows", "/aibot", "/analytics", "/settings", "/profile"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -25,16 +28,34 @@ export async function middleware(request: NextRequest) {
       if (!session) {
         const url = new URL("/login", request.url);
         url.searchParams.set("callbackUrl", pathname);
-        return NextResponse.redirect(url);
+        const response = NextResponse.redirect(url);
+        response.headers.set("x-middleware-cache", "no-cache");
+        return response;
       }
 
-      // If session exists, allow the request
+      // Check if the current path requires WhatsApp account
+      if (whatsappRequiredPaths.includes(pathname)) {
+        console.log("Session from middleware", session);
+        // Check WhatsApp account status from JWT token (no API call needed)
+        const hasWhatsAppAccount = session.hasWhatsAppAccount === true;
+        
+        // If user doesn't have WhatsApp account, redirect to dashboard
+        if (!hasWhatsAppAccount) {
+          const response = NextResponse.redirect(new URL("/dashboard?whatsapp=false", request.url));
+          response.headers.set("x-middleware-cache", "no-cache");
+          return response;
+        }
+      }
+
+      // If session exists and WhatsApp check passes, allow the request
       return NextResponse.next();
     } catch (error) {
       // If there's an error checking the session, redirect to login
       const url = new URL("/login", request.url);
       url.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(url);
+      const response = NextResponse.redirect(url);
+      response.headers.set("x-middleware-cache", "no-cache");
+      return response;
     }
   }
 

@@ -31,6 +31,31 @@ enum ContactAttributeType {
   NUMBER
 }
 
+enum RecipientStatus {
+  UNDELIVERED
+  UNREAD
+  READ
+  REPLIED
+}
+
+enum RecipientSource {
+  MANUAL
+  IMPORT
+  AI_SYNC
+}
+
+enum PlanPeriod {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  CANCELLED
+}
+
 // Unified User Model
 model User {
   id          String    @id @default(cuid())
@@ -43,6 +68,13 @@ model User {
 
   whatsAppAccount WhatsAppAccount? @relation("UserWhatsAppAccount", fields: [whatsAppAccountId], references: [id])
   whatsAppAccountId String? @unique
+
+  planId String?
+  plan   Plan? @relation(fields: [planId], references: [id])
+
+  expiresAt DateTime?
+
+  subscription Subscription[]
 
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -62,6 +94,8 @@ model WhatsAppAccount {
 
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
+
+  flows WhatsAppFlow[]
 
   user            User?                 @relation("UserWhatsAppAccount")
 
@@ -86,7 +120,6 @@ model WhatsAppPhoneNumber {
 
   recipients WhatsAppRecipient[]
   messages   WhatsAppMessage[]
-  automations WhatsAppAutomation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -103,7 +136,14 @@ model WhatsAppRecipient {
 
   hasConversation Boolean @default(false)
 
+  status RecipientStatus @default(UNREAD)
+
+  activeCampaignId String?
+
   lastCheckedTime DateTime @default(now())
+  source RecipientSource @default(MANUAL)
+
+  isOptedOut Boolean @default(false)
 
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
@@ -120,15 +160,19 @@ model WhatsAppCampaign {
   id             String           @id @default(cuid())
   name           String
   type           String // TEXT, IMAGE, TEMPLATE
+
   message        String?
   mediaUrl       String?
-  templateId     String?
-  templateParams Json? // Stored as JSON object
+  templateName   String?
+
+  recipientStats Json? // [ { id: string, name: string, recipientNumber: string, status: string } ]
   accountId      String
   account        WhatsAppAccount  @relation(fields: [accountId], references: [id])
   status         String           @default("COMPLETED") // DRAFT, SCHEDULED, ACTIVE, PAUSED, COMPLETED, FAILED
+  
   scheduledAt    DateTime?
   completedAt    DateTime?
+  
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 }
@@ -154,21 +198,6 @@ model WhatsAppMessage {
   recipient             WhatsAppRecipient    @relation(fields: [recipientId], references: [id])
 }
 
-model WhatsAppAutomation {
-  id String @id @default(cuid())
-  name String
-
-  phoneNumberId String
-  phoneNumber WhatsAppPhoneNumber @relation(fields: [phoneNumberId], references: [id])
-
-  automationJson Json
-  recipientArray Json[] // { [recipientNumber: string, automationTime: string] }
-
-  status String @default("ACTIVE") // ACTIVE, INACTIVE
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model Label {
   id String @id @default(cuid())
   name String
@@ -192,6 +221,52 @@ model ContactAttribute {
 
   accountId String
   account   WhatsAppAccount @relation(fields: [accountId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WhatsAppFlow {
+  id String @id @default(cuid())
+  name String
+
+  triggers       String[]
+  automationJson Json[]
+  recipientArray Json[] // { [recipientNumber: string, automationTime: string] }
+
+  status String @default("INACTIVE") // ACTIVE, INACTIVE
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accountId String
+  account   WhatsAppAccount @relation(fields: [accountId], references: [id])
+}
+
+model Plan {
+  id String @id @default(cuid())
+  name String
+
+  priceJson Json // { amount: number, currency: string }
+  period PlanPeriod
+  features String[]
+
+  users User[]
+  subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subscription {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id])
+
+  planId String
+  plan Plan @relation(fields: [planId], references: [id])
+
+  status SubscriptionStatus @default(PENDING)
+  expiresAt DateTime
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -2,11 +2,13 @@
 
 import Body from "@/components/layout/body";
 import { Edit, Trash, Play, Pause } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Table, { ActionMenuItem } from "@/components/ui/table";
 import { MRT_ColumnDef } from "material-react-table";
 import dynamic from "next/dynamic";
 import { Node, Edge } from "@xyflow/react";
+import { useFlow, Flow } from "@/context/flow-provider";
+import { toast } from "sonner";
 
 // Dynamically import FlowBuilder to avoid SSR issues
 const FlowBuilderComponent = dynamic(
@@ -15,16 +17,6 @@ const FlowBuilderComponent = dynamic(
     ssr: false,
   }
 );
-
-// Define the Flow type
-type Flow = {
-  id: string;
-  name: string;
-  status: string;
-  date: string;
-  triggers: string[];
-  steps: any[];
-};
 
 // Function to reconstruct nodes and edges from flow JSON
 function reconstructFlowData(flow: Flow): { nodes: Node[]; edges: Edge[] } {
@@ -118,11 +110,17 @@ function reconstructFlowData(flow: Flow): { nodes: Node[]; edges: Edge[] } {
   return { nodes, edges };
 }
 
-const initialFlows: Flow[] = [];
-
 export default function FlowPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [flows, setFlows] = useState<Flow[]>(initialFlows);
+  const { 
+    flows, 
+    isLoading, 
+    error,
+    deleteFlow, 
+    toggleFlowStatus, 
+    saveFlowFromBuilder, 
+    reconstructFlowData,
+    clearError
+  } = useFlow();
 
   // State for builder
   const [showBuilder, setShowBuilder] = useState(false);
@@ -130,8 +128,12 @@ export default function FlowPage() {
   const [initialNodes, setInitialNodes] = useState<Node[]>([]);
   const [initialEdges, setInitialEdges] = useState<Edge[]>([]);
 
-  const handleDeleteFlow = (flow: Flow) => {
-    setFlows(flows.filter((f) => f.id !== flow.id));
+  const handleDeleteFlow = async (flow: Flow) => {
+    try {
+      await deleteFlow(flow.id);
+    } catch (error) {
+      console.error("Failed to delete flow:", error);
+    }
   };
 
   const handleAddFlow = () => {
@@ -147,25 +149,24 @@ export default function FlowPage() {
     setShowBuilder(true);
   };
 
-  const handleToggleStatus = (flow: Flow) => {
-    const newStatus = flow.status === "Active" ? "Inactive" : "Active";
-    setFlows(
-      flows.map((f) => (f.id === flow.id ? { ...f, status: newStatus } : f))
-    );
+  const handleToggleStatus = async (flow: Flow) => {
+    try {
+      await toggleFlowStatus(flow.id);
+    } catch (error) {
+      console.error("Failed to toggle flow status:", error);
+    }
   };
 
-  const handleSaveFlow = (flow: Flow) => {
-    if (editingFlow) {
-      // Update existing flow
-      setFlows((prev) => prev.map((f) => (f.id === editingFlow.id ? flow : f)));
-    } else {
-      // Add new flow
-      setFlows((prev) => [...prev, flow]);
+  const handleSaveFlow = async (flow: Flow) => {
+    try {
+      await saveFlowFromBuilder(flow);
+      setShowBuilder(false);
+      setEditingFlow(null);
+      setInitialNodes([]);
+      setInitialEdges([]);
+    } catch (error) {
+      console.error("Failed to save flow:", error);
     }
-    setShowBuilder(false);
-    setEditingFlow(null);
-    setInitialNodes([]);
-    setInitialEdges([]);
   };
 
   const handleBack = () => {
@@ -190,15 +191,16 @@ export default function FlowPage() {
       header: "Status",
       Cell: ({ row }) => {
         const value = row.original.status;
+        const isActive = value === "ACTIVE";
         return (
           <span
             className={`px-2 py-1 text-xs font-medium rounded-full ${
-              value === "active"
+              isActive
                 ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
             }`}
           >
-            {value.charAt(0).toUpperCase() + value.slice(1)}
+            {isActive ? "Active" : "Inactive"}
           </span>
         );
       },
@@ -246,9 +248,9 @@ export default function FlowPage() {
     {
       key: "toggle",
       label: (row: Flow) =>
-        row.status === "Active" ? "Deactivate" : "Activate",
+        row.status === "ACTIVE" ? "Deactivate" : "Activate",
       icon: (row: Flow) =>
-        row.status === "Active" ? (
+        row.status === "ACTIVE" ? (
           <Pause className="size-4" />
         ) : (
           <Play className="size-4" />
@@ -270,8 +272,17 @@ export default function FlowPage() {
     },
   ];
 
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      clearError();
+    }
+  }, [error, clearError]);
+
   return (
     <Body title="Flows">
+      {/* Error toast handled in useEffect, nothing rendered here */}
+      
       {showBuilder ? (
         <FlowBuilderComponent
           onBack={handleBack}

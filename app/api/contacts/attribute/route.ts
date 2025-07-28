@@ -67,8 +67,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (existingAttribute.length >= 8) {
+    if (session.plan === "BASIC" && existingAttribute.length >= 3) {
+      return NextResponse.json({ error: "You can only have 3 attributes" }, { status: 400 });
+    } else if (session.plan === "PREMIUM" && existingAttribute.length >= 5) {
+      return NextResponse.json({ error: "You can only have 5 attributes" }, { status: 400 });
+    } else if (session.plan === "ENTERPRISE" && existingAttribute.length >= 8) {
       return NextResponse.json({ error: "You can only have 8 attributes" }, { status: 400 });
+    } else if (!session.plan) {
+      return NextResponse.json({ error: "You are not authorized to create attributes" }, { status: 400 });
     }
 
     if (existingAttribute.find((attribute) => attribute.name === name)) {
