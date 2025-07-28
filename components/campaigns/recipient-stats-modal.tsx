@@ -1,27 +1,25 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Card from "@/components/ui/card";
-import { AreaChart } from "@/components/charts/area-chart";
-import { BarChart } from "@/components/charts/bar-chart";
+import { DonutChart } from "@/components/charts/donut-chart";
 
 const FILTERS = [
-  { key: "UNDELIVERED", label: "Undelivered", color: "#EF4444" },
-  { key: "UNREAD", label: "Unread", color: "#F59E0B" },
-  { key: "READ", label: "Read", color: "#10B981" },
-  { key: "REPLIED", label: "Replied", color: "#3B82F6" },
+  { key: "Undelivered", label: "Undelivered", color: "#EF4444" },
+  { key: "Unread", label: "Unread", color: "#F59E0B" },
+  { key: "Read", label: "Read", color: "#10B981" },
+  { key: "Replied", label: "Replied", color: "#3B82F6" },
 ];
 
 export function RecipientStatsModal({ open, onClose, stats, chartData }: { open: boolean, onClose: () => void, stats?: { id: string, name: string, phoneNumber: string, status: string }[] | null, chartData?: { Status: string, Count: number }[] }) {
-  const [activeFilter, setActiveFilter] = useState("UNDELIVERED");
+  const [activeFilter, setActiveFilter] = useState("Undelivered");
   if (!open) return null;
 
-  const chartCategories = ["Count"];
   const chartColors = FILTERS.map(f => {
     switch (f.key) {
-      case "UNDELIVERED": return "red";
-      case "UNREAD": return "yellow";
-      case "READ": return "green";
-      case "REPLIED": return "blue";
+      case "Undelivered": return "red";
+      case "Unread": return "yellow";
+      case "Read": return "green";
+      case "Replied": return "blue";
       default: return "gray";
     }
   });
@@ -42,23 +40,37 @@ export function RecipientStatsModal({ open, onClose, stats, chartData }: { open:
             </button>
           }
         >
-          {/* Bar Chart */}
-          <div className="mb-6 mt-2">
-            <BarChart
+          {/* Pie Chart */}
+          <div className="mb-6 mt-2 flex flex-col items-center">
+            <DonutChart
               data={chartData || []}
-              index="Status"
-              categories={chartCategories}
+              category="Status"
+              value="Count"
               colors={chartColors}
-              showLegend={false}
-              showXAxis={true}
-              showYAxis={true}
-              showGridLines={true}
-              valueFormatter={(v) => v.toString()}
-              className="h-80"
+              variant="donut"
+              valueFormatter={(v: number) => v.toString()}
+              showTooltip={true}
+              showLabel={true}
+              label="Total Recipients"
+              className="h-80 w-80"
             />
+            {/* Legend */}
+            <div className="flex flex-wrap justify-center gap-4 mt-4">
+              {FILTERS.map((filter) => (
+                <div key={filter.key} className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: filter.color }}
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    {filter.label}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="flex flex-wrap gap-2 mb-6 mt-2">
-            {FILTERS.map((f) => (
+            {stats && stats.length > 0 && FILTERS.map((f) => (
               <button
                 key={f.key}
                 onClick={() => setActiveFilter(f.key)}
@@ -74,23 +86,25 @@ export function RecipientStatsModal({ open, onClose, stats, chartData }: { open:
               </button>
             ))}
           </div>
-          <div className="bg-gray-50 rounded-xl shadow-inner max-h-80 overflow-y-auto divide-y divide-gray-200">
-            {filtered.length > 0 ? (
-              filtered.map((recipient: any) => (
-                <div key={recipient.id} className="flex items-center justify-between py-3 px-4 hover:bg-gray-100 transition">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 truncate">{recipient.name || "Unknown"}</div>
-                    <div className="text-xs text-gray-500 truncate">{recipient.phoneNumber}</div>
+          {stats && stats.length > 0 && (
+            <div className="bg-gray-50 rounded-xl shadow-inner max-h-80 overflow-y-auto divide-y divide-gray-200">
+              {filtered.length > 0 ? (
+                filtered.map((recipient: any) => (
+                  <div key={recipient.id} className="flex items-center justify-between py-3 px-4 hover:bg-gray-100 transition">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-900 truncate">{recipient.name || "Unknown"}</div>
+                      <div className="text-xs text-gray-500 truncate">{recipient.phoneNumber}</div>
+                    </div>
+                    <span className={`ml-4 px-3 py-1 rounded-full text-xs font-semibold`} style={{ backgroundColor: FILTERS.find(f => f.key === recipient.status?.toUpperCase())?.color + '22', color: FILTERS.find(f => f.key === recipient.status?.toUpperCase())?.color }}>
+                      {recipient.status}
+                    </span>
                   </div>
-                  <span className={`ml-4 px-3 py-1 rounded-full text-xs font-semibold`} style={{ backgroundColor: FILTERS.find(f => f.key === recipient.status?.toUpperCase())?.color + '22', color: FILTERS.find(f => f.key === recipient.status?.toUpperCase())?.color }}>
-                    {recipient.status}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div className="text-gray-500 text-center py-12">No recipients in this category.</div>
-            )}
-          </div>
+                ))
+              ) : (
+                <div className="text-gray-500 text-center py-12">No recipients in this category.</div>
+                )}
+            </div>
+          )}
           <Button onClick={onClose} className="mt-6 w-full font-semibold">Close</Button>
         </Card>
       </div>

@@ -63,7 +63,7 @@ export default function CampaignsPage() {
   };
 
   const handleRowClick = (campaign: any) => {
-    if (campaign.recipientStats && campaign.recipientStats.length > 0) {
+    if (campaign.chartData) {
       setSelectedRecipientStats(campaign.recipientStats);
       setSelectedCampaign(campaign);
       setIsStatsModalOpen(true);
@@ -105,9 +105,10 @@ export default function CampaignsPage() {
       accessorKey: "readCount",
       header: "Read",
       Cell: ({ row }) => {
-        const stats = row.original.recipientStats || [];
-        const total = stats.length;
-        const count = stats.filter((r: any) => r.status === "READ").length;
+        const chartData = row.original.chartData || [];
+        const total = chartData.reduce((sum: number, item: any) => sum + item.Count, 0);
+        const readItem = chartData.find((item: any) => item.Status === "Read");
+        const count = readItem ? readItem.Count : 0;
         const percent = total > 0 ? Math.round((count / total) * 100) : 0;
         return `${percent}%`;
       },
@@ -116,9 +117,10 @@ export default function CampaignsPage() {
       accessorKey: "repliedCount",
       header: "Replied",
       Cell: ({ row }) => {
-        const stats = row.original.recipientStats || [];
-        const total = stats.length;
-        const count = stats.filter((r: any) => r.status === "REPLIED").length;
+        const chartData = row.original.chartData || [];
+        const total = chartData.reduce((sum: number, item: any) => sum + item.Count, 0);
+        const repliedItem = chartData.find((item: any) => item.Status === "Replied");
+        const count = repliedItem ? repliedItem.Count : 0;
         const percent = total > 0 ? Math.round((count / total) * 100) : 0;
         return `${percent}%`;
       },
@@ -127,9 +129,10 @@ export default function CampaignsPage() {
       accessorKey: "unreadCount",
       header: "Unread",
       Cell: ({ row }) => {
-        const stats = row.original.recipientStats || [];
-        const total = stats.length;
-        const count = stats.filter((r: any) => r.status === "UNREAD").length;
+        const chartData = row.original.chartData || [];
+        const total = chartData.reduce((sum: number, item: any) => sum + item.Count, 0);
+        const unreadItem = chartData.find((item: any) => item.Status === "Unread");
+        const count = unreadItem ? unreadItem.Count : 0;
         const percent = total > 0 ? Math.round((count / total) * 100) : 0;
         return `${percent}%`;
       },
