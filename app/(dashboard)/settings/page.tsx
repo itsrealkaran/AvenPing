@@ -9,6 +9,8 @@ import { Select } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Settings, User, Bell, Tag, ShoppingCart, Phone, Users, Trash2, Link, Plus, Edit, X, CreditCard, FileText, CheckCircle, AlertCircle } from "lucide-react"
 import Body from "@/components/layout/body"
+import axios from "axios"
+import { toast } from "sonner"
 
 const settingsNavigation = [
   { id: "general", title: "General Settings", icon: Settings },
@@ -58,6 +60,23 @@ export default function SettingsPage() {
 
   const removeLabel = (id: number) => {
     setLabels(labels.filter((label) => label.id !== id))
+  }
+
+  const handleChoosePlan = async (plan: any) => {
+    try {
+      const response = await axios.post("/api/subscription/stripe", {
+        planName: plan.name.toUpperCase(),
+        planPeriod: plan.period.toUpperCase(),
+      })
+      
+      if (response.data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = response.data.url
+      }
+    } catch (error) {
+      console.error("Error creating checkout session:", error)
+      toast.error("Failed to create checkout session")
+    }
   }
 
   const renderGeneralSettings = () => (
@@ -324,7 +343,7 @@ export default function SettingsPage() {
   const [planStatus, setPlanStatus] = React.useState("Active")
   const plans = [
     {
-      name: "Starter",
+      name: "Basic",
       price: "$29",
       period: "per month",
       description: "Perfect for small businesses getting started",
@@ -387,7 +406,7 @@ export default function SettingsPage() {
               <div key={plan.name} className={`bg-white rounded-2xl p-6 border-2 flex flex-col h-full ${plan.popular ? 'border-cyan-500 relative' : 'border-gray-200 hover:border-cyan-200'}`}> 
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-cyan-500 text-white px-4 py-2 rounded-full text-sm font-medium">Most Popular</span>
+                    <span className="bg-cyan-500 text-white px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap">Most Popular</span>
                   </div>
                 )}
                 <div className="text-center mb-4">
@@ -403,7 +422,7 @@ export default function SettingsPage() {
                     <li key={i} className="flex items-start text-gray-700"><CheckCircle className="text-cyan-500 mr-2 mt-0.5" size={18} />{feature}</li>
                   ))}
                 </ul>
-                <Button className="w-full mt-auto" variant={currentPlan === plan.name ? "outline" : "default"} disabled={currentPlan === plan.name}>{currentPlan === plan.name ? "Current Plan" : "Choose Plan"}</Button>
+                <Button onClick={() => handleChoosePlan(plan)} className="w-full mt-auto" variant={currentPlan === plan.name ? "outline" : "default"} disabled={currentPlan === plan.name}>{currentPlan === plan.name ? "Current Plan" : "Choose Plan"}</Button>
               </div>
             ))}
           </div>

@@ -44,10 +44,16 @@ enum RecipientSource {
   AI_SYNC
 }
 
-
 enum PlanPeriod {
   MONTHLY
   YEARLY
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  CANCELLED
 }
 
 // Unified User Model
@@ -67,6 +73,8 @@ model User {
   plan   Plan? @relation(fields: [planId], references: [id])
 
   expiresAt DateTime?
+
+  subscription Subscription[]
 
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -243,6 +251,22 @@ model Plan {
   features String[]
 
   users User[]
+  subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subscription {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id])
+
+  planId String
+  plan Plan @relation(fields: [planId], references: [id])
+
+  status SubscriptionStatus @default(PENDING)
+  expiresAt DateTime
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
