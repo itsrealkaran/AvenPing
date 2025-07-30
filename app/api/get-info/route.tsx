@@ -15,6 +15,7 @@ export async function GET(request: Request) {
         email: session.email as string,
       },
       select: {
+        id: true,
         name: true,
         email: true,
         whatsAppAccount: {
