@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getSession } from "@/lib/jwt";
+import { getSessionFromRequest } from "@/lib/jwt";
 
 interface JWTPayload {
   id: string;
@@ -57,7 +57,7 @@ export async function middleware(request: NextRequest) {
     if (publicRoutes.some((route) => pathname.startsWith(route))) {
       // If user is already authenticated, redirect to dashboard
       try {
-        const session = await getSession();
+        const session = await getSessionFromRequest(request);
         if (session) {
           const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
           redirectResponse.headers.set('x-middleware-cache', 'no-cache');
@@ -84,7 +84,7 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      const session = await getSession();
+      const session = await getSessionFromRequest(request);
       
       // If no session exists, redirect to login
       if (!session) {
@@ -125,7 +125,7 @@ export async function middleware(request: NextRequest) {
     // Allow access to public routes without authentication
     if (publicRoutes.some((route) => pathname.startsWith(route))) {
       try {
-        const session = await getSession();
+        const session = await getSessionFromRequest(request);
         if (session) {
           // Only redirect if we're on the root path or login page
           if (pathname === '/' || pathname === '/login') {
@@ -154,7 +154,7 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      const session = await getSession();
+      const session = await getSessionFromRequest(request);
       
       if (!session) {
         const redirectResponse = NextResponse.redirect(new URL('/login', request.url));
