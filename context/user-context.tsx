@@ -3,6 +3,9 @@ import { createContext, useContext, useState, ReactNode, useCallback, useEffect 
 
 interface UserInfo {
   userInfo: {
+    id: string;
+    name: string;
+    email: string;
     whatsappAccount: {
       id: string;
       name: string;
@@ -33,6 +36,9 @@ interface UserInfo {
 
 export const UserContext = createContext<UserInfo>({
   userInfo: {
+    id: "",
+    name: "",
+    email: "",
     whatsappAccount: null,
   },
   setUserInfo: () => {},
@@ -55,6 +61,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         const activePhoneNumber = phoneNumbers.length > 0 ? phoneNumbers[0] : null;
 
         setUserInfo({
+          id: response.data.userData.id,
+          name: response.data.userData.name,
+          email: response.data.userData.email,
           whatsappAccount: {
             id: response.data.userData.whatsappAccount.id,
             name: response.data.userData.whatsappAccount.name,
@@ -83,7 +92,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const phoneNumbers = userInfo.whatsappAccount.phoneNumbers.find((phone: any) => phone.phoneNumber === phoneNumber);
     if (phoneNumbers) {
       setUserInfo({
-        whatsappAccount: {
+        id: userInfo.id,
+        name: userInfo.name,
+        email: userInfo.email,
+          whatsappAccount: {
           ...userInfo.whatsappAccount,
           activePhoneNumber: phoneNumbers,
         },

@@ -10,7 +10,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Settings, User, Bell, Tag, ShoppingCart, Phone, Users, Trash2, Link, Plus, Edit, X, CreditCard, FileText, CheckCircle, AlertCircle } from "lucide-react"
 import Body from "@/components/layout/body"
 import axios from "axios"
+import { PaymentMethodSelector, PaymentMethodInfo } from "@/components/ui/payment-method-selector"
+import { initiateRazorpayPayment } from "@/lib/razorpay-utils"
 import { toast } from "sonner"
+import { useUser } from "@/context/user-context"
 
 const settingsNavigation = [
   { id: "general", title: "General Settings", icon: Settings },
@@ -42,6 +45,9 @@ export default function SettingsPage() {
   const [newLabelColor, setNewLabelColor] = React.useState("#3b82f6")
   const [optOutStatus, setOptOutStatus] = React.useState(false)
   const [optOutKeywords, setOptOutKeywords] = React.useState("STOP, UNSUBSCRIBE, CANCEL")
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = React.useState("stripe")
+
+  const { userInfo } = useUser()
 
   const addLabel = () => {
     if (newLabelName.trim()) {
@@ -64,14 +70,34 @@ export default function SettingsPage() {
 
   const handleChoosePlan = async (plan: any) => {
     try {
-      const response = await axios.post("/api/subscription/stripe", {
-        planName: plan.name.toUpperCase(),
-        planPeriod: plan.period.toUpperCase(),
-      })
-      
-      if (response.data.url) {
-        // Redirect to Stripe checkout
-        window.location.href = response.data.url
+      if (selectedPaymentMethod === "stripe") {
+        // Handle Stripe payment
+        const response = await axios.post("/api/subscription/stripe", {
+          planName: plan.name.toUpperCase(),
+          planPeriod: plan.period.toUpperCase(),
+        })
+        
+        if (response.data.url) {
+          // Redirect to Stripe checkout
+          window.location.href = response.data.url
+        }
+      } else if (selectedPaymentMethod === "razorpay") {
+        // Handle Razorpay payment
+        await initiateRazorpayPayment(
+          plan.name,
+          plan.period,
+          userInfo.email,
+          userInfo.name,
+          (response) => {
+            toast.success("Payment successful!")
+            console.log("Payment successful:", response)
+            // You can redirect or update UI here
+          },
+          (error) => {
+            toast.error("Payment failed. Please try again.")
+            console.error("Payment failed:", error)
+          }
+        )
       }
     } catch (error) {
       console.error("Error creating checkout session:", error)
@@ -395,10 +421,24 @@ export default function SettingsPage() {
       <Card title="Subscription" headerIcon={<CreditCard className="h-6 w-6 text-cyan-500" />} className="bg-white border border-gray-200 rounded-xl p-0 flex-1 flex flex-col min-h-0">
         <div className="space-y-8 px-8 py-8 overflow-y-auto flex-1 min-h-0" style={{ maxHeight: 'calc(100vh - 120px)' }}>
           <div className="mb-8">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 mb-6">
               <span className="text-lg font-semibold">Current Plan:</span>
               <span className="px-3 py-1 rounded-full bg-cyan-100 text-cyan-700 font-medium">{currentPlan}</span>
               <span className={`px-3 py-1 rounded-full font-medium ${planStatus === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{planStatus}</span>
+            </div>
+            
+            {/* Payment Method Selection */}
+            <div className="mb-6">
+              <PaymentMethodSelector
+                selectedMethod={selectedPaymentMethod}
+                onPaymentMethodChange={setSelectedPaymentMethod}
+                className="max-w-md"
+              />
+              {selectedPaymentMethod && (
+                <div className="mt-4">
+                  <PaymentMethodInfo method={selectedPaymentMethod} />
+                </div>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -422,7 +462,12 @@ export default function SettingsPage() {
                     <li key={i} className="flex items-start text-gray-700"><CheckCircle className="text-cyan-500 mr-2 mt-0.5" size={18} />{feature}</li>
                   ))}
                 </ul>
-                <Button onClick={() => handleChoosePlan(plan)} className="w-full mt-auto" variant={currentPlan === plan.name ? "outline" : "default"} disabled={currentPlan === plan.name}>{currentPlan === plan.name ? "Current Plan" : "Choose Plan"}</Button>
+                <Button onClick={() => handleChoosePlan(plan)} className="w-full mt-auto" variant={currentPlan === plan.name ? "outline" : "default"} disabled={currentPlan === plan.name}>
+                  {currentPlan === plan.name 
+                    ? "Current Plan" 
+                    : `Pay with ${selectedPaymentMethod === 'razorpay' ? 'Razorpay' : 'Stripe'}`
+                  }
+                </Button>
               </div>
             ))}
           </div>
