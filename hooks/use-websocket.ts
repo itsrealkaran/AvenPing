@@ -50,7 +50,7 @@ export const useWebSocket = ({ onMessage, onConnect, onDisconnect, onError }: Us
     setConnectionStatus('connecting');
 
     try {
-      const ws = new WebSocket('ws://localhost:3002');
+      const ws = new WebSocket(process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:3002');
       wsRef.current = ws;
 
       ws.onopen = () => {
