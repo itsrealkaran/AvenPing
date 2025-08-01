@@ -1,13 +1,21 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 import Navbar from "@/components/landing/navbar";
+
+// Facebook SDK types
+declare global {
+  interface Window {
+    FB: any;
+    fbAsyncInit: () => void;
+  }
+}
 
 interface SignupData {
   name: string;
@@ -43,6 +51,7 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isConnectingWhatsApp, setIsConnectingWhatsApp] = useState(false);
   const router = useRouter();
 
   const [formData, setFormData] = useState<SignupData>({
@@ -103,9 +112,52 @@ export default function Signup() {
     router.push("/dashboard");
   };
 
-  const handleConnectWhatsApp = () => {
-    // Redirect to WhatsApp connection flow
-    router.push("/dashboard");
+  const handleConnectWhatsApp = async () => {
+    setIsConnectingWhatsApp(true);
+    
+    //@ts-ignore
+    FB.login(
+      (response: any) => {
+        if (response.authResponse) {
+          console.log("Logged in as:", response.authResponse);
+          //@ts-ignore
+          FB.api("/me", { fields: "name, email" }, (userInfo) => {
+            console.log(
+              "Logged in as:",
+              userInfo.name,
+              "Email:",
+              userInfo.email
+            );
+          });
+
+          axios
+            .post("/api/whatsapp", {
+              code: response.authResponse.code,
+            })
+            .then((res) => {
+              console.log(res.data);
+              toast.success("WhatsApp connected successfully!");
+              router.push("/dashboard");
+            })
+            .catch((error) => {
+              console.error("Error connecting WhatsApp:", error);
+              toast.error("Failed to connect WhatsApp. Please try again.");
+              setIsConnectingWhatsApp(false);
+            });
+        } else {
+          console.log("User cancelled login or did not fully authorize.");
+          toast.error("WhatsApp connection was cancelled.");
+          setIsConnectingWhatsApp(false);
+        }
+      },
+      {
+        config_id: process.env.NEXT_PUBLIC_META_CONFIG_ID,
+        response_type: "code",
+        override_default_response_type: true,
+        scope:
+          "whatsapp_business_management,whatsapp_business_messaging,business_management",
+      }
+    );
   };
 
     const renderStep = () => {
@@ -277,15 +329,24 @@ export default function Signup() {
               <button
                 type="button"
                 onClick={handleConnectWhatsApp}
-                className="w-full px-6 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors font-medium"
+                disabled={isConnectingWhatsApp}
+                className="w-full px-6 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Connect to WhatsApp
+                {isConnectingWhatsApp ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Connecting...
+                  </div>
+                ) : (
+                  "Connect to WhatsApp"
+                )}
               </button>
               
               <button
                 type="button"
                 onClick={handleSkipWhatsApp}
-                className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                disabled={isConnectingWhatsApp}
+                className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Skip for now
               </button>
