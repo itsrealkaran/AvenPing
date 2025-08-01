@@ -246,8 +246,9 @@ export default function NotificationsPage() {
                 {categoryOptions.find(opt => opt.value === categoryFilter)?.label || "All Categories"}
               </DropdownButton>
             </div>
+            
+            {table.getSelectedRowModel().rows.length > 0 && (
             <div className="flex items-center gap-2">
-            {table.getSelectedRowModel().rows.length > 0 ? (
             <Button
               variant="destructive"
               onClick={() => {
@@ -261,14 +262,8 @@ export default function NotificationsPage() {
               <Trash className="h-4 w-4 mr-2" />
               Clear Notification ({table.getSelectedRowModel().rows.length})
             </Button>
-          ): (
-          <Button variant="outline" size="default" onClick={() => clearAllNotifications()}>
-            <Trash className="h-4 w-4 mr-2" />
-            Clear All
-          </Button>
-          )}
-              
             </div>
+          )}
             <div className="flex items-center gap-2">
               <Button size="default" onClick={() => markAllAsRead()}>
                 Mark All as Read
