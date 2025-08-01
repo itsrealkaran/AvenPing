@@ -8,8 +8,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
+  const router = useRouter();
   const [shortcut, setShortcut] = useState<{ mod: string; key: string }>({
     mod: "⌘",
     key: "F",
@@ -48,7 +50,7 @@ export default function Header() {
         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <button className="p-2 rounded-md hover:bg-gray-100 transition">
+              <button className="p-2 rounded-md hover:bg-gray-100 transition" onClick={() => router.push("/notifications")}>
                 <Bell size={20} className="text-gray-500" />
               </button>
             </TooltipTrigger>
