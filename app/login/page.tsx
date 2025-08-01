@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Eye, EyeOff, Triangle } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
+import Navbar from "@/components/landing/navbar";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -47,18 +48,7 @@ export default function Login() {
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent" />
 
       <div className="relative z-10 w-full max-w-lg mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col items-center justify-center space-y-1">
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="flex items-center justify-center gap-2 mb-2 sm:mb-3">
-            <Triangle className="w-6 h-6 sm:w-8 sm:h-8 text-[#43A2C9] fill-current" />
-            <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800">
-              <span className="text-[#43A2C9]">Aven</span>Ping
-            </span>
-          </div>
-          <p className="text-gray-600 text-xs sm:text-sm">
-            Your Business Communication Hub
-          </p>
-        </div>
-
+        <Navbar />
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border-4 border-black/10 p-6 sm:p-8 w-full max-w-lg">
           <div className="text-center mb-6 sm:mb-8">
             <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 mb-1 sm:mb-2">
