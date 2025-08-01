@@ -131,14 +131,14 @@ export default function TermsOfService() {
                     available by the Service.
                   </li>
                   <li>
-                    <strong>Website</strong> refers to AvenCRM, accessible from{" "}
+                    <strong>Website</strong> refers to AvenPing, accessible from{" "}
                     <a
-                      href="https://avencrm.com"
+                      href="https://avenping.com"
                       rel="noreferrer external nofollow noopener"
                       target="_blank"
                       className="text-[#43A2C9] hover:underline"
                     >
-                      https://avencrm.com
+                      https://avenping.com
                     </a>
                   </li>
                   <li>
@@ -354,7 +354,7 @@ export default function TermsOfService() {
                   If you have any questions about these Terms and Conditions, You can contact us:
                 </p>
                 <ul className="list-disc pl-6 mb-4 text-gray-700">
-                  <li>By email: info@avencrm.com</li>
+                  <li>By email: info@avenping.com</li>
                 </ul>
               </section>
             </motion.div>
