@@ -79,9 +79,9 @@ export async function POST(request: Request) {
       { status: 200 }
     );
 
-    response.cookies.set('token', token, {
+    response.cookies.set('Authorization', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", 
       maxAge: 60 * 60 * 24 // 24 hours
     });

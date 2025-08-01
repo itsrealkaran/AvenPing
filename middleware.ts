@@ -50,139 +50,56 @@ const whatsappRequiredRoutes = [
 ];
 
 export async function middleware(request: NextRequest) {
-  if (process.env.NODE_ENV === 'production') {
-    const { pathname } = request.nextUrl;
+  const { pathname } = request.nextUrl;
+  
+  // Allow public routes without any checks
+  if (publicRoutes.some((route) => pathname.startsWith(route))) {
+    return NextResponse.next();
+  }
+
+  // Check if the current path requires authentication
+  const requiresAuth = protectedRoutes.some((route) => pathname.startsWith(route));
+
+  if (!requiresAuth) {
+    // If it's not a protected route, proceed normally
+    return NextResponse.next();
+  }
+
+  try {
+    const session = await getSessionFromRequest(request);
     
-    // Allow public routes without authentication
-    if (publicRoutes.some((route) => pathname.startsWith(route))) {
-      // If user is already authenticated, redirect to dashboard
-      try {
-        const session = await getSessionFromRequest(request);
-        if (session) {
-          const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
-          redirectResponse.headers.set('x-middleware-cache', 'no-cache');
-          return redirectResponse;
-        }
-      } catch (error) {
-        // Invalid session - allow access to public routes
-        const redirectResponse = NextResponse.next();
-        redirectResponse.headers.set('x-middleware-cache', 'no-cache');
-        return redirectResponse;
-      }
-      
-      const redirectResponse = NextResponse.next();
-      redirectResponse.headers.set('x-middleware-cache', 'no-cache');
-      return redirectResponse;
-    }
-
-    // Check if the current path requires authentication
-    const requiresAuth = protectedRoutes.some((route) => pathname.startsWith(route));
-
-    if (!requiresAuth) {
-      // If it's not a protected route, proceed normally
-      return NextResponse.next();
-    }
-
-    try {
-      const session = await getSessionFromRequest(request);
-      
-      // If no session exists, redirect to login
-      if (!session) {
-        const url = new URL('/login', request.url);
-        url.searchParams.set('callbackUrl', pathname);
-        const redirectResponse = NextResponse.redirect(url);
-        redirectResponse.headers.set('x-middleware-cache', 'no-cache');
-        return redirectResponse;
-      }
-
-      // Check if the current path requires WhatsApp account
-      const requiresWhatsApp = whatsappRequiredRoutes.some((route) => pathname.startsWith(route));
-      
-      if (requiresWhatsApp) {
-        const hasWhatsAppAccount = session.hasWhatsAppAccount === true;
-        
-        // If user doesn't have WhatsApp account, redirect to dashboard
-        if (!hasWhatsAppAccount) {
-          const redirectResponse = NextResponse.redirect(new URL('/dashboard?whatsapp=false', request.url));
-          redirectResponse.headers.set('x-middleware-cache', 'no-cache');
-          return redirectResponse;
-        }
-      }
-
-      // If session exists and WhatsApp check passes, allow the request
-      return NextResponse.next();
-    } catch (error) {
-      // If there's an error checking the session, redirect to login
+    // If no session exists, redirect to login
+    if (!session) {
       const url = new URL('/login', request.url);
       url.searchParams.set('callbackUrl', pathname);
       const redirectResponse = NextResponse.redirect(url);
       redirectResponse.headers.set('x-middleware-cache', 'no-cache');
       return redirectResponse;
     }
-  } else if (process.env.NODE_ENV === 'development') {
-    const { pathname } = request.nextUrl;
 
-    // Allow access to public routes without authentication
-    if (publicRoutes.some((route) => pathname.startsWith(route))) {
-      try {
-        const session = await getSessionFromRequest(request);
-        if (session) {
-          // Only redirect if we're on the root path or login page
-          if (pathname === '/' || pathname === '/login') {
-            const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
-            redirectResponse.headers.set('x-middleware-cache', 'no-cache');
-            return redirectResponse;
-          }
-        }
-      } catch (error) {
-        // Invalid session - allow access to public routes
-        const redirectResponse = NextResponse.next();
+    // Check if the current path requires WhatsApp account
+    const requiresWhatsApp = whatsappRequiredRoutes.some((route) => pathname.startsWith(route));
+    
+    if (requiresWhatsApp) {
+      const hasWhatsAppAccount = session.hasWhatsAppAccount === true;
+      
+      // If user doesn't have WhatsApp account, redirect to dashboard
+      if (!hasWhatsAppAccount) {
+        const redirectResponse = NextResponse.redirect(new URL('/dashboard?whatsapp=false', request.url));
         redirectResponse.headers.set('x-middleware-cache', 'no-cache');
         return redirectResponse;
       }
-      
-      const redirectResponse = NextResponse.next();
-      redirectResponse.headers.set('x-middleware-cache', 'no-cache');
-      return redirectResponse;
     }
 
-    // Check if the current path requires authentication
-    const requiresAuth = protectedRoutes.some((route) => pathname.startsWith(route));
-
-    if (!requiresAuth) {
-      return NextResponse.next();
-    }
-
-    try {
-      const session = await getSessionFromRequest(request);
-      
-      if (!session) {
-        const redirectResponse = NextResponse.redirect(new URL('/login', request.url));
-        redirectResponse.headers.set('x-middleware-cache', 'no-cache');
-        return redirectResponse;
-      }
-
-      // Check if the current path requires WhatsApp account
-      const requiresWhatsApp = whatsappRequiredRoutes.some((route) => pathname.startsWith(route));
-      
-      if (requiresWhatsApp) {
-        const hasWhatsAppAccount = session.hasWhatsAppAccount === true;
-        
-        // If user doesn't have WhatsApp account, redirect to dashboard
-        if (!hasWhatsAppAccount) {
-          const redirectResponse = NextResponse.redirect(new URL('/dashboard?whatsapp=false', request.url));
-          redirectResponse.headers.set('x-middleware-cache', 'no-cache');
-          return redirectResponse;
-        }
-      }
-
-      // If session exists and WhatsApp check passes, allow the request
-      return NextResponse.next();
-    } catch (error) {
-      const redirectResponse = NextResponse.redirect(new URL('/login', request.url));
-      redirectResponse.headers.set('x-middleware-cache', 'no-cache');
-      return redirectResponse;
-    }
+    // If session exists and WhatsApp check passes, allow the request
+    return NextResponse.next();
+  } catch (error) {
+    // If there's an error checking the session, redirect to login
+    const url = new URL('/login', request.url);
+    url.searchParams.set('callbackUrl', pathname);
+    const redirectResponse = NextResponse.redirect(url);
+    redirectResponse.headers.set('x-middleware-cache', 'no-cache');
+    return redirectResponse;
   }
 }
 

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     const response = NextResponse.json({ message: "Signout successful" }, { status: 200 });
-    response.cookies.delete("token");
+    response.cookies.delete("Authorization");
     return response;
   } catch (error) {
     console.error(error);
