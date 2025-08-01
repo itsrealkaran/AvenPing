@@ -52,6 +52,8 @@ const whatsappRequiredRoutes = [
 export async function middleware(request: NextRequest) {
   if (process.env.NODE_ENV === 'production') {
     const { pathname } = request.nextUrl;
+    console.log("session", await getSessionFromRequest(request))
+    console.log("pathname", pathname)
     
     // Allow public routes without authentication
     if (publicRoutes.some((route) => pathname.startsWith(route))) {
