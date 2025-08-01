@@ -60,18 +60,21 @@ export async function middleware(request: NextRequest) {
       // If user is already authenticated, redirect to dashboard
       try {
         const session = await getSessionFromRequest(request);
+        console.log("inside try from public routes")
         if (session) {
           const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
           redirectResponse.headers.set('x-middleware-cache', 'no-cache');
           return redirectResponse;
         }
       } catch (error) {
+        console.log("inside catch from public routes")
         // Invalid session - allow access to public routes
         const redirectResponse = NextResponse.next();
         redirectResponse.headers.set('x-middleware-cache', 'no-cache');
         return redirectResponse;
       }
       
+      console.log("inside else from public routes")
       const redirectResponse = NextResponse.next();
       redirectResponse.headers.set('x-middleware-cache', 'no-cache');
       return redirectResponse;
@@ -79,17 +82,20 @@ export async function middleware(request: NextRequest) {
 
     // Check if the current path requires authentication
     const requiresAuth = protectedRoutes.some((route) => pathname.startsWith(route));
+    console.log("requiresAuth", requiresAuth)
 
     if (!requiresAuth) {
+      console.log("inside if from protected routes")
       // If it's not a protected route, proceed normally
       return NextResponse.next();
     }
 
     try {
       const session = await getSessionFromRequest(request);
-      
+      console.log("inside try from protected routes", session)
       // If no session exists, redirect to login
       if (!session) {
+        console.log("inside if from protected routes", session)
         const url = new URL('/login', request.url);
         url.searchParams.set('callbackUrl', pathname);
         const redirectResponse = NextResponse.redirect(url);
@@ -99,12 +105,13 @@ export async function middleware(request: NextRequest) {
 
       // Check if the current path requires WhatsApp account
       const requiresWhatsApp = whatsappRequiredRoutes.some((route) => pathname.startsWith(route));
-      
+      console.log("requiresWhatsApp", requiresWhatsApp)
       if (requiresWhatsApp) {
         const hasWhatsAppAccount = session.hasWhatsAppAccount === true;
-        
+        console.log("hasWhatsAppAccount", hasWhatsAppAccount)
         // If user doesn't have WhatsApp account, redirect to dashboard
         if (!hasWhatsAppAccount) {
+          console.log("inside if from protected routes", hasWhatsAppAccount)
           const redirectResponse = NextResponse.redirect(new URL('/dashboard?whatsapp=false', request.url));
           redirectResponse.headers.set('x-middleware-cache', 'no-cache');
           return redirectResponse;
@@ -112,8 +119,10 @@ export async function middleware(request: NextRequest) {
       }
 
       // If session exists and WhatsApp check passes, allow the request
+      console.log("inside try from protected routes", session)
       return NextResponse.next();
     } catch (error) {
+      console.log("inside catch from protected routes", error)
       // If there's an error checking the session, redirect to login
       const url = new URL('/login', request.url);
       url.searchParams.set('callbackUrl', pathname);
