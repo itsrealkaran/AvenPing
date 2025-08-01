@@ -1,6 +1,5 @@
 "use client"
 
-import { motion } from "framer-motion"
 import { Facebook, Instagram, Linkedin, Youtube } from 'lucide-react'
 import Link from "next/link"
 import Logo from "@/components/landing/logo"
