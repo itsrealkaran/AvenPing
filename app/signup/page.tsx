@@ -8,6 +8,7 @@ import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 import Navbar from "@/components/landing/navbar";
+import SearchableDropdown from "@/components/landing/ui/searchable-dropdown";
 
 // Facebook SDK types
 declare global {
@@ -27,16 +28,16 @@ interface SignupData {
 }
 
 const industries = [
-  "Technology",
-  "Healthcare",
-  "Finance",
-  "Education",
-  "Retail",
-  "Manufacturing",
-  "Real Estate",
-  "Marketing",
-  "Consulting",
-  "Other"
+  { id: "1", label: "Technology", value: "Technology" },
+  { id: "2", label: "Healthcare", value: "Healthcare" },
+  { id: "3", label: "Finance", value: "Finance" },
+  { id: "4", label: "Education", value: "Education" },
+  { id: "5", label: "Retail", value: "Retail" },
+  { id: "6", label: "Manufacturing", value: "Manufacturing" },
+  { id: "7", label: "Real Estate", value: "Real Estate" },
+  { id: "8", label: "Marketing", value: "Marketing" },
+  { id: "9", label: "Consulting", value: "Consulting" },
+  { id: "10", label: "Other", value: "Other" }
 ];
 
 const customerSizes = [
@@ -62,6 +63,8 @@ export default function Signup() {
     password: "",
     confirm_password: ""
   });
+
+  const [selectedIndustry, setSelectedIndustry] = useState<{ id: string; label: string; value: string } | null>(null);
 
   const updateFormData = (field: keyof SignupData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -194,19 +197,17 @@ export default function Signup() {
               <p className="text-gray-600">Help us customize your experience</p>
             </div>
             <div>
-              <select
-                value={formData.industry}
-                onChange={(e) => updateFormData("industry", e.target.value)}
+              <SearchableDropdown
+                items={industries}
+                placeholder="Choose Your Industry"
+                onSelect={(item) => {
+                  setSelectedIndustry(item);
+                  updateFormData("industry", item.value);
+                }}
+                variant="outline"
                 className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#43A2C9] focus:border-transparent transition-all duration-200 text-gray-900"
-                required
-              >
-                <option value="">Choose Your Industry</option>
-                {industries.map((industry) => (
-                  <option key={industry} value={industry}>
-                    {industry}
-                  </option>
-                ))}
-              </select>
+                selectedLabel={selectedIndustry?.label || null}
+              />
             </div>
           </div>
         );
