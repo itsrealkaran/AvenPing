@@ -1,10 +1,8 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Facebook, Instagram, Twitter, Linkedin, User2, Youtube } from 'lucide-react'
+import { Facebook, Instagram, Linkedin, Youtube } from 'lucide-react'
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import Logo from "@/components/landing/logo"
 
 const footerLinks = {
