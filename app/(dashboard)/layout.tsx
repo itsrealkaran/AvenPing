@@ -29,6 +29,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     { iconName: "GitBranch" as const, label: "Flow", href: "/flows" },
     { iconName: "Bot" as const, label: "AI Bot", href: "/aibot" },
     { iconName: "BarChart" as const, label: "Analytics", href: "/analytics" },
+    { iconName: "Bell" as const, label: "Notifications", href: "/notifications" },
     { iconName: "Settings" as const, label: "Settings", href: "/settings" },
   ];
 
