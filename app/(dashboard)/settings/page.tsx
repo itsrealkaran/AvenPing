@@ -29,7 +29,7 @@ const settingsNavigation = [
   {
     category: "BUSINESS",
     items: [
-  { id: "catalog", title: "Catalog", icon: ShoppingCart },
+  { id: "catalogs", title: "Catalogs", icon: ShoppingCart },
   { id: "subscription", title: "Subscription", icon: CreditCard },
   { id: "paymentHistory", title: "Payment History", icon: FileText },
   { id: "blueTick", title: "Blue Tick Request", icon: CheckCircle },
@@ -135,16 +135,9 @@ export default function SettingsPage() {
         )
       case "labels":
         return (
-          <LabelSettings
-            labels={labels}
-            setLabels={setLabels}
-            newLabelName={newLabelName}
-            setNewLabelName={setNewLabelName}
-            newLabelColor={newLabelColor}
-            setNewLabelColor={setNewLabelColor}
-          />
+          <LabelSettings />
         )
-      case "catalog":
+      case "catalogs":
         return <CatalogSettings />
       case "subscription":
         return <SubscriptionSettings />
@@ -180,8 +173,8 @@ export default function SettingsPage() {
         return ["Notification Preferences"]
       case "labels":
         return ["Manage Labels"]
-      case "catalog":
-        return ["Product Catalog"]
+      case "catalogs":
+        return ["Product Catalogs"]
       case "subscription":
         return ["Subscription Management"]
       case "paymentHistory":
