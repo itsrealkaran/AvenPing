@@ -155,14 +155,14 @@ export default function PrivacyPolicy() {
                     the Service or from the Service infrastructure itself (for example, the duration of a page visit).
                   </li>
                   <li>
-                    <strong>Website</strong> refers to AvenCRM, accessible from{" "}
+                    <strong>Website</strong> refers to AvenPing, accessible from{" "}
                     <a
-                      href="https://avencrm.com"
+                      href="https://avenping.com"
                       rel="noreferrer external nofollow noopener"
                       target="_blank"
                       className="text-[#43A2C9] hover:underline"
                     >
-                      https://avencrm.com
+                      https://avenping.com
                     </a>
                   </li>
                   <li>
@@ -448,12 +448,12 @@ export default function PrivacyPolicy() {
                   <li>
                     By visiting this page on our website:{" "}
                     <a
-                      href="https://avencrm.com/privacy-policy"
+                      href="https://avenping.com/privacy-policy"
                       className="text-[#43A2C9] hover:underline"
                       target="_blank"
                       rel="noreferrer external nofollow noopener"
                     >
-                      https://avencrm.com/privacy-policy
+                      https://avenping.com/privacy-policy
                     </a>
                   </li>
                 </ul>
