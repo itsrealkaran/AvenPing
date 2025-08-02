@@ -29,7 +29,7 @@ const settingsNavigation = [
   {
     category: "BUSINESS",
     items: [
-  { id: "catalogs", title: "Catalogs", icon: ShoppingCart },
+      { id: "catalogs", title: "Catalogs", icon: ShoppingCart },
   { id: "subscription", title: "Subscription", icon: CreditCard },
   { id: "paymentHistory", title: "Payment History", icon: FileText },
   { id: "blueTick", title: "Blue Tick Request", icon: CheckCircle },
@@ -98,14 +98,11 @@ export default function SettingsPage() {
           plan.period,
           userInfo.email,
           userInfo.name,
-          (response) => {
+          () => {
             toast.success("Payment successful!")
-            console.log("Payment successful:", response)
-            // You can redirect or update UI here
           },
-          (error) => {
+          () => {
             toast.error("Payment failed. Please try again.")
-            console.error("Payment failed:", error)
           }
         )
       }
@@ -134,9 +131,7 @@ export default function SettingsPage() {
           />
         )
       case "labels":
-        return (
-          <LabelSettings />
-        )
+        return <LabelSettings />
       case "catalogs":
         return <CatalogSettings />
       case "subscription":
@@ -173,22 +168,20 @@ export default function SettingsPage() {
         return ["Notification Preferences"]
       case "labels":
         return ["Manage Labels"]
-      case "catalogs":
-        return ["Product Catalogs"]
-      case "subscription":
-        return ["Subscription Management"]
-      case "paymentHistory":
-        return ["Payment History"]
-      case "blueTick":
-        return ["Blue Tick Verification"]
       default:
         return []
     }
   }
 
+  // Check if current section is a business setting
+  const isBusinessSection = () => {
+    const businessSections = ["catalogs", "subscription", "paymentHistory", "blueTick"]
+    return businessSections.includes(activeSection)
+  }
+
   return (
     <Body title="Settings">
-      <div className="flex gap-8 w-full mx-auto">
+      <div className={`flex gap-8 w-full mx-auto ${isBusinessSection() ? 'justify-start' : ''}`}>
         {/* Left Sidebar Navigation */}
       <div className="w-64 flex-shrink-0">
         <div className="sticky top-16">
@@ -215,37 +208,39 @@ export default function SettingsPage() {
                     ))}
                   </div>
                 </div>
-              ))}
-            </nav>
-          </div>
+            ))}
+          </nav>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="flex-1">
+      {/* Main Content */}
+        <div className={`${isBusinessSection() ? 'flex-1 max-w-none' : 'flex-1'}`}>
           <div className="bg-gray-50 h-[calc(100vh-180px)] overflow-y-auto p-8">
             {renderContent()}
           </div>
         </div>
 
-        {/* Right "On this page" Summary */}
-        <div className="w-64 flex-shrink-0">
-          <div className="sticky top-16">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">On this page</h3>
-              <nav className="space-y-1">
-                {getPageSections().map((section, index) => (
-                  <a
-                    key={section}
-                    href={`#${section.toLowerCase().replace(/\s+/g, '-')}`}
-                    className="block text-sm text-gray-600 hover:text-gray-900 py-1 transition-colors"
-                  >
-                    {section}
-                  </a>
-            ))}
-          </nav>
+        {/* Right "On this page" Summary - Only for Personal Settings */}
+        {!isBusinessSection() && (
+          <div className="w-64 flex-shrink-0">
+            <div className="sticky top-16">
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">On this page</h3>
+                <nav className="space-y-1">
+                  {getPageSections().map((section, index) => (
+                    <a
+                      key={section}
+                      href={`#${section.toLowerCase().replace(/\s+/g, '-')}`}
+                      className="block text-sm text-gray-600 hover:text-gray-900 py-1 transition-colors"
+                    >
+                      {section}
+                    </a>
+                  ))}
+                </nav>
+              </div>
             </div>
           </div>
-        </div>
+        )}
     </div>
     </Body>
   )
