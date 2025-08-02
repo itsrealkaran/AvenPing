@@ -40,7 +40,6 @@ const settingsNavigation = [
 
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = React.useState("general")
-  const [whatsappConnected, setWhatsappConnected] = React.useState(false)
   const [optInStatus, setOptInStatus] = React.useState(true)
   const [notifications, setNotifications] = React.useState({
     chats: true,
@@ -124,8 +123,6 @@ export default function SettingsPage() {
           <GeneralSettings
             optOutStatus={optOutStatus}
             setOptOutStatus={setOptOutStatus}
-            whatsappConnected={whatsappConnected}
-            setWhatsappConnected={setWhatsappConnected}
           />
         )
       case "contacts":
@@ -161,8 +158,6 @@ export default function SettingsPage() {
           <GeneralSettings
             optOutStatus={optOutStatus}
             setOptOutStatus={setOptOutStatus}
-            whatsappConnected={whatsappConnected}
-            setWhatsappConnected={setWhatsappConnected}
           />
         )
     }
