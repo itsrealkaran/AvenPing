@@ -8,7 +8,6 @@ import { PaymentMethodSelector, PaymentMethodInfo } from "@/components/ui/paymen
 import { initiateRazorpayPayment } from "@/lib/razorpay-utils"
 import { toast } from "sonner"
 import { useUser } from "@/context/user-context"
-import { calculateTableHeight } from "@/lib/utils"
 import GeneralSettings from "@/components/settings/general-settings"
 import ContactSettings from "@/components/settings/contact-settings"
 import NotificationSettings from "@/components/settings/notification-settings"
