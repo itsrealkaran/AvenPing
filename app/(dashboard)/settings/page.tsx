@@ -23,17 +23,17 @@ const settingsNavigation = [
     items: [
       { id: "general", title: "General", icon: Home },
       { id: "contacts", title: "Contacts", icon: User },
-      { id: "notifications", title: "Notifications", icon: Bell },
+  { id: "notifications", title: "Notifications", icon: Bell },
       { id: "labels", title: "Labels", icon: Tag },
     ]
   },
   {
     category: "BUSINESS",
     items: [
-      { id: "catalog", title: "Catalog", icon: ShoppingCart },
-      { id: "subscription", title: "Subscription", icon: CreditCard },
-      { id: "paymentHistory", title: "Payment History", icon: FileText },
-      { id: "blueTick", title: "Blue Tick Request", icon: CheckCircle },
+  { id: "catalog", title: "Catalog", icon: ShoppingCart },
+  { id: "subscription", title: "Subscription", icon: CreditCard },
+  { id: "paymentHistory", title: "Payment History", icon: FileText },
+  { id: "blueTick", title: "Blue Tick Request", icon: CheckCircle },
     ]
   }
 ]
@@ -198,8 +198,8 @@ export default function SettingsPage() {
     <Body title="Settings">
       <div className="flex gap-8 w-full mx-auto">
         {/* Left Sidebar Navigation */}
-        <div className="w-64 flex-shrink-0">
-          <div className="sticky top-16">
+      <div className="w-64 flex-shrink-0">
+        <div className="sticky top-16">
             <nav className="space-y-6">
               {settingsNavigation.map((category) => (
                 <div key={category.category}>
@@ -208,18 +208,18 @@ export default function SettingsPage() {
                   </h3>
                   <div className="space-y-1">
                     {category.items.map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => setActiveSection(item.id)}
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
                         className={`w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md font-medium transition-all ${
-                          activeSection === item.id
+                  activeSection === item.id
                             ? "bg-gray-100 text-gray-900"
                             : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
-                      >
+                }`}
+              >
                         <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </button>
+                <span>{item.title}</span>
+              </button>
                     ))}
                   </div>
                 </div>
@@ -249,12 +249,12 @@ export default function SettingsPage() {
                   >
                     {section}
                   </a>
-                ))}
-              </nav>
+            ))}
+          </nav>
             </div>
           </div>
         </div>
-      </div>
+    </div>
     </Body>
   )
 }
