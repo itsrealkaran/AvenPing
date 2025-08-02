@@ -1,10 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { Settings, User, Bell, Tag, ShoppingCart, Phone, Users, Trash2, Link, Plus, Edit, X, CreditCard, FileText, CheckCircle, AlertCircle, Home, ChevronRight } from "lucide-react"
+import { User, Bell, Tag, ShoppingCart, CreditCard, FileText, CheckCircle, Home } from "lucide-react"
 import Body from "@/components/layout/body"
 import axios from "axios"
-import { PaymentMethodSelector, PaymentMethodInfo } from "@/components/ui/payment-method-selector"
 import { initiateRazorpayPayment } from "@/lib/razorpay-utils"
 import { toast } from "sonner"
 import { useUser } from "@/context/user-context"
