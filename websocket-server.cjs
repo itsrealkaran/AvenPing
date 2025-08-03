@@ -2,7 +2,11 @@ const { WebSocketServer } = require("ws");
 const https = require("https");
 const http = require("http");
 const fs = require("fs");
+const path = require("path");
 const { setSendMessageToUserFunction } = require("./lib/websocket-utils.js");
+
+// Load environment variables from .env file
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const clients = [];
 
@@ -10,7 +14,7 @@ const clients = [];
 const useSSL = process.env.USE_SSL === 'true' && 
                fs.existsSync(process.env.SSL_CERT_PATH || '') && 
                fs.existsSync(process.env.SSL_KEY_PATH || '');
-
+console.log(useSSL, process.env.SSL_CERT_PATH, process.env.SSL_KEY_PATH, "useSSL");
 let serverOptions;
 
 if (useSSL) {
