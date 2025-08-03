@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "setup:redis": "node scripts/setup-redis.js"
+    "setup:redis": "node scripts/setup-redis.js",
+    "websocket": "node websocket-server.cjs",
+    "dev:all": "concurrently \"pnpm dev\" \"pnpm websocket\""
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",

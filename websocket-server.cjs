@@ -2,6 +2,7 @@ const { WebSocketServer } = require("ws");
 const https = require("https");
 const http = require("http");
 const fs = require("fs");
+const { setSendMessageToUserFunction } = require("./lib/websocket-utils.js");
 
 const clients = [];
 
@@ -20,9 +21,7 @@ if (useSSL) {
   });
   
   serverOptions = {
-    server: httpsServer,
-    host: '0.0.0.0',
-    port: 3002
+    server: httpsServer
   };
   
   httpsServer.listen(3002, '0.0.0.0', () => {
@@ -33,9 +32,7 @@ if (useSSL) {
   const httpServer = http.createServer();
   
   serverOptions = {
-    server: httpServer,
-    host: '0.0.0.0',
-    port: 3002
+    server: httpServer
   };
   
   httpServer.listen(3002, '0.0.0.0', () => {
@@ -86,7 +83,10 @@ function sendMessageToUser(userId, message) {
   });
 }
 
+// Set the function in the utility file so it can be used by API routes
+setSendMessageToUserFunction(sendMessageToUser);
+
 // Export the function for use in other parts of the application
 module.exports = { sendMessageToUser };
 
-console.log(`WebSocket server running on ${useSSL ? 'wss' : 'ws'}://0.0.0.0:3002`);
+console.log("WebSocket server running on ws://localhost:3002");
