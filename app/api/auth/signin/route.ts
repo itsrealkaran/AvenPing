@@ -30,7 +30,7 @@ export async function POST(request: Request) {
             phoneNumbers: true,
           },
         },
-        plan: true,
+        plans: true,
       }
     });
 
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
       name: user.name,
       accessToken: user.whatsAppAccount?.accessToken,
       hasWhatsAppAccount: hasWhatsAppAccount,
-      plan: user.plan?.name,
+      plan: user.plans.map((plan) => plan.name),
       expiresAt: user.expiresAt,
     });
 

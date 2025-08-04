@@ -76,7 +76,11 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       await prisma.user.update({
         where: { id: userId },
         data: {
-          planId: planId,
+          plans: {
+            connect: {
+              id: planId,
+            },
+          },
           expiresAt: expiresAt,
         },
       })
@@ -145,19 +149,24 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   console.log("Processing customer.subscription.deleted")
-  
+ 
   const customer = await stripe.customers.retrieve(subscription.customer as string)
   
   if ('email' in customer && customer.email) {
     const user = await prisma.user.findUnique({
       where: { email: customer.email },
+      include: {
+        plans: true,
+      },
     })
     
     if (user) {
       await prisma.user.update({
         where: { id: user.id },
         data: {
-          planId: null,
+          plans: {
+            disconnect: user.plans.map((plan) => ({ id: plan.id })),
+          },
           expiresAt: null,
         },
       })

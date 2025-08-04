@@ -44,7 +44,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get plan price in INR (assuming priceJson contains INR amount)
-    const planPrice = plan.priceJson as any
+    let planPrice;
+    if (planPeriod === "MONTHLY") {
+      planPrice = plan.monthlyPriceJson as any
+    } else if (planPeriod === "YEARLY") {
+      planPrice = plan.yearlyPriceJson as any
+    } else {
+      return NextResponse.json({ message: "Invalid plan period" }, { status: 400 })
+    }
     const amountInPaise = Math.round(parseFloat(planPrice.INR) * 100) // Convert to paise
 
     // Create Razorpay order
@@ -56,7 +63,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         planId: plan.id,
         planName: plan.name,
-        planPeriod: plan.period,
+        planPeriod: planPeriod,
         userEmail: user.email,
       },
     })
@@ -65,9 +72,11 @@ export async function POST(request: NextRequest) {
     const subscription = await prisma.subscription.create({
       data: {
         userId: user.id,
-        planId: plan.id,
-        status: "PENDING",
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        planName: plan.name,
+        period: planPeriod,
+        amount: amountInPaise,
+        currency: "INR",
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
       },
     })
 
@@ -131,8 +140,11 @@ export async function GET(request: NextRequest) {
         await prisma.user.update({
           where: { id: userId },
           data: {
-            planId: planId,
-            expiresAt: expiryDate,
+            plans: {
+              connect: {
+                id: planId,
+              },
+            },
           },
         })
 
@@ -140,11 +152,10 @@ export async function GET(request: NextRequest) {
         await prisma.subscription.updateMany({
           where: {
             userId: userId,
-            planId: planId,
-            status: "PENDING",
+            endDate: expiryDate,
           },
           data: {
-            status: "ACTIVE",
+            endDate: expiryDate,
           },
         })
       }

@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         planId: plan.id,
         planName: plan.name,
-        planPeriod: plan.period,
+        planPeriod: planPeriod,
       },
     })
 
@@ -105,7 +105,11 @@ export async function GET(request: NextRequest) {
         await prisma.user.update({
           where: { id: userId },
           data: {
-            planId: planId,
+            plans: {
+              connect: {
+                id: planId,
+              },
+            },
             expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
           },
         })

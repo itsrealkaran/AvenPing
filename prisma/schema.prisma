@@ -52,6 +52,7 @@ enum PlanPeriod {
 enum SubscriptionStatus {
   PENDING
   ACTIVE
+  OVERDUE
   INACTIVE
   CANCELLED
 }
@@ -69,12 +70,13 @@ model User {
   whatsAppAccount WhatsAppAccount? @relation("UserWhatsAppAccount", fields: [whatsAppAccountId], references: [id])
   whatsAppAccountId String? @unique
 
-  planId String?
-  plan   Plan? @relation(fields: [planId], references: [id])
-
+  status SubscriptionStatus @default(PENDING)
   expiresAt DateTime?
 
+  plans Plan[]
+
   subscription Subscription[]
+  settings    UserSetting?
 
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -246,12 +248,14 @@ model Plan {
   id String @id @default(cuid())
   name String
 
-  priceJson Json // { amount: number, currency: string }
-  period PlanPeriod
-  features String[]
+  monthlyPriceJson Json? // { amount: number, currency: string }
+  yearlyPriceJson Json? // { amount: number, currency: string }
 
   users User[]
-  subscriptions Subscription[]
+
+  features String[]
+  
+  isAddOn Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -259,14 +263,30 @@ model Plan {
 
 model Subscription {
   id String @id @default(cuid())
+
   userId String
   user User @relation(fields: [userId], references: [id])
 
-  planId String
-  plan Plan @relation(fields: [planId], references: [id])
+  planName String
+  period PlanPeriod
+  amount Float
+  currency String
 
-  status SubscriptionStatus @default(PENDING)
-  expiresAt DateTime
+  endDate DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserSetting {
+  id String @id @default(cuid())
+
+  userId String @unique
+  user User @relation(fields: [userId], references: [id])
+
+  isOptOutSelected Boolean @default(false)
+
+  notificationSettings Json[] // { [notificationType: string, isEnabled: boolean] }
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
