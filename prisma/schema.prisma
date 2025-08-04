@@ -183,17 +183,24 @@ model WhatsAppCampaign {
 model WhatsAppMessage {
   id                    String               @id @default(cuid())
   wamid                 String? // WhatsApp Message ID for delivery tracking
+
   status                MessageStatus        @default(PENDING)
+
   message               String?
-  media                 Json[] // { type: "image", handle: "https://example.com/image.jpg" }
+  mediaIds              String[]
+  templateData          Json? // { header: string, body: string, footer: string }
+
   isOutbound            Boolean              @default(false)
   errorMessage          String?
+
   phoneNumber           String?
+
   sentAt                DateTime?
   deliveredAt           DateTime?            @default(now())
   readAt                DateTime?
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
+
   whatsAppPhoneNumberId String?
   whatsAppPhoneNumber   WhatsAppPhoneNumber? @relation(fields: [whatsAppPhoneNumberId], references: [id])
   recipientId           String

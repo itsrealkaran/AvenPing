@@ -92,6 +92,7 @@ export async function POST(request: Request) {
       name,
       selectedContacts,
       templateName,
+      templateData,
       variables,
       scheduleType,
       scheduledAt,
@@ -174,12 +175,13 @@ export async function POST(request: Request) {
       axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/whatsapp/messages/send-template-message`, {
         contacts: selectedContacts,
         templateName,
+        templateData,
         variables,
         campaignId: campaign.id,
         phoneNumberId: phoneNumber.phoneNumberId
       }, {
         headers: {
-          Cookie: `token=${token}`,
+          Cookie: `Authorization=${token}`,
         },
       });
     }

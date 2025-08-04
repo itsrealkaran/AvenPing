@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useTemplates } from "./template-provider";
 
 export interface Campaign {
   id: string;
@@ -24,6 +25,7 @@ interface CampaignData {
   message?: string;
   templateName?: string;
   templateParams?: string;
+  templateData?: any; // Full template data from template provider
   scheduledAt?: Date;
   recipientPhoneNumbers: Array<{
     phoneNumber: string;
@@ -46,6 +48,8 @@ const CampaignContext = createContext<CampaignContextType | undefined>(undefined
 export function CampaignProvider({ children }: { children: ReactNode }) {
   const [selectedWhatsAppAccountId, setSelectedWhatsAppAccountId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  const { templates } = useTemplates();
 
   // Fetch campaigns
   const {

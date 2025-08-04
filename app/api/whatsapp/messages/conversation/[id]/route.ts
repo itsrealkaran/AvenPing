@@ -93,36 +93,36 @@ export async function GET(
         const hasMore = conversation.messages.length > take;
         let messages = hasMore ? conversation.messages.slice(0, take) : conversation.messages;
 
-        messages = await Promise.all(messages.map(async (item: any) => ({
-            ...item,
-                media: item.media.length > 0 ? await (async () => {
-                try {
-                  const mediaResponse = await axios.get(`https://graph.facebook.com/v23.0/${item.media[0].mediaId}`, {
-                    headers: {
-                      'Authorization': `Bearer ${account.accessToken}`
-                    }
-                  });
+        // messages = await Promise.all(messages.map(async (item: any) => ({
+        //     ...item,
+        //         media: item.media.length > 0 ? await (async () => {
+        //         try {
+        //           const mediaResponse = await axios.get(`https://graph.facebook.com/v23.0/${item.media[0].mediaId}`, {
+        //             headers: {
+        //               'Authorization': `Bearer ${account.accessToken}`
+        //             }
+        //           });
                   
-                  // Download the actual media file
-                  const mediaFile = await axios.get(mediaResponse.data.url, {
-                    headers: {
-                      'Authorization': `Bearer ${account.accessToken}`
-                    },
-                    responseType: 'arraybuffer'
-                  });
+        //           // Download the actual media file
+        //           const mediaFile = await axios.get(mediaResponse.data.url, {
+        //             headers: {
+        //               'Authorization': `Bearer ${account.accessToken}`
+        //             },
+        //             responseType: 'arraybuffer'
+        //           });
                   
-                  // Convert to base64 for frontend display
-                  const base64 = Buffer.from(mediaFile.data).toString('base64');
-                  const dataUrl = `data:${mediaResponse.data.mime_type};base64,${base64}`;
+        //           // Convert to base64 for frontend display
+        //           const base64 = Buffer.from(mediaFile.data).toString('base64');
+        //           const dataUrl = `data:${mediaResponse.data.mime_type};base64,${base64}`;
                   
-                  return [{type: mediaResponse.data.mime_type, mediaId: dataUrl}];
-                } catch (error) {
-                  console.error('Failed to fetch media:', error instanceof Error ? error.message : 'Unknown error');
-                  // Return empty array if media fetch fails
-                  return [];
-                }
-              })() : []
-          })));
+        //           return [{type: mediaResponse.data.mime_type, mediaId: dataUrl}];
+        //         } catch (error) {
+        //           console.error('Failed to fetch media:', error instanceof Error ? error.message : 'Unknown error');
+        //           // Return empty array if media fetch fails
+        //           return [];
+        //         }
+        //       })() : []
+        //   })));
 
         // Get the cursor for the next page
         const nextCursor = hasMore ? messages[messages.length - 1].id : null;
