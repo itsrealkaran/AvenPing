@@ -47,6 +47,7 @@ interface CampaignData {
   name: string;
   selectedContacts: Contact[];
   templateName: string;
+  templateData?: any; // Full template data from template provider
   variables: VariableData[];
   scheduleType: 'immediate' | 'scheduled';
   scheduledAt?: Date;
@@ -184,7 +185,13 @@ export function CreateCampaignModal({ open, onClose, onSubmit }: CreateCampaignM
     }
 
     try {
-      await onSubmit(campaignData);
+      // Include the full template data in the campaign data
+      const campaignDataWithTemplate = {
+        ...campaignData,
+        templateData: selectedTemplate
+      };
+      
+      await onSubmit(campaignDataWithTemplate);
       onClose();
       setCurrentStep(1);
       setCampaignData({

@@ -13,7 +13,11 @@ const instance = new Razorpay({
 
 export async function POST(request: NextRequest) {
   try {
-    const { planName, planPeriod }: { planName: string; planPeriod: string } = await request.json()
+    const { planName, planPeriod, region }: { planName: string; planPeriod: string; region: string } = await request.json()
+
+    if (!planName || !planPeriod || !region) {
+      return NextResponse.json({ message: "Invalid request" }, { status: 400 })
+    }
     
     // Get the session to get user email
     const session = await getSession()
@@ -35,7 +39,6 @@ export async function POST(request: NextRequest) {
     const plan = await prisma.plan.findFirst({
       where: {
         name: planName.toUpperCase(),
-        // period: planPeriod as PlanPeriod,
       },
     })
 
@@ -43,21 +46,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Plan not found" }, { status: 404 })
     }
 
-    // Get plan price in INR (assuming priceJson contains INR amount)
-    let planPrice;
-    if (planPeriod === "MONTHLY") {
-      planPrice = plan.monthlyPriceJson as any
-    } else if (planPeriod === "YEARLY") {
-      planPrice = plan.yearlyPriceJson as any
-    } else {
-      return NextResponse.json({ message: "Invalid plan period" }, { status: 400 })
-    }
-    const amountInPaise = Math.round(parseFloat(planPrice.INR) * 100) // Convert to paise
+    const priceJson: any = planPeriod === "YEARLY" ? plan.yearlyPriceJson : plan.monthlyPriceJson
+    const price = region === "US" ? priceJson.US : region === "IND" ? priceJson.IND : region === "ASIA" ? priceJson.ASIA : priceJson.USD
+    const currency = region === "US" ? "USD" : region === "IND" ? "INR" : region === "ASIA" ? "USD" : "USD"
+
+    console.log(price, currency)
+
+    const amountInPaise = Math.round(parseFloat(price) * 100) // Convert to paise
 
     // Create Razorpay order
     const order = await instance.orders.create({
       amount: amountInPaise,
-      currency: "INR",
+      currency: currency,
       receipt: `receipt_${Date.now()}`,
       notes: {
         userId: user.id,
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: user.id,
         planName: plan.name,
-        period: planPeriod,
+        period: planPeriod as PlanPeriod,
         amount: amountInPaise,
         currency: "INR",
         endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now

@@ -11,7 +11,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
-    const { planName, planPeriod }: { planName: string; planPeriod: string } = await request.json()
+    const { planName, planPeriod, region }: { planName: string; planPeriod: string; region: string } = await request.json()
     
     // Get the session to get user email
     const session = await getSession()
@@ -33,7 +33,6 @@ export async function POST(request: NextRequest) {
     const plan = await prisma.plan.findFirst({
       where: {
         name: planName,
-        // period: planPeriod as PlanPeriod,
       },
     })
 
@@ -41,19 +40,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Plan not found" }, { status: 404 })
     }
 
+    const priceJson: any = planPeriod === "YEARLY" ? plan.yearlyPriceJson : plan.monthlyPriceJson
+
+    const price = region === "US" ? priceJson.US : region === "IND" ? priceJson.IND : region === "ASIA" ? priceJson.ASIA : priceJson.USD
+    const currency = region === "US" ? "usd" : region === "IND" ? "inr" : region === "ASIA" ? "usd" : "usd"
+
+    console.log(price, currency)
+
     // Create Stripe checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
-            currency: "usd",
+            currency: currency,
             product_data: {
               name: plan.name,
               description: `Subscription to ${plan.name} plan`,
             },
-            // @ts-ignore
-            unit_amount: Math.round(parseFloat(plan.priceJson!.INR) * 100), // Convert to cents
+            unit_amount: Math.round(parseFloat(price) * 100), // Convert to cents
             recurring: {
               interval: planPeriod === "YEARLY" ? "year" : "month",
             },

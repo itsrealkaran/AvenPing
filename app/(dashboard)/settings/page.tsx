@@ -78,39 +78,6 @@ export default function SettingsPage() {
     setLabels(labels.filter((label) => label.id !== id))
   }
 
-  const handleChoosePlan = async (plan: any) => {
-    try {
-      if (selectedPaymentMethod === "stripe") {
-        // Handle Stripe payment
-        const response = await axios.post("/api/subscription/stripe", {
-          planName: plan.name.toUpperCase(),
-          planPeriod: plan.period.toUpperCase(),
-        })
-        
-        if (response.data.url) {
-          // Redirect to Stripe checkout
-          window.location.href = response.data.url
-        }
-      } else if (selectedPaymentMethod === "razorpay") {
-        // Handle Razorpay payment
-        await initiateRazorpayPayment(
-          plan.name,
-          plan.period,
-          userInfo.email,
-          userInfo.name,
-          () => {
-            toast.success("Payment successful!")
-          },
-          () => {
-            toast.error("Payment failed. Please try again.")
-          }
-        )
-      }
-    } catch (error) {
-      console.error("Payment error:", error)
-      toast.error("Payment failed. Please try again.")
-    }
-  }
 
   const renderContent = () => {
     switch (activeSection) {

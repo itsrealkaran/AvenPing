@@ -4,14 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { contacts, templateName, variables, campaignId, phoneNumberId } = await request.json();
-    console.log("contacts", contacts)
-    console.log("templateName", templateName)
-    console.log("variables", variables)
-    console.log("campaignId", campaignId)
-    console.log("phoneNumberId", phoneNumberId)
+    const { contacts, templateName, templateData, variables, campaignId, phoneNumberId } = await request.json();
 
     const session = await getSession();
+    console.log("session from send template message", session)
 
     if (!session?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -89,6 +85,8 @@ export async function POST(request: NextRequest) {
           templateStructure.template.components.push({ type: "body", parameters: bodyParams });
         }
 
+        console.log("templateStructure", templateStructure.template.components)
+
         // Send message via WhatsApp API
         const response = await fetch(
           `https://graph.facebook.com/v23.0/${phoneNumberId}/messages`,
@@ -102,9 +100,20 @@ export async function POST(request: NextRequest) {
           }
         );
 
+        
         const result = await response.json();
+        
+        console.log("response from send template message", JSON.stringify(result, null, 2))
 
-        console.log("result from send template message", result)
+        const message = await prisma.whatsAppMessage.create({
+          data: {
+            templateData: templateData.components,
+            recipientId: contact.id,
+            whatsAppPhoneNumberId: account.phoneNumbers[0].id,
+          },
+        });
+
+        console.log("result from send template message", message)
 
         if (result.error) {
           await prisma.whatsAppMessage.create({

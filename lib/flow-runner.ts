@@ -235,7 +235,7 @@ export class FlowRunner {
             phoneNumber: recipientPhoneNumber,
             whatsAppPhoneNumberId: phoneNumberId,
             recipientId: recipient.id,
-            media: mediaUrl ? [{ type: mediaType!, mediaId: mediaUrl }] : undefined
+            mediaIds: mediaUrl ? [mediaUrl] : []
           }
         });
       }
