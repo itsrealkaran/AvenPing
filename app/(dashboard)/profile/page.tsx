@@ -359,6 +359,7 @@ export default function ProfilePage() {
                       placeholder="Select a category"
                       onSelect={(item) => !isEditing ? null : handleDropdownChange(item.value)}
                       variant="outline"
+                      disabled={!isEditing}
                       className={`w-full ${!isEditing ? 'opacity-50 cursor-not-allowed' : ''}`}
                       selectedLabel={profile.vertical ? getCategoryDisplayName(profile.vertical) : null}
                     />
