@@ -30,7 +30,7 @@ export async function POST(request: Request) {
             phoneNumbers: true,
           },
         },
-        plan: true,
+        plans: true,
       }
     });
 
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
       name: user.name,
       accessToken: user.whatsAppAccount?.accessToken,
       hasWhatsAppAccount: hasWhatsAppAccount,
-      plan: user.plan?.name,
+      plan: user.plans.map((plan) => plan.name),
       expiresAt: user.expiresAt,
     });
 
@@ -79,9 +79,9 @@ export async function POST(request: Request) {
       { status: 200 }
     );
 
-    response.cookies.set('token', token, {
+    response.cookies.set('Authorization', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", 
       maxAge: 60 * 60 * 24 // 24 hours
     });

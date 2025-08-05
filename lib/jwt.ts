@@ -24,7 +24,7 @@ export async function verifyToken(token: string) {
 
 export async function getSession() {
   const cookieStore = await cookies();
-  const token = cookieStore.get('token')?.value;
+  const token = cookieStore.get('Authorization')?.value;
   
   if (!token) return null;
   
@@ -33,7 +33,7 @@ export async function getSession() {
 
 // New function for middleware to get session from request cookies
 export async function getSessionFromRequest(request: NextRequest) {
-  const token = request.cookies.get('token')?.value;
+  const token = request.cookies.get('Authorization')?.value;
   
   if (!token) return null;
   

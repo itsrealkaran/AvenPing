@@ -84,7 +84,7 @@ export async function GET(request: Request) {
             createdAt: true,
             status: true,
             isOutbound: true,
-            media: true,
+            mediaIds: true,
           },
           orderBy: {
             createdAt: "asc",
@@ -271,14 +271,7 @@ export async function POST(request: Request) {
         phoneNumber: recipient.phoneNumber,
         whatsAppPhoneNumberId: phoneNumberId,
         recipientId,
-        media: media
-          ? [
-              {
-                mediaId: media[0].mediaId,
-                type: media[0].type,
-              },
-            ]
-          : undefined,
+        mediaIds: media ? media.map((m: any) => m.mediaId) : [],
       },
     });
 
@@ -303,7 +296,7 @@ export async function POST(request: Request) {
               ],
             },
           }
-        : (media && media[0].type == "image") || media[0].type == "video" || media[0].type == "document" || media[0].type == "audio"
+        : media && media[0] && (media[0].type == "image" || media[0].type == "video" || media[0].type == "document" || media[0].type == "audio")
         ? {
             messaging_product: "whatsapp",
             recipient_type: "individual",
@@ -328,7 +321,7 @@ export async function POST(request: Request) {
           };
 
       const response = await fetch(
-        `https://graph.facebook.com/v17.0/${phoneNumber.phoneNumberId}/messages`,
+        `https://graph.facebook.com/v23.0/${phoneNumber.phoneNumberId}/messages`,
         {
           method: "POST",
           headers: {

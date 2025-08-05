@@ -17,7 +17,6 @@ interface SearchableDropdownProps {
   className?: string;
   selectedLabel?: string | null;
   buttonContent?: React.ReactNode;
-  disabled?: boolean;
 }
 
 const SearchableDropdown = ({
@@ -28,7 +27,6 @@ const SearchableDropdown = ({
   className = "",
   selectedLabel,
   buttonContent,
-  disabled = false,
 }: SearchableDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,8 +62,7 @@ const SearchableDropdown = ({
     <div className="relative " ref={dropdownRef}>
       <button
         type="button"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-        disabled={disabled}
+        onClick={() => setIsOpen(!isOpen)}
         className={buttonClasses}
       >
         {buttonContent || (

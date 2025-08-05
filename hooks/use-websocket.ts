@@ -50,7 +50,20 @@ export const useWebSocket = ({ onMessage, onConnect, onDisconnect, onError }: Us
     setConnectionStatus('connecting');
 
     try {
-      const ws = new WebSocket(process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:3002');
+      // Determine the WebSocket URL based on environment
+      let wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL;
+      
+      if (!wsUrl) {
+        // Auto-detect protocol based on current location
+        const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+        const protocol = isHttps ? 'wss:' : 'ws:';
+        const host = process.env.NODE_ENV === 'production' 
+          ? window.location.host 
+          : 'localhost:3002';
+        wsUrl = `${protocol}//${host}`;
+      }
+      
+      const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {

@@ -200,7 +200,7 @@ export function ContactProvider({ children }: { children: ReactNode }) {
   // Update attribute mutation
   const updateAttributeMutation = useMutation({
     mutationFn: async (data: { id: string; name: string; type: string }) => {
-      const response = await axios.put(`/api/contacts/attribute/${data.id}`, data);
+      const response = await axios.put('/api/contacts/attribute', data);
       return response.data;
     },
     onSuccess: () => {
@@ -212,7 +212,7 @@ export function ContactProvider({ children }: { children: ReactNode }) {
   // Delete attribute mutation
   const deleteAttributeMutation = useMutation({
     mutationFn: async (id: string) => {
-      await axios.delete(`/api/contacts/attribute/${id}`);
+      await axios.delete('/api/contacts/attribute', { data: { id } });
     },
     onSuccess: () => {
       // Invalidate and refetch attributes data

@@ -1,10 +1,7 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { Facebook, Instagram, Twitter, Linkedin, User2, Youtube } from 'lucide-react'
+import { Facebook, Instagram, Linkedin, Youtube } from 'lucide-react'
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import Logo from "@/components/landing/logo"
 
 const footerLinks = {
@@ -75,11 +72,11 @@ export function Footer() {
                 <div
                 className='text-[1rem] md:text-[1.3rem] flex gap-[2px] items-end font-bold'
                   >
-                  <h1>AvenCRM</h1>
+                  <h1>AvenPing</h1>
                 </div>
               </Link>
               <p className="text-[#5c5f66] max-w-sm">
-                A simple CRM that is easy to use and easy to manage.
+                A whatsapp marketing tool that is easy to use and easy to manage.
               </p>
             </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
@@ -104,7 +101,7 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-[#d6d6d6]">
+        <div className="flex flex-col md:flex-row items-center justify-between py-4 border-t border-[#d6d6d6]">
           <div className="flex items-center gap-6 mb-4 md:mb-0">
             {socialLinks.map((link, index) => {
               const Icon = link.icon
@@ -133,7 +130,7 @@ export function Footer() {
           </div>
 
           <div className="text-sm text-[#5c5f66] mt-4 md:mt-0">
-            © 2024 Aven Technologies Inc. All Rights Reserved.
+            © 2025 Aven Technologies Inc. All Rights Reserved.
           </div>
         </div>
       </div>

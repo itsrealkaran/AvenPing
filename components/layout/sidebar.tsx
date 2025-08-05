@@ -24,6 +24,7 @@ import {
   ChevronLeft,
   SidebarClose,
   SidebarOpen,
+  Bell,
   LogOut,
 } from "lucide-react";
 import Link from "next/link";
@@ -57,7 +58,8 @@ export type IconName =
   | "Bot"
   | "Contact"
   | "BarChart"
-  | "User";
+  | "User"
+  | "Bell";
 
 // Map of icon names to components
 const iconMap: Record<IconName, LucideIcon> = {
@@ -77,6 +79,7 @@ const iconMap: Record<IconName, LucideIcon> = {
   Bot,
   BarChart,
   User,
+  Bell,
 };
 
 // Types for navigation items

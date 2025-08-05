@@ -61,6 +61,7 @@ export const DropdownButton = React.forwardRef<
               key={option.value}
               ref={buttonRef}
               {...props}
+              className="w-full justify-start"
               variant="ghost"
               onClick={() => {
                 onChange(option.value);

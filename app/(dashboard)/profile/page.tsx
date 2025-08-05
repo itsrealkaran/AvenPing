@@ -15,11 +15,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
 import Card from "@/components/messages/message-card";
 import { useProfile } from "@/context/profile-provider";
 import { useUser } from "@/context/user-context";
-import { DropdownButton } from "@/components/ui/dropdown-button";
+import SearchableDropdown from "@/components/ui/searchable-dropdown";
 
 export default function ProfilePage() {
   // Profile state
@@ -332,39 +331,38 @@ export default function ProfilePage() {
                     >
                       Category
                     </label>
-                    <DropdownButton
-                      id="vertical"
-                      name="vertical"
-                      selected={profile.vertical}
-                      onChange={handleDropdownChange}
-                      disabled={!isEditing}
-                      options={[
-                        { value: "", label: "Select a category" },
-                        { value: "ALCOHOL", label: "Alcoholic Beverages" },
-                        { value: "APPAREL", label: "Clothing and Apparel" },
-                        { value: "AUTO", label: "Automotive" },
-                        { value: "BEAUTY", label: "Beauty, Spa and Salon" },
-                        { value: "EDU", label: "Education" },
-                        { value: "ENTERTAIN", label: "Entertainment" },
-                        { value: "EVENT_PLAN", label: "Event Planning and Service" },
-                        { value: "FINANCE", label: "Finance and Banking" },
-                        { value: "GOVT", label: "Public Service" },
-                        { value: "GROCERY", label: "Food and Grocery" },
-                        { value: "HEALTH", label: "Medical and Health" },
-                        { value: "HOTEL", label: "Hotel and Lodging" },
-                        { value: "NONPROFIT", label: "Non-profit" },
-                        { value: "ONLINE_GAMBLING", label: "Online Gambling & Gaming" },
-                        { value: "OTC_DRUGS", label: "Over-the-Counter Drugs" },
-                        { value: "OTHER", label: "Other" },
-                        { value: "PHYSICAL_GAMBLING", label: "Non-Online Gambling & Gaming (E.g. Brick and mortar)" },
-                        { value: "PROF_SERVICES", label: "Professional Services" },
-                        { value: "RESTAURANT", label: "Restaurant" },
-                        { value: "RETAIL", label: "Shopping and Retail" },
-                        { value: "TRAVEL", label: "Travel and Transportation" },
+                    <SearchableDropdown
+                      items={[
+                        { id: "1", label: "Select a category", value: "" },
+                        { id: "2", label: "Alcoholic Beverages", value: "ALCOHOL" },
+                        { id: "3", label: "Clothing and Apparel", value: "APPAREL" },
+                        { id: "4", label: "Automotive", value: "AUTO" },
+                        { id: "5", label: "Beauty, Spa and Salon", value: "BEAUTY" },
+                        { id: "6", label: "Education", value: "EDU" },
+                        { id: "7", label: "Entertainment", value: "ENTERTAIN" },
+                        { id: "8", label: "Event Planning and Service", value: "EVENT_PLAN" },
+                        { id: "9", label: "Finance and Banking", value: "FINANCE" },
+                        { id: "10", label: "Public Service", value: "GOVT" },
+                        { id: "11", label: "Food and Grocery", value: "GROCERY" },
+                        { id: "12", label: "Medical and Health", value: "HEALTH" },
+                        { id: "13", label: "Hotel and Lodging", value: "HOTEL" },
+                        { id: "14", label: "Non-profit", value: "NONPROFIT" },
+                        { id: "15", label: "Online Gambling & Gaming", value: "ONLINE_GAMBLING" },
+                        { id: "16", label: "Over-the-Counter Drugs", value: "OTC_DRUGS" },
+                        { id: "17", label: "Other", value: "OTHER" },
+                        { id: "18", label: "Non-Online Gambling & Gaming (E.g. Brick and mortar)", value: "PHYSICAL_GAMBLING" },
+                        { id: "19", label: "Professional Services", value: "PROF_SERVICES" },
+                        { id: "20", label: "Restaurant", value: "RESTAURANT" },
+                        { id: "21", label: "Shopping and Retail", value: "RETAIL" },
+                        { id: "22", label: "Travel and Transportation", value: "TRAVEL" },
                       ]}
-                    >
-                      {profile.vertical ? getCategoryDisplayName(profile.vertical) : "Select a category"}
-                    </DropdownButton>
+                      placeholder="Select a category"
+                      onSelect={(item) => !isEditing ? null : handleDropdownChange(item.value)}
+                      variant="outline"
+                      disabled={!isEditing}
+                      className={`w-full ${!isEditing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      selectedLabel={profile.vertical ? getCategoryDisplayName(profile.vertical) : null}
+                    />
                   </div>
 
             {/* Section 4: Contact Info */}

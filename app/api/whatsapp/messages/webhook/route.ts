@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendMessageToUser } from "@/websocket-server.cjs";
+import { sendMessageToUserSafe } from "@/lib/websocket-utils";
 import { flowRunner } from "@/lib/flow-runner";
 
 export async function GET(req: NextRequest) {
@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
                       : null,
                   },
                 };
-                sendMessageToUser(whatsAppPhoneNumber.account.user?.id!, eventData);
+                sendMessageToUserSafe(whatsAppPhoneNumber.account.user?.id!, eventData);
               }
             } else if (
               change.field === "messages" &&
@@ -289,7 +289,7 @@ export async function POST(req: NextRequest) {
                     phoneNumberId,
                   },
                 };
-                sendMessageToUser(whatsAppPhoneNumber.account.user?.id!, eventData);
+                sendMessageToUserSafe(whatsAppPhoneNumber.account.user?.id!, eventData);
               }
             }
           }

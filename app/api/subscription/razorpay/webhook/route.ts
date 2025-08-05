@@ -75,7 +75,11 @@ async function handlePaymentCaptured(payment: any) {
       await prisma.user.update({
         where: { id: userId },
         data: {
-          planId: planId,
+          plans: {
+            connect: {
+              id: planId,
+            },
+          },
           expiresAt: expiryDate,
         },
       })
@@ -84,11 +88,12 @@ async function handlePaymentCaptured(payment: any) {
       await prisma.subscription.updateMany({
         where: {
           userId: userId,
-          planId: planId,
-          status: "PENDING",
+          endDate: {
+            gte: new Date(),
+          },
         },
         data: {
-          status: "ACTIVE",
+          endDate: expiryDate,
         },
       })
 
@@ -118,11 +123,12 @@ async function handlePaymentFailed(payment: any) {
       await prisma.subscription.updateMany({
         where: {
           userId: userId,
-          planId: planId,
-          status: "PENDING",
+          endDate: {
+            gte: new Date(),
+          },
         },
         data: {
-          status: "INACTIVE",
+          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         },
       })
 
@@ -153,7 +159,11 @@ async function handleOrderPaid(order: any) {
       await prisma.user.update({
         where: { id: userId },
         data: {
-          planId: planId,
+          plans: {
+            connect: {
+              id: planId,
+            },
+          },
           expiresAt: expiryDate,
         },
       })
@@ -162,11 +172,12 @@ async function handleOrderPaid(order: any) {
       await prisma.subscription.updateMany({
         where: {
           userId: userId,
-          planId: planId,
-          status: "PENDING",
+          endDate: {
+            gte: new Date(),
+          },
         },
         data: {
-          status: "ACTIVE",
+          endDate: expiryDate,
         },
       })
 

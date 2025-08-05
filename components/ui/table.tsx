@@ -61,6 +61,7 @@ export type TableProps<T extends Record<string, any>> = {
   Add?: LucideIcon;
   Delete?: LucideIcon;
   onRowClick?: (row: T) => void;
+  renderTopToolbar?: (props: { table: any }) => React.ReactNode;
 };
 
 export default function Table<T extends Record<string, any>>({
@@ -88,6 +89,7 @@ export default function Table<T extends Record<string, any>>({
   Add,
   Delete,
   onRowClick,
+  renderTopToolbar,
 }: TableProps<T>) {
   const [tableHeight, setTableHeight] = useState(propTableHeight || "450px");
 
@@ -177,7 +179,7 @@ export default function Table<T extends Record<string, any>>({
         borderBottom: "1px solid #e5e7eb",
       },
     },
-    renderTopToolbar: ({ table }) => {
+    renderTopToolbar: renderTopToolbar || (({ table }) => {
       const selectedRowCount = table.getSelectedRowModel().rows.length;
 
       return (
@@ -245,7 +247,7 @@ export default function Table<T extends Record<string, any>>({
           </div>
         </div>
       );
-    },
+    }),
     renderRowActionMenuItems:
       actionMenuItems.length > 0
         ? ({ row, closeMenu }) =>
