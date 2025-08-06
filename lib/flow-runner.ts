@@ -350,7 +350,7 @@ export class FlowRunner {
   private async startFlow(
     userId: string,
     recipientId: string,
-    flow: Flow,
+    flow: any,
     recipientPhoneNumber: string,
     phoneNumberId: string
   ): Promise<void> {
@@ -367,7 +367,7 @@ export class FlowRunner {
 
       // Execute first step
       if (flow.steps.length > 0) {
-        const firstStep = flow.steps[0];
+        const firstStep = flow.steps[0].steps[0];
         session.currentStepId = firstStep.id;
         console.log("First step:", firstStep);
         
