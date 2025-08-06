@@ -129,6 +129,7 @@ export class FlowRunner {
 
       for (const flow of flows) {
           const triggers = flow.triggers ? flow.triggers : [];
+          console.log("flow.automationJson", flow.automationJson);
          if (this.matchesTrigger(message, triggers)) {
            return {
              id: flow.id,
