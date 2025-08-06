@@ -96,12 +96,31 @@ export async function POST(req: NextRequest) {
                   );
 
                   if (recipient && recipient.activeCampaignId) {
+                    // Map WhatsApp status to our enum values
+                    let mappedStatus: "UNDELIVERED" | "UNREAD" | "READ" | "REPLIED";
+                    switch (statusValue) {
+                      case "sent":
+                        mappedStatus = "UNREAD";
+                        break;
+                      case "delivered":
+                        mappedStatus = "UNREAD";
+                        break;
+                      case "read":
+                        mappedStatus = "READ";
+                        break;
+                      case "failed":
+                        mappedStatus = "UNDELIVERED";
+                        break;
+                      default:
+                        mappedStatus = "UNREAD";
+                    }
+
                     await prisma.whatsAppRecipient.updateMany({
                       where: {
                         id: recipient.id,
                       },
                       data: {
-                        status: statusValue === "sent" ? "UNREAD" : statusValue.toUpperCase(),
+                        status: mappedStatus,
                       },
                     })
                     await prisma.whatsAppCampaign.update({
@@ -114,7 +133,7 @@ export async function POST(req: NextRequest) {
                             id: recipient.id,
                             name: recipient.name || "",
                             phoneNumber: recipient.phoneNumber,
-                            status: statusValue === "sent" ? "UNREAD" : statusValue.toUpperCase(),
+                            status: mappedStatus,
                           }
                         }
                       }
