@@ -334,6 +334,7 @@ export class FlowRunner {
       } else {
         // Check for new flow trigger
         const flow = await this.findFlowByTrigger(userId, message);
+        console.log("Flow found:", flow);
         
         if (flow) {
           // Start new flow
@@ -368,6 +369,7 @@ export class FlowRunner {
       if (flow.steps.length > 0) {
         const firstStep = flow.steps[0];
         session.currentStepId = firstStep.id;
+        console.log("First step:", firstStep);
         
         const result = await this.executeStep(firstStep, recipientPhoneNumber, phoneNumberId);
         
