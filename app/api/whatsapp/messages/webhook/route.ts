@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
                       : null,
                   },
                 };
-                sendMessageToUserSafe(whatsAppPhoneNumber.account.user?.id!, eventData);
+                await sendMessageToUserSafe(whatsAppPhoneNumber.account.user?.id!, eventData);
               }
             } else if (
               change.field === "messages" &&
@@ -308,7 +308,7 @@ export async function POST(req: NextRequest) {
                     phoneNumberId,
                   },
                 };
-                sendMessageToUserSafe(whatsAppPhoneNumber.account.user?.id!, eventData);
+                await sendMessageToUserSafe(whatsAppPhoneNumber.account.user?.id!, eventData);
               }
             }
           }

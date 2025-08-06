@@ -3,46 +3,24 @@ const https = require("https");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const { setSendMessageToUserFunction } = require("./lib/websocket-utils.js");
+const { setSendMessageToUserFunction, subscribeToRedisMessages } = require("./lib/websocket-utils.js");
 
 // Load environment variables from .env file
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const clients = [];
 
-// Check if SSL certificates are available
-const useSSL = process.env.USE_SSL === 'true' && 
-               fs.existsSync(process.env.SSL_CERT_PATH || '') && 
-               fs.existsSync(process.env.SSL_KEY_PATH || '');
-console.log(useSSL, process.env.SSL_CERT_PATH, process.env.SSL_KEY_PATH, "useSSL");
 let serverOptions;
 
-if (useSSL) {
-  // SSL configuration for production
-  const httpsServer = https.createServer({
-    cert: fs.readFileSync(process.env.SSL_CERT_PATH),
-    key: fs.readFileSync(process.env.SSL_KEY_PATH)
-  });
-  
-  serverOptions = {
-    server: httpsServer
-  };
-  
-  httpsServer.listen(3002, '0.0.0.0', () => {
-    console.log("HTTPS server running on port 3002");
-  });
-} else {
-  // Non-SSL configuration for development/testing
-  const httpServer = http.createServer();
-  
-  serverOptions = {
-    server: httpServer
-  };
-  
-  httpServer.listen(3002, '0.0.0.0', () => {
-    console.log("HTTP server running on port 3002");
-  });
-}
+const httpServer = http.createServer();
+
+serverOptions = {
+  server: httpServer
+};
+
+httpServer.listen(3002, '0.0.0.0', () => {
+  console.log("HTTP server running on port 3002");
+});
 
 const wss = new WebSocketServer(serverOptions);
 
@@ -87,10 +65,10 @@ function sendMessageToUser(userId, message) {
   });
 }
 
-// Set the function in the utility file so it can be used by API routes
+// Set the function for direct calls (same process)
 setSendMessageToUserFunction(sendMessageToUser);
 
-// Export the function for use in other parts of the application
-module.exports = { sendMessageToUser };
+// Subscribe to Redis messages for inter-process communication
+subscribeToRedisMessages(sendMessageToUser);
 
 console.log("WebSocket server running on ws://localhost:3002");
