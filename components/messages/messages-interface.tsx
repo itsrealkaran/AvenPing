@@ -74,9 +74,9 @@ const MessagesInterface = () => {
       console.log(newMessage, "newMessage from websocket");
       
       // Add the message to the appropriate conversation
-      if (message.conversationId) {
-        console.log(message.conversationId, "message.conversationId from websocket");
-        addRealTimeMessage(newMessage, message.conversationId);
+      if (message.data.message.recipientId) {
+        console.log(message.data.message.recipientId, "message.conversationId from websocket");
+        addRealTimeMessage(newMessage, message.data.message.recipientId);
       }
     }
   }, [addRealTimeMessage]);
