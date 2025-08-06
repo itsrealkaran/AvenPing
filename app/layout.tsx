@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
-import { Toaster } from "sonner";
 import { AppProvider } from "@/context/app-provider";
 
 const geistSans = Geist({
@@ -39,7 +38,7 @@ export default function RootLayout({
                 FB.init({
                   appId: '641045902102378',
                   xfbml: true,
-                  version: 'v22.0',
+                  version: 'v23.0',
                   config_id: '${process.env.NEXT_PUBLIC_META_CONFIG_ID}'
                 });
               };
