@@ -64,12 +64,12 @@ const MessagesInterface = () => {
     if (message.type === 'new_message') {
       // Handle incoming real-time message
       const newMessage: Message = {
-        id: message.id || `m${Date.now()}`,
-        message: message.message,
-        createdAt: message.createdAt || new Date().toISOString(),
-        status: message.status || "DELIVERED",
+        id: message.data.message.id || `m${Date.now()}`,
+        message: message.data.message.message,
+        createdAt: message.data.message.createdAt || new Date().toISOString(),
+        status: message.data.message.status || "DELIVERED",
         isOutbound: false, // Incoming messages are not outbound
-        media: message.media,
+        media: message.data.message.media,
       };
       console.log(newMessage, "newMessage from websocket");
       
