@@ -60,6 +60,7 @@ const MessagesInterface = () => {
 
   // WebSocket callbacks - memoized to prevent re-renders
   const handleWebSocketMessage = useCallback((message: any) => {
+    console.log(message, "message from websocket");
     if (message.type === 'new_message') {
       // Handle incoming real-time message
       const newMessage: Message = {
@@ -70,9 +71,11 @@ const MessagesInterface = () => {
         isOutbound: false, // Incoming messages are not outbound
         media: message.media,
       };
+      console.log(newMessage, "newMessage from websocket");
       
       // Add the message to the appropriate conversation
       if (message.conversationId) {
+        console.log(message.conversationId, "message.conversationId from websocket");
         addRealTimeMessage(newMessage, message.conversationId);
       }
     }
