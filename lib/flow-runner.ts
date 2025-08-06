@@ -137,7 +137,7 @@ export class FlowRunner {
              status: flow.status,
              date: flow.createdAt.toISOString(),
              triggers,
-             steps: (flow.automationJson[0] as unknown) as FlowStep[]
+             steps: (flow.automationJson as unknown) as FlowStep[]
            };
         }
       }
@@ -368,7 +368,7 @@ export class FlowRunner {
 
       // Execute first step
       if (flow.steps.length > 0) {
-        const firstStep = flow.steps[0];
+        const firstStep = flow.steps[0].steps[0];
         session.currentStepId = firstStep.id;
         console.log("First step:", firstStep);
         
