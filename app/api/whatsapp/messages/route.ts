@@ -87,7 +87,7 @@ export async function GET(request: Request) {
             mediaIds: true,
           },
           orderBy: {
-            createdAt: "desc",
+            createdAt: "asc",
           },
         },
         labels: {
