@@ -101,7 +101,7 @@ async function getAccessToken(code: string) {
     for (let i = 0; i < 3; i++) {
       try {
         const response = await fetch(
-          `https://graph.facebook.com/v22.0/oauth/access_token?client_id=${process.env.META_ADS_CLIENT_ID}&client_secret=${process.env.META_ADS_CLIENT_SECRET}&code=${code}`,
+          `https://graph.facebook.com/v23.0/oauth/access_token?client_id=${process.env.META_ADS_CLIENT_ID}&client_secret=${process.env.META_ADS_CLIENT_SECRET}&code=${code}`,
         );
         const data: any = await response.json();
         console.log(data, 'data from get access token');
@@ -119,11 +119,11 @@ async function getAccessToken(code: string) {
 
 const getUserInfo = async (accessToken: string) => {
   try {
-    const userInfo = await axios.get(`https://graph.facebook.com/v22.0/me?access_token=${accessToken}`);
+    const userInfo = await axios.get(`https://graph.facebook.com/v23.0/me?access_token=${accessToken}`);
     console.log('User info:', userInfo.data);
 
     const debugInfo = await axios.get(
-      `https://graph.facebook.com/v22.0/debug_token?input_token=${accessToken}&access_token=${accessToken}`
+      `https://graph.facebook.com/v23.0/debug_token?input_token=${accessToken}&access_token=${accessToken}`
     );
     console.log('Debug info:', debugInfo.data);
 
@@ -132,7 +132,7 @@ const getUserInfo = async (accessToken: string) => {
     )?.target_ids[0];
 
     const phoneNumbers = await axios.get(
-      `https://graph.facebook.com/v22.0/${wabaId}/phone_numbers?access_token=${accessToken}`
+      `https://graph.facebook.com/v23.0/${wabaId}/phone_numbers?access_token=${accessToken}`
     );
     console.log('Phone numbers:', phoneNumbers.data);
 

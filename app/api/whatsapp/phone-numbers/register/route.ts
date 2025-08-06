@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     console.log(typeof pin, 'pin');
     console.log(typeof Number(pin), 'pin');
 
-    const response = await axios.post(`https://graph.facebook.com/v22.0/${phoneNumberId}/register?access_token=${whatsappAccount.accessToken}`, {
+    const response = await axios.post(`https://graph.facebook.com/v23.0/${phoneNumberId}/register?access_token=${whatsappAccount.accessToken}`, {
       pin: Number(pin),
       messaging_product: "whatsapp",
     });

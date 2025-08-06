@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 
     try {
         const profile = await axios.get(
-            `https://graph.facebook.com/v22.0/${phoneNumberId}/whatsapp_business_profile`,
+            `https://graph.facebook.com/v23.0/${phoneNumberId}/whatsapp_business_profile`,
             {
                 params: {
                     fields: 'about,address,description,email,profile_picture_url,websites,vertical',
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
 
     // console.log(about, address, description, email, profile_picture_url, websites);
     const profile = await axios.post(
-        `https://graph.facebook.com/v22.0/${phoneNumberId}/whatsapp_business_profile`,
+        `https://graph.facebook.com/v23.0/${phoneNumberId}/whatsapp_business_profile`,
         {
             about,
             address,
