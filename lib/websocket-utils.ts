@@ -1,18 +1,32 @@
-// WebSocket utility functions that don't start the server during import
+// WebSocket utility functions for broadcasting messages to connected clients
 // This file is safe to import during build time
 
-let sendMessageToUser: ((userId: string, message: any) => void) | null = null;
+// Function to send message to user via HTTP request to WebSocket server
+export async function sendMessageToUserSafe(userId: string, message: any): Promise<boolean> {
+  try {
+    const wsServerUrl = process.env.WEBSOCKET_SERVER_URL || 'http://localhost:3002';
+    const response = await fetch(`${wsServerUrl}/broadcast`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, message }),
+    });
 
-// Function to set the sendMessageToUser function (called by the WebSocket server)
-export function setSendMessageToUserFunction(fn: (userId: string, message: any) => void) {
-  sendMessageToUser = fn;
-}
+    if (!response.ok) {
+      console.error(`Failed to send message to WebSocket server: ${response.status}`);
+      return false;
+    }
 
-// Function to send message to user (safe to call from API routes)
-export function sendMessageToUserSafe(userId: string, message: any) {
-  if (sendMessageToUser) {
-    sendMessageToUser(userId, message);
-  } else {
-    console.warn('WebSocket server not initialized, message not sent:', message);
+    const result = await response.json();
+    if (!result.success) {
+      console.error('WebSocket server returned error:', result.error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error sending message to WebSocket server:', error);
+    return false;
   }
 } 

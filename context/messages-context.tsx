@@ -227,6 +227,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       // Update cache
       const cached = messageCache.current.get(conversationId) || [];
       messageCache.current.set(conversationId, [...cached, message]);
+      console.log("updating cache", message, conversationId);
       // Update react-query cache as before
       queryClient.setQueryData(['messages', phoneNumberId, debouncedSearchQuery, label], (oldData: Conversation[] | undefined) => {
         if (!oldData) return oldData;

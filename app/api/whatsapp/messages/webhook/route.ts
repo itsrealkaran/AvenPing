@@ -96,12 +96,31 @@ export async function POST(req: NextRequest) {
                   );
 
                   if (recipient && recipient.activeCampaignId) {
+                    // Map WhatsApp status to our enum values
+                    let mappedStatus: "UNDELIVERED" | "UNREAD" | "READ" | "REPLIED";
+                    switch (statusValue) {
+                      case "sent":
+                        mappedStatus = "UNREAD";
+                        break;
+                      case "delivered":
+                        mappedStatus = "UNREAD";
+                        break;
+                      case "read":
+                        mappedStatus = "READ";
+                        break;
+                      case "failed":
+                        mappedStatus = "UNDELIVERED";
+                        break;
+                      default:
+                        mappedStatus = "UNREAD";
+                    }
+
                     await prisma.whatsAppRecipient.updateMany({
                       where: {
                         id: recipient.id,
                       },
                       data: {
-                        status: statusValue === "sent" ? "UNREAD" : statusValue.toUpperCase(),
+                        status: mappedStatus,
                       },
                     })
                     await prisma.whatsAppCampaign.update({
@@ -114,7 +133,7 @@ export async function POST(req: NextRequest) {
                             id: recipient.id,
                             name: recipient.name || "",
                             phoneNumber: recipient.phoneNumber,
-                            status: statusValue === "sent" ? "UNREAD" : statusValue.toUpperCase(),
+                            status: mappedStatus,
                           }
                         }
                       }
@@ -125,7 +144,7 @@ export async function POST(req: NextRequest) {
                 // Emit status update event
                 const eventData = {
                   type: "status_update",
-                  userId: whatsAppPhoneNumber.account.user?.id,
+                  userId: whatsAppPhoneNumber.account.id,
                   data: {
                     wamid,
                     status: statusValue.toUpperCase(),
@@ -136,7 +155,7 @@ export async function POST(req: NextRequest) {
                       : null,
                   },
                 };
-                sendMessageToUserSafe(whatsAppPhoneNumber.account.user?.id!, eventData);
+                await sendMessageToUserSafe(whatsAppPhoneNumber.account.id!, eventData);
               }
             } else if (
               change.field === "messages" &&
@@ -283,13 +302,13 @@ export async function POST(req: NextRequest) {
                 // Emit new message event
                 const eventData = {
                   type: "new_message",
-                  userId: whatsAppPhoneNumber.account.user?.id,
+                  userId: whatsAppPhoneNumber.account.id,
                   data: {
                     message: newMessage,
                     phoneNumberId,
                   },
                 };
-                sendMessageToUserSafe(whatsAppPhoneNumber.account.user?.id!, eventData);
+                await sendMessageToUserSafe(whatsAppPhoneNumber.account.id!, eventData);
               }
             }
           }

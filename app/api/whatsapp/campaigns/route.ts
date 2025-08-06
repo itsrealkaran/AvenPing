@@ -38,9 +38,11 @@ export async function GET(request: Request) {
 
     // Add chart data to each campaign
     campaigns.map((c: any) => {
+      const recipientStats = Array.isArray(c.recipientStats) ? c.recipientStats : [];
+
       c.chartData = FILTERS.map(f => ({
         Status: f.label,
-        Count: c.recipientStats?.filter((r: any) => r.status?.toUpperCase() === f.key).length || 0,
+        Count: recipientStats.filter((r: any) => r.status?.toUpperCase() === f.key).length || 0,
       }));
     });
 

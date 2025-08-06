@@ -3,46 +3,64 @@ const https = require("https");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const { setSendMessageToUserFunction } = require("./lib/websocket-utils.js");
 
 // Load environment variables from .env file
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-const clients = [];
+const clients = new Map(); // Use Map for better performance and cleaner code
 
-// Check if SSL certificates are available
-const useSSL = process.env.USE_SSL === 'true' && 
-               fs.existsSync(process.env.SSL_CERT_PATH || '') && 
-               fs.existsSync(process.env.SSL_KEY_PATH || '');
-console.log(useSSL, process.env.SSL_CERT_PATH, process.env.SSL_KEY_PATH, "useSSL");
 let serverOptions;
 
-if (useSSL) {
-  // SSL configuration for production
-  const httpsServer = https.createServer({
-    cert: fs.readFileSync(process.env.SSL_CERT_PATH),
-    key: fs.readFileSync(process.env.SSL_KEY_PATH)
-  });
-  
-  serverOptions = {
-    server: httpsServer
-  };
-  
-  httpsServer.listen(3002, '0.0.0.0', () => {
-    console.log("HTTPS server running on port 3002");
-  });
-} else {
-  // Non-SSL configuration for development/testing
-  const httpServer = http.createServer();
-  
-  serverOptions = {
-    server: httpServer
-  };
-  
-  httpServer.listen(3002, '0.0.0.0', () => {
-    console.log("HTTP server running on port 3002");
-  });
-}
+const httpServer = http.createServer();
+
+// Add HTTP endpoint for receiving broadcast messages
+httpServer.on('request', (req, res) => {
+  if (req.method === 'POST' && req.url === '/broadcast') {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      try {
+        const { userId, message } = JSON.parse(body);
+        console.log(`Received broadcast request for user ${userId}:`, message);
+        
+        const client = clients.get(userId);
+        if (client && client.readyState === client.OPEN) {
+          try {
+            client.send(JSON.stringify(message));
+            console.log(`Message sent to user ${userId}`);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true }));
+          } catch (error) {
+            console.error(`Error sending message to user ${userId}:`, error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: error.message }));
+          }
+        } else {
+          console.log(`User ${userId} not connected`);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, message: 'User not connected' }));
+        }
+      } catch (error) {
+        console.error('Error parsing broadcast request:', error);
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON' }));
+      }
+    });
+  } else {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Not found' }));
+  }
+});
+
+serverOptions = {
+  server: httpServer
+};
+
+httpServer.listen(3002, '0.0.0.0', () => {
+  console.log("HTTP server running on port 3002");
+});
 
 const wss = new WebSocketServer(serverOptions);
 
@@ -52,14 +70,25 @@ wss.on("connection", (ws) => {
   ws.on("message", (message) => {
     try {
       const data = JSON.parse(message.toString());
-      console.log(data, "data");
+      console.log("Received message:", data);
+      
       if (data.type === "register" && data.userId) {
         userId = data.userId;
-        clients.push({ userId: data.userId, ws });
+        
+        // Remove any existing connection for this user
+        if (clients.has(userId)) {
+          const existingWs = clients.get(userId);
+          if (existingWs.readyState === existingWs.OPEN) {
+            existingWs.close(1000, 'New connection from same user');
+          }
+        }
+        
+        clients.set(userId, ws);
         ws.send(JSON.stringify({ type: "registered", userId: data.userId }));
         console.log(`User ${data.userId} registered for real-time messaging`);
       }
     } catch (e) {
+      console.error("Error parsing message:", e);
       ws.send(
         JSON.stringify({ type: "error", message: "Invalid message format" })
       );
@@ -68,29 +97,25 @@ wss.on("connection", (ws) => {
 
   ws.on("close", () => {
     if (userId) {
-      const idx = clients.findIndex((c) => c.userId === userId && c.ws === ws);
-      if (idx !== -1) {
-        clients.splice(idx, 1);
+      // Only remove if this is still the current connection for this user
+      if (clients.get(userId) === ws) {
+        clients.delete(userId);
         console.log(`User ${userId} disconnected from real-time messaging`);
+      }
+    }
+  });
+
+  ws.on("error", (error) => {
+    console.error("WebSocket error:", error);
+    if (userId) {
+      if (clients.get(userId) === ws) {
+        clients.delete(userId);
+        console.log(`User ${userId} removed due to error`);
       }
     }
   });
 });
 
-function sendMessageToUser(userId, message) {
-  clients.forEach((client) => {
-    if (client.userId === userId) {
-      console.log(client.ws, "client.ws");
-      console.log(message, "message");
-      client.ws.send(JSON.stringify({ type: "new_message", ...message }));
-    }
-  });
-}
-
-// Set the function in the utility file so it can be used by API routes
-setSendMessageToUserFunction(sendMessageToUser);
-
-// Export the function for use in other parts of the application
-module.exports = { sendMessageToUser };
-
 console.log("WebSocket server running on ws://localhost:3002");
+console.log("HTTP broadcast endpoint available at http://localhost:3002/broadcast");
+console.log("Ready to broadcast messages to connected clients");

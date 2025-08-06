@@ -60,20 +60,23 @@ const MessagesInterface = () => {
 
   // WebSocket callbacks - memoized to prevent re-renders
   const handleWebSocketMessage = useCallback((message: any) => {
+    console.log(message, "message from websocket");
     if (message.type === 'new_message') {
       // Handle incoming real-time message
       const newMessage: Message = {
-        id: message.id || `m${Date.now()}`,
-        message: message.message,
-        createdAt: message.createdAt || new Date().toISOString(),
-        status: message.status || "DELIVERED",
+        id: message.data.message.id || `m${Date.now()}`,
+        message: message.data.message.message,
+        createdAt: message.data.message.createdAt || new Date().toISOString(),
+        status: message.data.message.status || "DELIVERED",
         isOutbound: false, // Incoming messages are not outbound
-        media: message.media,
+        media: message.data.message.media,
       };
+      console.log(newMessage, "newMessage from websocket");
       
       // Add the message to the appropriate conversation
-      if (message.conversationId) {
-        addRealTimeMessage(newMessage, message.conversationId);
+      if (message.data.message.recipientId) {
+        console.log(message.data.message.recipientId, "message.conversationId from websocket");
+        addRealTimeMessage(newMessage, message.data.message.recipientId);
       }
     }
   }, [addRealTimeMessage]);
