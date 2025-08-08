@@ -50,6 +50,7 @@ export async function POST(request: Request) {
     }
 
     const accessToken = await getAccessToken(code);
+    console.log("accessToken", accessToken);
 
     if (!accessToken) {
       return NextResponse.json(
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
     }
 
     const userInfo = await getUserInfo(accessToken);
-
+    console.log("userInfo", userInfo);
     const user = await prisma.user.findUnique({
       where: { email: session.email as string }
     });
