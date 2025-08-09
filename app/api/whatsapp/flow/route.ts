@@ -113,8 +113,47 @@ export async function PUT(req: NextRequest) {
       },
     });
 
-    if (existingFlows.find(flow => flow.automationJson.find((t: any) => t.triggers.find((t: any) => triggers.some((t: any) => t.trigger === t.trigger))))) {
-      return NextResponse.json({ error: "Trigger already exists" }, { status: 400 });
+    // Check for existing triggers with proper null/undefined checks
+    // Exclude the current flow being updated from conflict check
+    if (triggers && Array.isArray(triggers)) {
+      const hasConflict = existingFlows.some(flow => {
+        // Skip checking the current flow being updated
+        if (id && flow.id === id) {
+          return false;
+        }
+        
+        // Check the direct triggers array first
+        if (flow.triggers && Array.isArray(flow.triggers)) {
+          return flow.triggers.some((existingTrigger: string) => 
+            triggers.some((newTrigger: string) => 
+              existingTrigger === newTrigger
+            )
+          );
+        }
+        
+        // Also check automationJson triggers if they exist
+        if (flow.automationJson && Array.isArray(flow.automationJson)) {
+          return flow.automationJson.some((automation: any) => {
+            if (automation && automation.triggers && Array.isArray(automation.triggers)) {
+              return automation.triggers.some((existingTrigger: string) => 
+                triggers.some((newTrigger: string) => 
+                  existingTrigger === newTrigger
+                )
+              );
+            }
+            return false;
+          });
+        }
+        
+        return false;
+      });
+
+      if (hasConflict) {
+        console.log("Trigger conflict detected, returning 400");
+        return NextResponse.json({ error: "Trigger already exists" }, { status: 400 });
+      }
+      
+      console.log("No trigger conflicts found");
     }
 
     const updateData: any = {};

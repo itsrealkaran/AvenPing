@@ -228,10 +228,12 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       const cached = messageCache.current.get(conversationId) || [];
       messageCache.current.set(conversationId, [...cached, message]);
       console.log("updating cache", message, conversationId);
-      // Update react-query cache as before
+      
+      // Update react-query cache with proper immutability
       queryClient.setQueryData(['messages', phoneNumberId, debouncedSearchQuery, label], (oldData: Conversation[] | undefined) => {
         if (!oldData) return oldData;
-        return oldData.map((conv) => {
+        
+        const updatedData = oldData.map((conv) => {
           if (conv.id === conversationId) {
             return {
               ...conv,
@@ -240,7 +242,13 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           }
           return conv;
         });
+        
+        console.log("Updated query data:", updatedData);
+        return updatedData;
       });
+      
+      // Force a re-render by invalidating the query after updating
+      queryClient.invalidateQueries({ queryKey: ['messages', phoneNumberId, debouncedSearchQuery, label] });
     },
     updateConversationUnreadCount: (conversationId: string, unreadCount: number) => {
       queryClient.setQueryData(['messages', phoneNumberId, debouncedSearchQuery, label], (oldData: Conversation[] | undefined) => {

@@ -50,6 +50,7 @@ export async function POST(request: Request) {
     }
 
     const accessToken = await getAccessToken(code);
+    console.log("accessToken", accessToken);
 
     if (!accessToken) {
       return NextResponse.json(
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
     }
 
     const userInfo = await getUserInfo(accessToken);
-
+    console.log("userInfo", userInfo);
     const user = await prisma.user.findUnique({
       where: { email: session.email as string }
     });
@@ -101,7 +102,7 @@ async function getAccessToken(code: string) {
     for (let i = 0; i < 3; i++) {
       try {
         const response = await fetch(
-          `https://graph.facebook.com/v23.0/oauth/access_token?client_id=${process.env.META_ADS_CLIENT_ID}&client_secret=${process.env.META_ADS_CLIENT_SECRET}&code=${code}`,
+          `https://graph.facebook.com/v23.0/oauth/access_token?client_id=${process.env.META_APP_ID}&client_secret=${process.env.META_CLIENT_SECRET}&code=${code}`,
         );
         const data: any = await response.json();
         console.log(data, 'data from get access token');

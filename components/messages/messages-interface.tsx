@@ -63,23 +63,39 @@ const MessagesInterface = () => {
     console.log(message, "message from websocket");
     if (message.type === 'new_message') {
       // Handle incoming real-time message
-      const newMessage: Message = {
-        id: message.data.message.id || `m${Date.now()}`,
-        message: message.data.message.message,
-        createdAt: message.data.message.createdAt || new Date().toISOString(),
-        status: message.data.message.status || "DELIVERED",
-        isOutbound: false, // Incoming messages are not outbound
-        media: message.data.message.media,
-      };
-      console.log(newMessage, "newMessage from websocket");
-      
-      // Add the message to the appropriate conversation
-      if (message.data.message.recipientId) {
-        console.log(message.data.message.recipientId, "message.conversationId from websocket");
-        addRealTimeMessage(newMessage, message.data.message.recipientId);
+      const messageData = message.data?.message;
+      if (messageData) {
+        const newMessage: Message = {
+          id: messageData.id || `m${Date.now()}`,
+          message: messageData.message,
+          createdAt: messageData.createdAt || new Date().toISOString(),
+          status: messageData.status || "DELIVERED",
+          isOutbound: false, // Incoming messages are not outbound
+          media: messageData.media,
+        };
+        console.log(newMessage, "newMessage from websocket");
+        
+        // Try to find conversation by recipientId first
+        if (messageData.recipientId) {
+          console.log(messageData.recipientId, "recipientId from websocket");
+          addRealTimeMessage(newMessage, messageData.recipientId);
+        } else if (messageData.phoneNumber && conversations) {
+          // Fallback: find conversation by phone number
+          const conversation = conversations.find(conv => 
+            conv.phoneNumber === messageData.phoneNumber
+          );
+          if (conversation) {
+            console.log(conversation.id, "found conversation by phone number");
+            addRealTimeMessage(newMessage, conversation.id);
+          } else {
+            console.warn("No conversation found for phone number:", messageData.phoneNumber);
+          }
+        } else {
+          console.warn("No recipientId or phoneNumber in WebSocket message");
+        }
       }
     }
-  }, [addRealTimeMessage]);
+  }, [addRealTimeMessage, conversations]);
 
   const handleWebSocketConnect = useCallback(() => {
     console.log('WebSocket connected for real-time messaging');

@@ -12,7 +12,6 @@ interface JWTPayload {
 
 // List of public routes that don't require authentication
 const publicRoutes = [
-  '/',
   '/login',
   '/register',
   '/forgot-password',

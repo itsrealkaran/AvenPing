@@ -129,6 +129,7 @@ export class FlowRunner {
 
       for (const flow of flows) {
           const triggers = flow.triggers ? flow.triggers : [];
+          console.log("flow.automationJson", flow.automationJson);
          if (this.matchesTrigger(message, triggers)) {
            return {
              id: flow.id,
@@ -196,7 +197,7 @@ export class FlowRunner {
           }
         };
       }
-
+      console.log("messageData", messageData);
       // Send via WhatsApp API
       const response = await fetch(
         `https://graph.facebook.com/v17.0/${phoneNumber.phoneNumberId}/messages`,
@@ -334,6 +335,7 @@ export class FlowRunner {
       } else {
         // Check for new flow trigger
         const flow = await this.findFlowByTrigger(userId, message);
+        console.log("Flow found:", flow);
         
         if (flow) {
           // Start new flow
@@ -349,7 +351,7 @@ export class FlowRunner {
   private async startFlow(
     userId: string,
     recipientId: string,
-    flow: Flow,
+    flow: any,
     recipientPhoneNumber: string,
     phoneNumberId: string
   ): Promise<void> {
@@ -366,8 +368,9 @@ export class FlowRunner {
 
       // Execute first step
       if (flow.steps.length > 0) {
-        const firstStep = flow.steps[0];
+        const firstStep = flow.steps[0].steps[0];
         session.currentStepId = firstStep.id;
+        console.log("First step:", firstStep);
         
         const result = await this.executeStep(firstStep, recipientPhoneNumber, phoneNumberId);
         
