@@ -188,11 +188,11 @@ export default function Sidebar({
           >
             {!isCollapsed && (
               <Link
-                href="/"
-                className="flex items-center gap-2 font-bold text-xl"
+                href=""
+                className="flex items-center font-bold text-xl"
               >
                 <img src={brand?.logo} alt={brand?.name} className="w-7 h-7" />
-                <span className="tracking-tight text-gray-800">
+                <span className="tracking-tight text-cyan-600">
                   {brand?.name}
                 </span>
               </Link>

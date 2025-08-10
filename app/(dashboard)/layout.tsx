@@ -55,7 +55,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <SidebarContainer
         brand={{
           name: "AvenPing",
-          logo: "/logo-black.svg",
+          logo: "/AvenPing-Logo.svg",
         }}
         navigationItems={navigationItems}
         accountInfo={userInfo && userInfo.whatsappAccount && userInfo.whatsappAccount.phoneNumbers.length > 0 ? userInfo.whatsappAccount.phoneNumbers.map((phone: any) => {
