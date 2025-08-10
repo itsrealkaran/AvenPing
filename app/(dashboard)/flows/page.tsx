@@ -67,6 +67,8 @@ function reconstructFlowData(flow: Flow): { nodes: Node[]; edges: Edge[] } {
       nodeData.caption = step.message || "";
     } else if (nodeType === "ConnectFlowAction") {
       nodeData.flowId = step.flowId || "";
+    } else if (nodeType === "CallSupport" || nodeType === "WhatsAppSupport") {
+      nodeData.phoneNumber = step.phoneNumber || "";
     }
 
     nodes.push({

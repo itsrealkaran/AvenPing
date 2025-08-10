@@ -9,6 +9,8 @@ import {
   GitMerge,
   Play,
   Trash,
+  Phone,
+  MessageCircle,
 } from "lucide-react";
 
 interface CustomNodeProps {
@@ -46,6 +48,11 @@ const CustomNode = ({ data, selected, id, onDelete }: CustomNodeProps) => {
     borderStyle = selected ? "border-green-500" : "border-green-200";
     handleColor = "!bg-green-400";
     textColor = "text-green-700";
+  } else if (data.nodeType && data.nodeType.includes("Support")) {
+    nodeStyle = "bg-orange-50";
+    borderStyle = selected ? "border-orange-500" : "border-orange-200";
+    handleColor = "!bg-orange-400";
+    textColor = "text-orange-700";
   } else if (isStartNode) {
     nodeStyle = "bg-purple-50";
     borderStyle = selected ? "border-purple-500" : "border-purple-200";
@@ -71,6 +78,10 @@ const CustomNode = ({ data, selected, id, onDelete }: CustomNodeProps) => {
         return <MessageSquare size={14} className="text-green-500" />;
       case "ConnectFlowAction":
         return <GitMerge size={14} className="text-green-500" />;
+      case "CallSupport":
+        return <Phone size={14} className="text-orange-500" />;
+      case "WhatsAppSupport":
+        return <MessageCircle size={14} className="text-orange-500" />;
       default:
         return null;
     }

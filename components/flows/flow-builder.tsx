@@ -48,6 +48,7 @@ interface Step {
   link?: string;
   buttons?: { label: string; next: string | null }[];
   flowId?: string;
+  phoneNumber?: string;
   position: { x: number; y: number };
 }
 
@@ -166,6 +167,18 @@ function buildFlowJson({
           position: { x: position.x, y: position.y },
         };
       }
+      // Support nodes
+      if (type === "CallSupport" || type === "WhatsAppSupport") {
+        const nextEdge = (outgoingMap[id] || [])[0];
+        return {
+          id,
+          type,
+          phoneNumber:
+            typeof data.phoneNumber === "string" ? data.phoneNumber : "",
+          next: nextEdge ? nextEdge.target : null,
+          position: { x: position.x, y: position.y },
+        };
+      }
       // Fallback
       return {
         id,
@@ -265,6 +278,8 @@ export default function FlowBuilder({
         category = "message";
       } else if (nodeType.includes("Action")) {
         category = "action";
+      } else if (nodeType.includes("Support")) {
+        category = "support";
       }
 
       const newNode: Node = {

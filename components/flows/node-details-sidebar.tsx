@@ -182,6 +182,31 @@ const renderNodeDetails = (
     );
   }
 
+  // Support nodes
+  if (nodeType === "CallSupport" || nodeType === "WhatsAppSupport") {
+    return (
+      <div>
+        <Label htmlFor="phoneNumber">Phone Number</Label>
+        <Input
+          id="phoneNumber"
+          value={
+            typeof selectedNode.data.phoneNumber === "string"
+              ? selectedNode.data.phoneNumber
+              : ""
+          }
+          onChange={(e) => onUpdateNodeData("phoneNumber", e.target.value)}
+          placeholder="Enter phone number"
+          className="mt-1"
+        />
+        <div className="text-xs text-gray-500 mt-1">
+          {nodeType === "CallSupport"
+            ? "This agent will be specified to call"
+            : "This agent will be specified to message"}
+        </div>
+      </div>
+    );
+  }
+
   // Start node
   if (nodeType === "Start") {
     // Store keywords as array in data
