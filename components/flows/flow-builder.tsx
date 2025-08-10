@@ -102,7 +102,6 @@ function buildFlowJson({
           "VideoMessage",
           "AudioMessage",
           "DocumentMessage",
-          "TemplateMessage",
         ].includes(type)
       ) {
         const nextEdge = (outgoingMap[id] || [])[0];

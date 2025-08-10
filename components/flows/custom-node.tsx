@@ -67,8 +67,7 @@ const CustomNode = ({ data, selected, id, onDelete }: CustomNodeProps) => {
         return <FileText size={14} className="text-blue-500" />;
       case "AudioMessage":
         return <FileAudio size={14} className="text-blue-500" />;
-      case "TemplateMessage":
-        return <FileEdit size={14} className="text-blue-500" />;
+
       case "MessageAction":
         return <MessageSquare size={14} className="text-green-500" />;
       case "ConnectFlowAction":

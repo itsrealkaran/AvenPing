@@ -27,11 +27,6 @@ const initialSidebarNodes = {
       icon: <FileText size={18} />,
     },
     { type: "AudioMessage", label: "Audio", icon: <FileAudio size={18} /> },
-    {
-      type: "TemplateMessage",
-      label: "Template",
-      icon: <FileEdit size={18} />,
-    },
   ],
   action: [
     {

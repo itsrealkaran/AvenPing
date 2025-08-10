@@ -282,25 +282,6 @@ const renderNodeDetails = (
     );
   }
 
-  // Template node
-  if (nodeType === "TemplateMessage") {
-    return (
-      <div>
-        <Label htmlFor="template">Template</Label>
-        <Input
-          id="template"
-          value={
-            typeof selectedNode.data.template === "string"
-              ? selectedNode.data.template
-              : ""
-          }
-          onChange={(e) => onUpdateNodeData("template", e.target.value)}
-          className="mt-1"
-        />
-      </div>
-    );
-  }
-
   // Default fallback
   return <div>No details available for this node type.</div>;
 };
