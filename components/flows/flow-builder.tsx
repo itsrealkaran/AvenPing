@@ -28,6 +28,7 @@ export interface FlowBuilderProps {
   initialNodes?: Node[];
   initialEdges?: Edge[];
   editingFlow?: any; // Flow being edited, if any
+  flows?: any[]; // All available flows for Connect Flow nodes
 }
 
 interface BuildFlowJsonArgs {
@@ -209,11 +210,13 @@ export default function FlowBuilder({
         label: "Start",
         isStartNode: true,
         nodeType: "Start",
+        currentFlowId: null,
       },
     },
   ],
   initialEdges = [],
   editingFlow = null,
+  flows = [],
 }: FlowBuilderProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -291,6 +294,7 @@ export default function FlowBuilder({
           description: "",
           nodeType,
           category,
+          currentFlowId: editingFlow?.id || null, // Add current flow ID for Connect Flow nodes
         },
       };
 
@@ -422,6 +426,7 @@ export default function FlowBuilder({
         selectedNode={selectedNode}
         onClose={closeRightSidebar}
         onUpdateNodeData={updateNodeData}
+        flows={flows}
       />
 
       {/* Main Flow Area */}

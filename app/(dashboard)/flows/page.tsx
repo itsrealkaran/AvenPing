@@ -23,8 +23,8 @@ function reconstructFlowData(flow: Flow): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
-  // Add start node
-  nodes.push({
+  // Create start node
+  const startNode: Node = {
     id: "1",
     type: "custom",
     position: { x: 250, y: 100 },
@@ -32,9 +32,13 @@ function reconstructFlowData(flow: Flow): { nodes: Node[]; edges: Edge[] } {
       label: "Start",
       isStartNode: true,
       nodeType: "Start",
-      startKeywords: flow.triggers,
+      startKeywords: flow.triggers || [],
+      currentFlowId: flow.id, // Add current flow ID
     },
-  });
+  };
+
+  // Add start node
+  nodes.push(startNode);
 
   // Add other nodes from steps
   flow.steps.forEach((step, index) => {
@@ -75,7 +79,10 @@ function reconstructFlowData(flow: Flow): { nodes: Node[]; edges: Edge[] } {
       id: nodeId,
       type: "custom",
       position: { x, y },
-      data: nodeData,
+      data: {
+        ...nodeData,
+        currentFlowId: flow.id, // Add current flow ID for Connect Flow nodes
+      },
     });
 
     // Add edges
@@ -303,6 +310,7 @@ export default function FlowPage() {
         <FlowBuilderComponent
           onBack={handleBack}
           onSave={handleSaveFlow}
+          flows={flows}
           {...(editingFlow ? { initialNodes, initialEdges, editingFlow } : {})}
         />
       ) : (

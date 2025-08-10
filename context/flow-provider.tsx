@@ -257,7 +257,8 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
           label: "Start",
           isStartNode: true,
           nodeType: "Start",
-          startKeywords: flow.triggers,
+          startKeywords: flow.triggers || [],
+          currentFlowId: flow.id, // Add current flow ID
         },
       });
 
@@ -304,7 +305,10 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
           id: nodeId,
           type: "custom",
           position: { x, y },
-          data: nodeData,
+          data: {
+            ...nodeData,
+            currentFlowId: flow.id, // Add current flow ID for Connect Flow nodes
+          },
         });
 
         // Add edges
