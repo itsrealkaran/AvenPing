@@ -77,17 +77,31 @@ function reconstructFlowData(flow: Flow): { nodes: Node[]; edges: Edge[] } {
     });
 
     // Add edges
-    if (nodeType === "MessageAction" && step.buttons) {
-      step.buttons.forEach((button: any, buttonIndex: number) => {
-        if (button.next) {
-          edges.push({
-            id: `${nodeId}-${buttonIndex}`,
-            source: nodeId,
-            target: button.next,
-            sourceHandle: `reply-${buttonIndex}`,
-          });
-        }
-      });
+    if (nodeType === "MessageAction") {
+      if (step.buttons && step.buttons.length > 0) {
+        // Add button-specific edges
+        step.buttons.forEach((button: any, buttonIndex: number) => {
+          if (button.next) {
+            edges.push({
+              id: `${nodeId}-${buttonIndex}`,
+              source: nodeId,
+              target: button.next,
+              sourceHandle: `reply-${buttonIndex}`,
+            });
+          }
+        });
+      }
+
+      // Add default outgoing edge (for when no buttons or as fallback)
+      if (step.next) {
+        edges.push({
+          id: `${nodeId}-next`,
+          source: nodeId,
+          target: step.next,
+          sourceHandle:
+            step.buttons && step.buttons.length > 0 ? "normal" : undefined,
+        });
+      }
     } else if (step.next) {
       edges.push({
         id: `${nodeId}-next`,
@@ -111,15 +125,15 @@ function reconstructFlowData(flow: Flow): { nodes: Node[]; edges: Edge[] } {
 }
 
 export default function FlowPage() {
-  const { 
-    flows, 
-    isLoading, 
+  const {
+    flows,
+    isLoading,
     error,
-    deleteFlow, 
-    toggleFlowStatus, 
-    saveFlowFromBuilder, 
+    deleteFlow,
+    toggleFlowStatus,
+    saveFlowFromBuilder,
     reconstructFlowData,
-    clearError
+    clearError,
   } = useFlow();
 
   // State for builder
@@ -282,7 +296,7 @@ export default function FlowPage() {
   return (
     <Body title="Flows">
       {/* Error toast handled in useEffect, nothing rendered here */}
-      
+
       {showBuilder ? (
         <FlowBuilderComponent
           onBack={handleBack}

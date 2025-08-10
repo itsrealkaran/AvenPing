@@ -5,7 +5,6 @@ import {
   FileVideo,
   FileText,
   FileAudio,
-  FileEdit,
   MessageSquare,
   GitMerge,
   Play,
@@ -77,53 +76,53 @@ const CustomNode = ({ data, selected, id, onDelete }: CustomNodeProps) => {
     }
   };
 
-  // For MessageAction, render as many outgoing handles as reply buttons (default 1)
+  // For MessageAction, render normal outgoing handle + one handle per reply button
   let outgoingHandles: React.ReactNode = null;
   if (data.nodeType === "MessageAction") {
     const replyButtons = Array.isArray(data.replyButtons)
       ? data.replyButtons
       : [];
-    if (replyButtons.length === 0) {
-      outgoingHandles = (
-        <div className="flex flex-col gap-1 items-end mt-2">
-          <div
-            className="flex items-center gap-1 w-full justify-end relative"
-            style={{ height: 24 }}
-          >
-            <Handle
-              type="source"
-              position={Position.Right}
-              id={`reply-0`}
-              className={handleColor}
-              style={{ right: -12 }}
-            />
-          </div>
+
+    // Normal outgoing handle (only shown when no buttons)
+    const normalHandle =
+      replyButtons.length === 0 ? (
+        <div className="flex items-center gap-1 w-full justify-center relative">
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="normal"
+            className={handleColor}
+            style={{ right: -12, top: -12 }}
+          />
         </div>
-      );
-    } else {
-      outgoingHandles = (
-        <div className="flex flex-col gap-1 items-end mt-2">
-          {replyButtons.map((label: string, idx: number) => (
-            <div
-              key={idx}
-              className="flex items-center gap-1 w-full justify-end relative"
-              style={{ height: 24 }}
-            >
-              <span className="text-xs px-2 py-0.5 min-w-[48px] text-green-700 text-left truncate max-w-[70px]">
-                {label || `Button ${idx + 1}`}
-              </span>
-              <Handle
-                type="source"
-                position={Position.Right}
-                id={`reply-${idx}`}
-                className={handleColor}
-                style={{ right: -12 }}
-              />
-            </div>
-          ))}
-        </div>
-      );
-    }
+      ) : null;
+
+    // Add handles for each reply button
+    const buttonHandles = replyButtons.map((label: string, idx: number) => (
+      <div
+        key={idx}
+        className="flex items-center gap-1 w-full justify-end relative"
+        style={{ height: 24 }}
+      >
+        <span className="text-xs px-2 py-0.5 min-w-[48px] text-green-700 text-left truncate max-w-[70px]">
+          {label || `Button ${idx + 1}`}
+        </span>
+        <Handle
+          type="source"
+          position={Position.Right}
+          id={`reply-${idx}`}
+          className={handleColor}
+          style={{ right: -12 }}
+        />
+      </div>
+    ));
+
+    outgoingHandles = (
+      <div className="flex flex-col gap-1 items-end mt-2">
+        {normalHandle}
+        {buttonHandles}
+      </div>
+    );
   }
 
   return (
@@ -134,12 +133,15 @@ const CustomNode = ({ data, selected, id, onDelete }: CustomNodeProps) => {
           data.nodeType === "MessageAction"
             ? 40 +
               24 *
-                Math.max(
-                  1,
-                  Array.isArray(data.replyButtons)
-                    ? data.replyButtons.length
-                    : 1
-                )
+                (Array.isArray(data.replyButtons) &&
+                data.replyButtons.length === 0
+                  ? 1 // Normal handle when no buttons
+                  : Math.max(
+                      0,
+                      Array.isArray(data.replyButtons)
+                        ? data.replyButtons.length
+                        : 0
+                    )) // Button handles
             : undefined,
       }}
     >

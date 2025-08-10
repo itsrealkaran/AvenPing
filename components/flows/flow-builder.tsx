@@ -116,23 +116,41 @@ function buildFlowJson({
       }
       // MessageAction node
       if (type === "MessageAction") {
-        const buttons = Array.isArray(data.replyButtons)
-          ? data.replyButtons.map((label: string, idx: number) => {
-              // Find edge with sourceHandle = reply-idx
-              const edge = (outgoingMap[id] || []).find(
-                (e) => e.edge.sourceHandle === `reply-${idx}`
-              );
-              return {
-                label: typeof label === "string" ? label : `Button ${idx + 1}`,
-                next: edge ? edge.target : null,
-              };
-            })
+        const replyButtons = Array.isArray(data.replyButtons)
+          ? data.replyButtons
           : [];
+
+        // Find default outgoing connection
+        let defaultNext: string | null = null;
+        if (replyButtons.length === 0) {
+          // When no buttons, use the first edge (default outgoing)
+          const defaultEdge = (outgoingMap[id] || [])[0];
+          defaultNext = defaultEdge ? defaultEdge.target : null;
+        } else {
+          // When buttons exist, look for the "normal" handle edge
+          const normalEdge = (outgoingMap[id] || []).find(
+            (e) => e.edge.sourceHandle === "normal"
+          );
+          defaultNext = normalEdge ? normalEdge.target : null;
+        }
+
+        const buttons = replyButtons.map((label: string, idx: number) => {
+          // Find edge with sourceHandle = reply-idx
+          const edge = (outgoingMap[id] || []).find(
+            (e) => e.edge.sourceHandle === `reply-${idx}`
+          );
+          return {
+            label: typeof label === "string" ? label : `Button ${idx + 1}`,
+            next: edge ? edge.target : null,
+          };
+        });
+
         return {
           id,
           type,
           message: typeof data.message === "string" ? data.message : "",
           link: typeof data.link === "string" ? data.link : "",
+          next: defaultNext,
           buttons,
           position: { x: position.x, y: position.y },
         };
