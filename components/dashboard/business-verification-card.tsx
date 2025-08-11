@@ -5,9 +5,7 @@ type Props = {
   isVerified: boolean;
 };
 
-export default function BusinessVerificationCardContent({
-  isVerified,
-}: Props) {
+export default function BusinessVerificationCardContent({ isVerified }: Props) {
   return (
     <div className="flex items-center justify-between">
       {isVerified ? (
@@ -26,15 +24,19 @@ export default function BusinessVerificationCardContent({
               Verify your Meta Business Account to prevent messaging limits and
               unlock all WhatsApp Business features.
             </p>
-            <Button size="sm" className="text-black" onClick={() => {
+          </div>
+          <Button
+            size="sm"
+            className="text-black"
+            onClick={() => {
               window.open(
                 "https://business.facebook.com/latest/settings/security_center/",
                 "_blank"
               );
-            }}>
-              Verify Now
-            </Button>
-          </div>
+            }}
+          >
+            Verify Now
+          </Button>
         </div>
       )}
     </div>
