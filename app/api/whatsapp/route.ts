@@ -126,7 +126,7 @@ const getUserInfo = async (accessToken: string) => {
     const debugInfo = await axios.get(
       `https://graph.facebook.com/v23.0/debug_token?input_token=${accessToken}&access_token=${accessToken}`
     );
-    console.log('Debug info:', debugInfo.data);
+    console.log('Debug info:', JSON.stringify(debugInfo.data, null, 2));
 
     const wabaId = debugInfo.data.data.granular_scopes.find(
       (scope: any) => scope.scope === 'whatsapp_business_management'
@@ -156,7 +156,7 @@ const getUserInfo = async (accessToken: string) => {
       accessToken,
     };
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error:', JSON.stringify(error, null, 2));
     throw error;
   }
 };
