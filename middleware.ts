@@ -44,7 +44,6 @@ const whatsappRequiredRoutes = [
   '/flows',
   '/aibot',
   '/analytics',
-  '/settings',
   '/profile'
 ];
 

@@ -51,11 +51,7 @@ export default function WhatsAppNumbersCardContent({
                 features. Without this connection, you won't be able to send
                 messages, manage campaigns, or use the messaging interface.
               </div>
-              <Button
-                onClick={handleConnectAccount}
-                size="sm"
-              >
-                <MessageSquare className="w-4 h-4 mr-2" />
+              <Button onClick={handleConnectAccount} size="sm">
                 Connect WhatsApp
               </Button>
             </div>
