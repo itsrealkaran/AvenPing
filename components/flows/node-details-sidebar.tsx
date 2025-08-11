@@ -283,6 +283,7 @@ const renderNodeDetails = (
     nodeType === "DocumentMessage" ||
     nodeType === "AudioMessage"
   ) {
+    console.log("selectedNode.data", selectedNode.data);
     return (
       <>
         <div>

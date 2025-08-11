@@ -290,7 +290,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
             "DocumentMessage",
           ].includes(nodeType)
         ) {
-          nodeData.fileUrl = step.file || "";
+          nodeData.file = step.file || "";
           nodeData.caption = step.message || "";
         } else if (nodeType === "ConnectFlowAction") {
           nodeData.flowId = step.flowId || "";

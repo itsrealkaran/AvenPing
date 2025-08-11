@@ -319,10 +319,16 @@ export class FlowRunner {
           const flow = await prisma.whatsAppFlow.findUnique({
             where: { id: step.flowId }
           });
+          console.log("flow from ConnectFlowAction", JSON.stringify(flow, null, 2))
           if (flow) {
-            await this.startFlow(userId, recipientId, flow, recipientPhoneNumber, phoneNumberId);
+            const updatedFlow = {
+              ...flow,
+              steps: (flow.automationJson as unknown) as FlowStep[]
+            }
+            await this.startFlow(userId, recipientId, updatedFlow, recipientPhoneNumber, phoneNumberId);
+            return { success: true };
           }
-          return { success: true };
+          return { success: false };
 
         default:
           console.warn('Unknown step type:', step.type);
