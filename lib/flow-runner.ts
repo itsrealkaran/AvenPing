@@ -294,7 +294,7 @@ export class FlowRunner {
           if (step.buttons && step.buttons.length === 0) {
             return { success: actionSuccess, shouldWait: false };
           }
-          
+
           return { success: actionSuccess, shouldWait: true };
 
         case 'ConnectFlowAction':
@@ -469,14 +469,16 @@ export class FlowRunner {
       const flow = await prisma.whatsAppFlow.findUnique({
         where: { id: session.flowId }
       });
+      console.log("flow from continueFlowExecution", flow)
 
       if (!flow) return;
 
       const flowSteps = (flow.automationJson as unknown) as FlowStep[];
       
       while (session.currentStepId) {
+        console.log("session.currentStepId", session.currentStepId)
         const currentStep = flowSteps.find(step => step.id === session.currentStepId);
-        
+        console.log("currentStep", currentStep)
         if (!currentStep) break;
 
         const result = await this.executeStep(currentStep, recipientPhoneNumber, phoneNumberId);
