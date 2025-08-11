@@ -167,10 +167,12 @@ export async function POST(req: NextRequest) {
                   (recipient) => recipient.phoneNumber === message.from
                 );
                 let isOptedOut = false;
-                if (message.text.body.toLowerCase().replace(/\s/g, "") === "stop") {
+                if (message.type === "text" && message.text.body.toLowerCase().replace(/\s/g, "") === "stop") {
                   isOptedOut = true;
                 }
                 let newMessage;
+
+                let messageText = message?.text?.body || message?.interactive?.button_reply?.title;
 
                 if (recipient) {
                   if (
@@ -192,7 +194,7 @@ export async function POST(req: NextRequest) {
                       recipientId: recipient.id,
                       phoneNumber: message.from,
                       wamid: message.id,
-                      message: message.text.body,
+                      message: messageText,
                       sentAt: new Date(message.timestamp * 1000),
                       status: "PENDING",
                       whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
@@ -225,7 +227,7 @@ export async function POST(req: NextRequest) {
                         recipientId: newRecipient.id,
                         wamid: message.id,
                         phoneNumber: message.from,
-                        message: message.text.body,
+                        message: messageText,
                         sentAt: new Date(message.timestamp * 1000),
                         status: "PENDING",
                         whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
@@ -251,7 +253,7 @@ export async function POST(req: NextRequest) {
                       await flowRunner.processMessage(
                         whatsAppPhoneNumber.account.user.id,
                         newData.newRecipient.id,
-                        message.text.body,
+                        messageText,
                         whatsAppPhoneNumber.id
                       );
                     } catch (flowError) {
@@ -291,7 +293,7 @@ export async function POST(req: NextRequest) {
                     await flowRunner.processMessage(
                       whatsAppPhoneNumber.account.user.id,
                       recipient.id,
-                      message.text.body,
+                      messageText,
                       whatsAppPhoneNumber.id
                     );
                   } catch (flowError) {

@@ -154,7 +154,8 @@ export class FlowRunner {
     recipientPhoneNumber: string,
     message: string,
     mediaUrl?: string,
-    mediaType?: string
+    mediaType?: string,
+    buttons?: { label: string; next: string | null }[]
   ): Promise<boolean> {
     try {
       // Get account details
@@ -181,8 +182,27 @@ export class FlowRunner {
           to: recipientPhoneNumber,
           type: mediaType,
           [mediaType]: {
-            link: mediaUrl,
+            id: mediaUrl,
             caption: message
+          }
+        };
+      } else if (buttons && buttons.length > 0) {
+        messageData = {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: recipientPhoneNumber,
+          type: 'interactive',
+          interactive: {
+            type: 'button',
+            body: {
+              text: message
+            },
+            action: {
+              buttons: buttons.map(button => ({
+                type: 'reply',
+                reply: { id: button.next, title: button.label }
+              }))
+            }
           }
         };
       } else {
@@ -252,7 +272,9 @@ export class FlowRunner {
   private async executeStep(
     step: FlowStep,
     recipientPhoneNumber: string,
-    phoneNumberId: string
+    phoneNumberId: string,
+    userId: string,
+    recipientId: string,
   ): Promise<{ success: boolean; shouldWait?: boolean }> {
     try {
       switch (step.type) {
@@ -274,29 +296,39 @@ export class FlowRunner {
           
           return { success };
 
-        case 'TemplateMessage':
-          // Handle template messages
-          const templateSuccess = await this.sendWhatsAppMessage(
-            phoneNumberId,
-            recipientPhoneNumber,
-            step.message || ''
-          );
-          return { success: templateSuccess };
-
         case 'MessageAction':
           // Send message with buttons and wait for response
           const actionSuccess = await this.sendWhatsAppMessage(
             phoneNumberId,
             recipientPhoneNumber,
-            step.message || ''
+            step.message || '',
+            undefined,
+            undefined,
+            step.buttons || []
           );
-          
+
+          if (step.buttons && step.buttons.length === 0) {
+            return { success: actionSuccess, shouldWait: false };
+          }
+
           return { success: actionSuccess, shouldWait: true };
 
         case 'ConnectFlowAction':
           // Handle flow connection (could trigger another flow)
           console.log('ConnectFlowAction executed:', step.flowId);
-          return { success: true };
+          const flow = await prisma.whatsAppFlow.findUnique({
+            where: { id: step.flowId }
+          });
+          console.log("flow from ConnectFlowAction", JSON.stringify(flow, null, 2))
+          if (flow) {
+            const updatedFlow = {
+              ...flow,
+              steps: (flow.automationJson as unknown) as FlowStep[]
+            }
+            await this.startFlow(userId, recipientId, updatedFlow, recipientPhoneNumber, phoneNumberId);
+            return { success: true };
+          }
+          return { success: false };
 
         default:
           console.warn('Unknown step type:', step.type);
@@ -372,7 +404,8 @@ export class FlowRunner {
         session.currentStepId = firstStep.id;
         console.log("First step:", firstStep);
         
-        const result = await this.executeStep(firstStep, recipientPhoneNumber, phoneNumberId);
+        const result = await this.executeStep(firstStep, recipientPhoneNumber, phoneNumberId, userId, recipientId);
+        console.log("Result:", result);
         
         if (result.success) {
           // Update session with next step
@@ -384,7 +417,7 @@ export class FlowRunner {
           
           // Continue executing steps until we hit a MessageAction
           if (!result.shouldWait) {
-            await this.continueFlowExecution(session, recipientPhoneNumber, phoneNumberId);
+            await this.continueFlowExecution(session, recipientPhoneNumber, phoneNumberId, userId, recipientId);
           }
         }
       }
@@ -412,7 +445,8 @@ export class FlowRunner {
         return;
       }
 
-      const flowSteps = (flow.automationJson as unknown) as FlowStep[];
+      //@ts-ignore
+      const flowSteps = (flow.automationJson[0]?.steps as unknown) as FlowStep[];
       const currentStep = flowSteps.find(step => step.id === session.currentStepId);
 
       if (!currentStep) {
@@ -435,7 +469,7 @@ export class FlowRunner {
             session.updatedAt = new Date();
             
             await this.saveFlowSession(session);
-            await this.continueFlowExecution(session, recipientPhoneNumber, phoneNumberId);
+            await this.continueFlowExecution(session, recipientPhoneNumber, phoneNumberId, session.userId, session.recipientId);
           } else {
             // End of flow
             await this.deleteFlowSession(session.userId, session.recipientId);
@@ -458,23 +492,29 @@ export class FlowRunner {
   private async continueFlowExecution(
     session: FlowSession,
     recipientPhoneNumber: string,
-    phoneNumberId: string
+    phoneNumberId: string,
+    userId: string,
+    recipientId: string
   ): Promise<void> {
     try {
       const flow = await prisma.whatsAppFlow.findUnique({
         where: { id: session.flowId }
       });
+      console.log("flow from continueFlowExecution", flow)
 
       if (!flow) return;
 
-      const flowSteps = (flow.automationJson as unknown) as FlowStep[];
+      //@ts-ignore
+      const flowSteps = (flow.automationJson[0]?.steps as unknown) as FlowStep[];
       
       while (session.currentStepId) {
+        console.log("session.currentStepId", session.currentStepId)
+        console.log("flowSteps", flowSteps)
         const currentStep = flowSteps.find(step => step.id === session.currentStepId);
-        
+        console.log("currentStep", currentStep)
         if (!currentStep) break;
 
-        const result = await this.executeStep(currentStep, recipientPhoneNumber, phoneNumberId);
+        const result = await this.executeStep(currentStep, recipientPhoneNumber, phoneNumberId, userId, recipientId);
         
         if (!result.success) break;
 

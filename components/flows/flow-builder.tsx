@@ -110,7 +110,7 @@ function buildFlowJson({
         return {
           id,
           type,
-          file: typeof data.fileUrl === "string" ? data.fileUrl : "", // fileUrl should be set after upload
+          file: typeof data.file === "string" ? data.file : "",
           message: typeof data.caption === "string" ? data.caption : "",
           next: nextEdge ? nextEdge.target : null,
           position: { x: position.x, y: position.y },
@@ -317,6 +317,7 @@ export default function FlowBuilder({
   // Function to update node data
   const updateNodeData = (key: string, value: string) => {
     if (!selectedNode) return;
+    console.log("updateNodeData", key, value);
 
     setNodes((nds) =>
       nds.map((node) => {
