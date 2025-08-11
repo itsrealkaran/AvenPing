@@ -49,17 +49,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const accessToken = await getAccessToken(code);
-    console.log("accessToken", accessToken);
+    // const accessToken = await getAccessToken(code);
+    // console.log("accessToken", accessToken);
 
-    if (!accessToken) {
-      return NextResponse.json(
-        { error: 'Failed to get access token' },
-        { status: 500 }
-      );
-    }
+    // if (!accessToken) {
+    //   return NextResponse.json(
+    //     { error: 'Failed to get access token' },
+    //     { status: 500 }
+    //   );
+    // }
 
-    const userInfo = await getUserInfo(accessToken);
+    const userInfo = await getUserInfo(code);
     console.log("userInfo", userInfo);
     const user = await prisma.user.findUnique({
       where: { email: session.email as string }
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(whatsappAccount, { status: 201 });
   } catch (error) {
-    console.error('Error creating WhatsApp account:', error);
+    console.error('Error creating WhatsApp account:', JSON.stringify(error, null, 2));
     return NextResponse.json(
       { error: 'Failed to create WhatsApp account' },
       { status: 500 }
