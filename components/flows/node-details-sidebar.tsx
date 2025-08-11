@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import SearchableDropdown from "../ui/searchable-dropdown";
+import { useUser } from "@/context/user-context";
+import axios from "axios";
 
 interface NodeDetailsSidebarProps {
   selectedNode: Node | null;
@@ -16,10 +18,24 @@ interface NodeDetailsSidebarProps {
 
 const MAX_REPLY_BUTTONS = 3;
 
-// Mock file upload utility
-async function mockUploadFile(file: File): Promise<string> {
-  await new Promise((res) => setTimeout(res, 500));
-  return URL.createObjectURL(file);
+// WhatsApp file upload utility
+async function uploadFileToWhatsApp(file: File, phoneNumberId: string): Promise<string> {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('phoneNumberId', phoneNumberId);
+    
+    const response = await axios.post('/api/whatsapp/upload-file', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data.mediaId;
+  } catch (error) {
+    console.error('Error uploading file to WhatsApp:', error);
+    throw new Error('Failed to upload file to WhatsApp');
+  }
 }
 
 function isFile(val: any): val is File {
@@ -81,6 +97,7 @@ const renderNodeDetails = (
   onUpdateNodeData: (key: string, value: any) => void,
   flows: any[]
 ) => {
+  const { userInfo } = useUser();
   const nodeType = selectedNode.data.nodeType;
 
   // Message Action Node
@@ -289,24 +306,28 @@ const renderNodeDetails = (
             onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
               const file = e.target.files?.[0];
               if (file) {
-                const url = await mockUploadFile(file);
-                onUpdateNodeData("fileUrl", url);
+                try {
+                  const phoneNumberId = userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId;
+                  
+                  if (!phoneNumberId) {
+                    alert('No WhatsApp phone number configured. Please set up your WhatsApp account first.');
+                    return;
+                  }
+                  
+                  const mediaId = await uploadFileToWhatsApp(file, phoneNumberId);
+                  onUpdateNodeData("file", mediaId);
+                } catch (error) {
+                  console.error('Upload failed:', error);
+                  alert('File upload failed. Please try again.');
+                }
               }
             }}
             className="mt-1"
           />
-          {typeof selectedNode.data.fileUrl === "string" &&
-            selectedNode.data.fileUrl && (
+          {typeof selectedNode.data.file === "string" &&
+            selectedNode.data.file && (
               <div className="text-xs text-green-600 mt-1">
-                File uploaded:{" "}
-                <a
-                  href={selectedNode.data.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline"
-                >
-                  View
-                </a>
+                File uploaded successfully! Media ID: {selectedNode.data.file}
               </div>
             )}
         </div>

@@ -182,7 +182,7 @@ export class FlowRunner {
           to: recipientPhoneNumber,
           type: mediaType,
           [mediaType]: {
-            link: mediaUrl,
+            id: mediaUrl,
             caption: message
           }
         };
@@ -293,15 +293,6 @@ export class FlowRunner {
           );
           
           return { success };
-
-        case 'TemplateMessage':
-          // Handle template messages
-          const templateSuccess = await this.sendWhatsAppMessage(
-            phoneNumberId,
-            recipientPhoneNumber,
-            step.message || ''
-          );
-          return { success: templateSuccess };
 
         case 'MessageAction':
           // Send message with buttons and wait for response
@@ -440,7 +431,8 @@ export class FlowRunner {
         return;
       }
 
-      const flowSteps = (flow.automationJson as unknown) as FlowStep[];
+      //@ts-ignore
+      const flowSteps = (flow.automationJson[0]?.steps as unknown) as FlowStep[];
       const currentStep = flowSteps.find(step => step.id === session.currentStepId);
 
       if (!currentStep) {
