@@ -154,7 +154,8 @@ export class FlowRunner {
     recipientPhoneNumber: string,
     message: string,
     mediaUrl?: string,
-    mediaType?: string
+    mediaType?: string,
+    buttons?: { label: string; next: string | null }[]
   ): Promise<boolean> {
     try {
       // Get account details
@@ -183,6 +184,25 @@ export class FlowRunner {
           [mediaType]: {
             link: mediaUrl,
             caption: message
+          }
+        };
+      } else if (buttons && buttons.length > 0) {
+        messageData = {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: recipientPhoneNumber,
+          type: 'interactive',
+          interactive: {
+            type: 'button',
+            body: {
+              text: message
+            },
+            action: {
+              buttons: buttons.map(button => ({
+                type: 'reply',
+                reply: { id: button.next, title: button.label }
+              }))
+            }
           }
         };
       } else {
@@ -288,7 +308,10 @@ export class FlowRunner {
           const actionSuccess = await this.sendWhatsAppMessage(
             phoneNumberId,
             recipientPhoneNumber,
-            step.message || ''
+            step.message || '',
+            undefined,
+            undefined,
+            step.buttons || []
           );
 
           if (step.buttons && step.buttons.length === 0) {
@@ -473,10 +496,12 @@ export class FlowRunner {
 
       if (!flow) return;
 
-      const flowSteps = (flow.automationJson as unknown) as FlowStep[];
+      //@ts-ignore
+      const flowSteps = (flow.automationJson[0]?.steps as unknown) as FlowStep[];
       
       while (session.currentStepId) {
         console.log("session.currentStepId", session.currentStepId)
+        console.log("flowSteps", flowSteps)
         const currentStep = flowSteps.find(step => step.id === session.currentStepId);
         console.log("currentStep", currentStep)
         if (!currentStep) break;
