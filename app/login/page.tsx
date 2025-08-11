@@ -135,14 +135,14 @@ export default function Login() {
             <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
               By proceeding, you agree to our{" "}
               <Link
-                href="/terms-of-service"
+                href="https://avenping.com/terms-of-service"
                 className="text-[#43A2C9] hover:text-cyan-600"
               >
                 Terms of Service
               </Link>{" "}
               and{" "}
               <Link
-                href="/privacy-policy"
+                href="https://avenping.com/privacy-policy"
                 className="text-[#43A2C9] hover:text-cyan-600"
               >
                 Privacy Policy

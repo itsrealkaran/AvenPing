@@ -28,6 +28,7 @@ export interface FlowBuilderProps {
   initialNodes?: Node[];
   initialEdges?: Edge[];
   editingFlow?: any; // Flow being edited, if any
+  flows?: any[]; // All available flows for Connect Flow nodes
 }
 
 interface BuildFlowJsonArgs {
@@ -48,6 +49,7 @@ interface Step {
   link?: string;
   buttons?: { label: string; next: string | null }[];
   flowId?: string;
+  phoneNumber?: string;
   position: { x: number; y: number };
 }
 
@@ -102,7 +104,6 @@ function buildFlowJson({
           "VideoMessage",
           "AudioMessage",
           "DocumentMessage",
-          "TemplateMessage",
         ].includes(type)
       ) {
         const nextEdge = (outgoingMap[id] || [])[0];
@@ -117,23 +118,41 @@ function buildFlowJson({
       }
       // MessageAction node
       if (type === "MessageAction") {
-        const buttons = Array.isArray(data.replyButtons)
-          ? data.replyButtons.map((label: string, idx: number) => {
-              // Find edge with sourceHandle = reply-idx
-              const edge = (outgoingMap[id] || []).find(
-                (e) => e.edge.sourceHandle === `reply-${idx}`
-              );
-              return {
-                label: typeof label === "string" ? label : `Button ${idx + 1}`,
-                next: edge ? edge.target : null,
-              };
-            })
+        const replyButtons = Array.isArray(data.replyButtons)
+          ? data.replyButtons
           : [];
+
+        // Find default outgoing connection
+        let defaultNext: string | null = null;
+        if (replyButtons.length === 0) {
+          // When no buttons, use the first edge (default outgoing)
+          const defaultEdge = (outgoingMap[id] || [])[0];
+          defaultNext = defaultEdge ? defaultEdge.target : null;
+        } else {
+          // When buttons exist, look for the "normal" handle edge
+          const normalEdge = (outgoingMap[id] || []).find(
+            (e) => e.edge.sourceHandle === "normal"
+          );
+          defaultNext = normalEdge ? normalEdge.target : null;
+        }
+
+        const buttons = replyButtons.map((label: string, idx: number) => {
+          // Find edge with sourceHandle = reply-idx
+          const edge = (outgoingMap[id] || []).find(
+            (e) => e.edge.sourceHandle === `reply-${idx}`
+          );
+          return {
+            label: typeof label === "string" ? label : `Button ${idx + 1}`,
+            next: edge ? edge.target : null,
+          };
+        });
+
         return {
           id,
           type,
           message: typeof data.message === "string" ? data.message : "",
           link: typeof data.link === "string" ? data.link : "",
+          next: defaultNext,
           buttons,
           position: { x: position.x, y: position.y },
         };
@@ -145,6 +164,18 @@ function buildFlowJson({
           id,
           type,
           flowId: typeof data.flowId === "string" ? data.flowId : "",
+          next: nextEdge ? nextEdge.target : null,
+          position: { x: position.x, y: position.y },
+        };
+      }
+      // Support nodes
+      if (type === "CallSupport" || type === "WhatsAppSupport") {
+        const nextEdge = (outgoingMap[id] || [])[0];
+        return {
+          id,
+          type,
+          phoneNumber:
+            typeof data.phoneNumber === "string" ? data.phoneNumber : "",
           next: nextEdge ? nextEdge.target : null,
           position: { x: position.x, y: position.y },
         };
@@ -179,11 +210,13 @@ export default function FlowBuilder({
         label: "Start",
         isStartNode: true,
         nodeType: "Start",
+        currentFlowId: null,
       },
     },
   ],
   initialEdges = [],
   editingFlow = null,
+  flows = [],
 }: FlowBuilderProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -248,6 +281,8 @@ export default function FlowBuilder({
         category = "message";
       } else if (nodeType.includes("Action")) {
         category = "action";
+      } else if (nodeType.includes("Support")) {
+        category = "support";
       }
 
       const newNode: Node = {
@@ -259,6 +294,7 @@ export default function FlowBuilder({
           description: "",
           nodeType,
           category,
+          currentFlowId: editingFlow?.id || null, // Add current flow ID for Connect Flow nodes
         },
       };
 
@@ -390,6 +426,7 @@ export default function FlowBuilder({
         selectedNode={selectedNode}
         onClose={closeRightSidebar}
         onUpdateNodeData={updateNodeData}
+        flows={flows}
       />
 
       {/* Main Flow Area */}

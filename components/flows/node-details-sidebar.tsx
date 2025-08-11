@@ -11,6 +11,7 @@ interface NodeDetailsSidebarProps {
   selectedNode: Node | null;
   onClose: () => void;
   onUpdateNodeData: (key: string, value: any) => void;
+  flows?: any[]; // All available flows for Connect Flow nodes
 }
 
 const MAX_REPLY_BUTTONS = 3;
@@ -77,7 +78,8 @@ const KeywordChips: React.FC<{
 
 const renderNodeDetails = (
   selectedNode: Node,
-  onUpdateNodeData: (key: string, value: any) => void
+  onUpdateNodeData: (key: string, value: any) => void,
+  flows: any[]
 ) => {
   const nodeType = selectedNode.data.nodeType;
 
@@ -167,17 +169,60 @@ const renderNodeDetails = (
 
   // Connect Flow node
   if (nodeType === "ConnectFlowAction") {
+    // Filter out the current flow being edited (if we have access to editingFlow)
+    const availableFlows = flows.filter(
+      (flow) => flow.id !== selectedNode.data.currentFlowId
+    );
+
+    // Find the currently selected flow
+    const selectedFlow = flows.find(
+      (flow) => flow.id === selectedNode.data.flowId
+    );
+
     return (
       <div>
         <Label htmlFor="flow">Connect to Flow</Label>
-        {/* Placeholder dropdown, replace with real flows */}
         <SearchableDropdown
-          // className="mt-1 w-full border rounded px-2 py-1"
           placeholder="Select a flow..."
           variant="outline"
-          items={[]}
-          onSelect={() => {}}
+          items={availableFlows.map((flow) => ({
+            id: flow.id,
+            label: flow.name,
+            value: flow.id,
+          }))}
+          onSelect={(flow) => onUpdateNodeData("flowId", flow.id)}
+          selectedLabel={selectedFlow?.name || null}
         />
+        {selectedFlow && (
+          <div className="text-xs text-gray-500 mt-1">
+            Will connect to: {selectedFlow.name}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Support nodes
+  if (nodeType === "CallSupport" || nodeType === "WhatsAppSupport") {
+    return (
+      <div>
+        <Label htmlFor="phoneNumber">Phone Number</Label>
+        <Input
+          id="phoneNumber"
+          value={
+            typeof selectedNode.data.phoneNumber === "string"
+              ? selectedNode.data.phoneNumber
+              : ""
+          }
+          onChange={(e) => onUpdateNodeData("phoneNumber", e.target.value)}
+          placeholder="Enter phone number"
+          className="mt-1"
+        />
+        <div className="text-xs text-gray-500 mt-1">
+          {nodeType === "CallSupport"
+            ? "This agent will be specified to call"
+            : "This agent will be specified to message"}
+        </div>
       </div>
     );
   }
@@ -282,25 +327,6 @@ const renderNodeDetails = (
     );
   }
 
-  // Template node
-  if (nodeType === "TemplateMessage") {
-    return (
-      <div>
-        <Label htmlFor="template">Template</Label>
-        <Input
-          id="template"
-          value={
-            typeof selectedNode.data.template === "string"
-              ? selectedNode.data.template
-              : ""
-          }
-          onChange={(e) => onUpdateNodeData("template", e.target.value)}
-          className="mt-1"
-        />
-      </div>
-    );
-  }
-
   // Default fallback
   return <div>No details available for this node type.</div>;
 };
@@ -309,6 +335,7 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({
   selectedNode,
   onClose,
   onUpdateNodeData,
+  flows = [],
 }) => {
   if (!selectedNode) return null;
 
@@ -324,7 +351,7 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({
       </div>
       <div className="space-y-4 overflow-auto px-2">
         {/* Render node-specific details */}
-        {renderNodeDetails(selectedNode, onUpdateNodeData)}
+        {renderNodeDetails(selectedNode, onUpdateNodeData, flows)}
 
         {/* Node Type and Node ID are always shown */}
         <div>

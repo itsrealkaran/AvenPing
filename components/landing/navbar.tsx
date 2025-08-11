@@ -1,15 +1,16 @@
 "use client";
 
 import { Menu, X } from "lucide-react";
-import Button from "@/components/landing/ui/button";
+import Button from "@/components/landing/ui/button2";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 
 const navLinks = [
-  { label: "Pricing", href: "/pricing" },
-  { label: "Features", href: "#features" },
-  { label: "Insights", href: "/insights" },
+  { label: "Pricing", href: "https://avenping.com/pricing" },
+  { label: "Features", href: "https://avenping.com/features" },
+  { label: "Insights", href: "https://insights.avenping.com" },
 ];
 
 export default function Navbar() {
@@ -63,13 +64,14 @@ export default function Navbar() {
               }`}
             >
               <div>
-                <Link href="/" className="flex items-center gap-2">
-                  {/* <img
-                    src="/images/logo.png"
+                <Link href="https://avenping.com" className="flex items-center px-4">
+                  <Image
+                    src="/AvenPing-Logo.svg"
                     alt="AvenPing Logo"
-                    className="h-8 w-8"
-                  /> */}
-                <div className="text-2xl font-bold text-cyan-600 px-5">
+                    width={30}
+                    height={30}
+                  />
+                <div className="text-2xl font-bold text-cyan-600 ">
                   AvenPing
                 </div>
                 </Link>

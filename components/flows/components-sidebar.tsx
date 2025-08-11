@@ -9,6 +9,8 @@ import {
   MessageSquare,
   GitMerge,
   PanelLeft,
+  Phone,
+  MessageCircle,
 } from "lucide-react";
 
 interface ComponentsSidebarProps {
@@ -27,11 +29,6 @@ const initialSidebarNodes = {
       icon: <FileText size={18} />,
     },
     { type: "AudioMessage", label: "Audio", icon: <FileAudio size={18} /> },
-    {
-      type: "TemplateMessage",
-      label: "Template",
-      icon: <FileEdit size={18} />,
-    },
   ],
   action: [
     {
@@ -43,6 +40,18 @@ const initialSidebarNodes = {
       type: "ConnectFlowAction",
       label: "Connect Flow",
       icon: <GitMerge size={18} />,
+    },
+  ],
+  support: [
+    {
+      type: "CallSupport",
+      label: "Call Support",
+      icon: <Phone size={18} />,
+    },
+    {
+      type: "WhatsAppSupport",
+      label: "WhatsApp Support",
+      icon: <MessageCircle size={18} />,
     },
   ],
 };
@@ -103,6 +112,26 @@ const ComponentsSidebar = ({
               onDragStart={(e) => onDragStart(e, node.type)}
             >
               <span className="text-green-500">{node.icon}</span>
+              <span>{node.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Support Blocks */}
+      <div>
+        <div className="text-sm font-semibold text-gray-700 mb-3 pl-1 border-l-2 border-orange-500 pl-2">
+          Support Blocks
+        </div>
+        <div className="grid grid-cols-1 gap-2">
+          {initialSidebarNodes.support.map((node) => (
+            <div
+              key={node.type}
+              className="cursor-move bg-white border border-gray-200 rounded-lg px-3 py-3 text-sm hover:border-orange-300 hover:bg-orange-50 transition shadow-sm flex items-center gap-2"
+              draggable
+              onDragStart={(e) => onDragStart(e, node.type)}
+            >
+              <span className="text-orange-500">{node.icon}</span>
               <span>{node.label}</span>
             </div>
           ))}
