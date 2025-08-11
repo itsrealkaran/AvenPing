@@ -272,7 +272,9 @@ export class FlowRunner {
   private async executeStep(
     step: FlowStep,
     recipientPhoneNumber: string,
-    phoneNumberId: string
+    phoneNumberId: string,
+    userId: string,
+    recipientId: string,
   ): Promise<{ success: boolean; shouldWait?: boolean }> {
     try {
       switch (step.type) {
@@ -314,6 +316,12 @@ export class FlowRunner {
         case 'ConnectFlowAction':
           // Handle flow connection (could trigger another flow)
           console.log('ConnectFlowAction executed:', step.flowId);
+          const flow = await prisma.whatsAppFlow.findUnique({
+            where: { id: step.flowId }
+          });
+          if (flow) {
+            await this.startFlow(userId, recipientId, flow, recipientPhoneNumber, phoneNumberId);
+          }
           return { success: true };
 
         default:
@@ -390,7 +398,7 @@ export class FlowRunner {
         session.currentStepId = firstStep.id;
         console.log("First step:", firstStep);
         
-        const result = await this.executeStep(firstStep, recipientPhoneNumber, phoneNumberId);
+        const result = await this.executeStep(firstStep, recipientPhoneNumber, phoneNumberId, userId, recipientId);
         console.log("Result:", result);
         
         if (result.success) {
@@ -403,7 +411,7 @@ export class FlowRunner {
           
           // Continue executing steps until we hit a MessageAction
           if (!result.shouldWait) {
-            await this.continueFlowExecution(session, recipientPhoneNumber, phoneNumberId);
+            await this.continueFlowExecution(session, recipientPhoneNumber, phoneNumberId, userId, recipientId);
           }
         }
       }
@@ -455,7 +463,7 @@ export class FlowRunner {
             session.updatedAt = new Date();
             
             await this.saveFlowSession(session);
-            await this.continueFlowExecution(session, recipientPhoneNumber, phoneNumberId);
+            await this.continueFlowExecution(session, recipientPhoneNumber, phoneNumberId, session.userId, session.recipientId);
           } else {
             // End of flow
             await this.deleteFlowSession(session.userId, session.recipientId);
@@ -478,7 +486,9 @@ export class FlowRunner {
   private async continueFlowExecution(
     session: FlowSession,
     recipientPhoneNumber: string,
-    phoneNumberId: string
+    phoneNumberId: string,
+    userId: string,
+    recipientId: string
   ): Promise<void> {
     try {
       const flow = await prisma.whatsAppFlow.findUnique({
@@ -498,7 +508,7 @@ export class FlowRunner {
         console.log("currentStep", currentStep)
         if (!currentStep) break;
 
-        const result = await this.executeStep(currentStep, recipientPhoneNumber, phoneNumberId);
+        const result = await this.executeStep(currentStep, recipientPhoneNumber, phoneNumberId, userId, recipientId);
         
         if (!result.success) break;
 
