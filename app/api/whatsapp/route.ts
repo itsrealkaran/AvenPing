@@ -101,6 +101,7 @@ async function getAccessToken(code: string) {
   try {
     for (let i = 0; i < 3; i++) {
       try {
+        console.log("app id", process.env.META_APP_ID, "client secret", process.env.META_CLIENT_SECRET, "code", code);
         const response = await fetch(
           `https://graph.facebook.com/v23.0/oauth/access_token?client_id=${process.env.META_APP_ID}&client_secret=${process.env.META_CLIENT_SECRET}&code=${code}`,
         );

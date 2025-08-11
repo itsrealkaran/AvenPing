@@ -69,7 +69,7 @@ export default function DashboardPage() {
     FB.login(
       (response: any) => {
         if (response.authResponse) {
-          console.log("Logged in as:", response.authResponse);
+          console.log("Logged in as:", response.authResponse, response);
           //@ts-ignore
           FB.api("/me", { fields: "name, email" }, (userInfo) => {
             console.log(
