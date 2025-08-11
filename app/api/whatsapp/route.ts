@@ -125,7 +125,7 @@ const getUserInfo = async (accessToken: string) => {
     console.log('User info:', userInfo.data);
 
     const debugInfo = await axios.get(
-      `https://graph.facebook.com/v23.0/debug_token?input_token=${accessToken}&access_token=${accessToken}`
+      `https://graph.facebook.com/v23.0/debug_token?input_token=${accessToken}&access_token=${process.env.META_APP_ID}`
     );
     console.log('Debug info:', JSON.stringify(debugInfo.data, null, 2));
 
