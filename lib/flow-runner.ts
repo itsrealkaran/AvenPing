@@ -290,6 +290,10 @@ export class FlowRunner {
             recipientPhoneNumber,
             step.message || ''
           );
+
+          if (step.buttons && step.buttons.length === 0) {
+            return { success: actionSuccess, shouldWait: false };
+          }
           
           return { success: actionSuccess, shouldWait: true };
 
@@ -373,6 +377,7 @@ export class FlowRunner {
         console.log("First step:", firstStep);
         
         const result = await this.executeStep(firstStep, recipientPhoneNumber, phoneNumberId);
+        console.log("Result:", result);
         
         if (result.success) {
           // Update session with next step
