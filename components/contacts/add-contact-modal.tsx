@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -18,19 +18,33 @@ interface Contact {
 interface AddContactModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { name: string; phoneNumber: string; attributes: { name: string; value: string }[] }) => Promise<void>;
+  onSubmit: (data: {
+    name: string;
+    phoneNumber: string;
+    attributes: { name: string; value: string }[];
+  }) => Promise<void>;
   isLoading: boolean;
   editContact?: Contact | null;
 }
 
-const AddContactModal = ({ isOpen, onClose, onSubmit, isLoading, editContact }: AddContactModalProps) => {
+const AddContactModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  isLoading,
+  editContact,
+}: AddContactModalProps) => {
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [errors, setErrors] = useState<{ name?: string; phoneNumber?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; phoneNumber?: string }>(
+    {}
+  );
   const { attributes } = useContacts();
 
   // Attribute-value pairs state
-  const [attributeValues, setAttributeValues] = useState<{ attributeId: string; value: string }[]>([]);
+  const [attributeValues, setAttributeValues] = useState<
+    { attributeId: string; value: string }[]
+  >([]);
 
   // Pre-fill form when editing
   useEffect(() => {
@@ -39,11 +53,12 @@ const AddContactModal = ({ isOpen, onClose, onSubmit, isLoading, editContact }: 
       setPhoneNumber(editContact.phoneNumber);
       // Pre-fill attributeValues if editing
       if (editContact.attributeValues && attributes) {
-        const mapped = editContact.attributeValues.map(av => {
-          // Try to find the attribute by name (since that's what is submitted)
-          const attr = attributes.find(attr => attr.name === av.name);
-          return attr ? { attributeId: attr.id, value: av.value } : null;
-        }).filter(Boolean) as { attributeId: string; value: string }[];
+        const mapped = editContact.attributeValues
+          .map((av) => {
+            const attr = attributes.find((attr) => attr.name === av.name);
+            return attr ? { attributeId: attr.id, value: av.value } : null;
+          })
+          .filter(Boolean) as { attributeId: string; value: string }[];
         setAttributeValues(mapped);
       } else {
         setAttributeValues([]);
@@ -88,8 +103,10 @@ const AddContactModal = ({ isOpen, onClose, onSubmit, isLoading, editContact }: 
   // Get available attributes for a dropdown (exclude already selected in other rows)
   const getAvailableAttributes = (currentIdx: number) => {
     if (!attributes) return [];
-    const selectedIds = attributeValues.map((av, idx) => idx !== currentIdx ? av.attributeId : null).filter(Boolean);
-    return attributes.filter(attr => !selectedIds.includes(attr.id));
+    const selectedIds = attributeValues
+      .map((av, idx) => (idx !== currentIdx ? av.attributeId : null))
+      .filter(Boolean);
+    return attributes.filter((attr) => !selectedIds.includes(attr.id));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,22 +115,28 @@ const AddContactModal = ({ isOpen, onClose, onSubmit, isLoading, editContact }: 
     const newErrors: { name?: string; phoneNumber?: string } = {};
     if (!name.trim()) newErrors.name = "Name is required";
     if (!phoneNumber.trim()) newErrors.phoneNumber = "Phone number is required";
-    else if (!/^\+?[\d\s\-\(\)]+$/.test(phoneNumber)) newErrors.phoneNumber = "Please enter a valid phone number";
+    else if (!/^\+?[\d\s\-\(\)]+$/.test(phoneNumber))
+      newErrors.phoneNumber = "Please enter a valid phone number";
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
     // Prepare attribute values for submission
     const attributesToSubmit = attributeValues
-      .filter(av => av.attributeId && av.value)
-      .map(av => ({
-        name: attributes?.find(attr => attr.id === av.attributeId)?.name || "",
+      .filter((av) => av.attributeId && av.value)
+      .map((av) => ({
+        name:
+          attributes?.find((attr) => attr.id === av.attributeId)?.name || "",
         value: av.value,
       }));
 
     console.log(attributesToSubmit, "attributesToSubmit");
     try {
-      await onSubmit({ name: name.trim(), phoneNumber: phoneNumber.trim(), attributes: attributesToSubmit });
+      await onSubmit({
+        name: name.trim(),
+        phoneNumber: phoneNumber.trim(),
+        attributes: attributesToSubmit,
+      });
       setName("");
       setPhoneNumber("");
       setAttributeValues([]);
@@ -135,117 +158,195 @@ const AddContactModal = ({ isOpen, onClose, onSubmit, isLoading, editContact }: 
 
   const isEditing = !!editContact;
   const title = isEditing ? "Edit Contact" : "Add New Contact";
-  const submitText = isLoading ? (isEditing ? "Updating..." : "Creating...") : (isEditing ? "Update Contact" : "Create Contact");
+  const submitText = isLoading
+    ? isEditing
+      ? "Updating..."
+      : "Creating..."
+    : isEditing
+    ? "Update Contact"
+    : "Create Contact";
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-90">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-              Name *
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter contact name"
-              className={`mt-1 ${errors.name ? 'border-red-500' : ''}`}
-              disabled={isLoading}
-            />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-            )}
-          </div>
-          <div>
-            <Label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">
-              Phone Number *
-            </Label>
-            <Input
-              id="phoneNumber"
-              type="tel"
-              value={normalizePhoneNumber(phoneNumber)}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="+1 (555) 123-4567"
-              className={`mt-1 ${errors.phoneNumber ? 'border-red-500' : ''}`}
-              disabled={isLoading}
-            />
-            {errors.phoneNumber && (
-              <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>
-            )}
-          </div>
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/50 z-50" onClick={handleClose} />
 
-          {attributes && attributes.length > 0 && (
+      {/* Modal */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg max-w-md w-full max-h-[80vh] flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
             <div>
-              <Label className="text-sm font-medium text-gray-700">Attributes</Label>
-              <div className="flex flex-col gap-2 mt-2">
-                {attributeValues.map((av, idx) => {
-                  const availableAttributes = getAvailableAttributes(idx);
-                  const selectedAttribute = attributes.find(attr => attr.id === av.attributeId);
-                  return (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <select
-                        className="border border-gray-300 rounded px-2 py-1 min-w-[120px]"
-                        value={av.attributeId}
-                        onChange={e => handleAttributeChange(idx, e.target.value)}
-                        disabled={isLoading}
-                      >
-                        <option value="">Select attribute</option>
-                        {availableAttributes.map(attr => (
-                          <option key={attr.id} value={attr.id}>{attr.name}</option>
-                        ))}
-                        {selectedAttribute && !availableAttributes.some(attr => attr.id === selectedAttribute.id) && (
-                          <option value={selectedAttribute.id}>{selectedAttribute.name}</option>
-                        )}
-                      </select>
-                      {selectedAttribute && (
-                        <Input
-                          type={selectedAttribute.type === "NUMBER" ? "number" : "text"}
-                          value={av.value}
-                          onChange={e => handleAttributeValueChange(idx, e.target.value)}
-                          placeholder={`Enter ${selectedAttribute.name}`}
-                          className="flex-1"
-                          disabled={isLoading}
-                        />
-                      )}
-                      <button
-                        type="button"
-                        className="text-red-500 hover:text-red-700 ml-1"
-                        onClick={() => handleRemoveAttribute(idx)}
-                        disabled={isLoading}
-                        title="Remove"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  );
-                })}
-                {attributeValues.length < attributes.length && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="mt-2 w-fit"
-                    onClick={handleAddAttribute}
-                    disabled={isLoading}
-                  >
-                    + Add Attribute
-                  </Button>
-                )}
-              </div>
+              <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                {isEditing
+                  ? "Update contact information"
+                  : "Add a new contact to your list"}
+              </p>
             </div>
-          )}
+            <Button variant="ghost" size="icon" onClick={handleClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
 
-          <div className="flex gap-3 pt-4">
+          {/* Content - Scrollable */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Basic Information */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-gray-700">
+                  Basic Information
+                </h3>
+
+                <div>
+                  <Label
+                    htmlFor="name"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Name *
+                  </Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter contact name"
+                    className={`mt-1 ${
+                      errors.name ? "border-red-500 focus:ring-red-500" : ""
+                    }`}
+                    disabled={isLoading}
+                  />
+                  {errors.name && (
+                    <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="phoneNumber"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Phone Number *
+                  </Label>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    value={normalizePhoneNumber(phoneNumber)}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="+1 (555) 123-4567"
+                    className={`mt-1 ${
+                      errors.phoneNumber
+                        ? "border-red-500 focus:ring-red-500"
+                        : ""
+                    }`}
+                    disabled={isLoading}
+                  />
+                  {errors.phoneNumber && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.phoneNumber}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Attributes Section */}
+              {attributes && attributes.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Attributes
+                    </Label>
+                    {attributeValues.length < attributes.length && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAddAttribute}
+                        disabled={isLoading}
+                        className="text-xs"
+                      >
+                        Add Attribute
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    {attributeValues.map((av, idx) => {
+                      const availableAttributes = getAvailableAttributes(idx);
+                      const selectedAttribute = attributes.find(
+                        (attr) => attr.id === av.attributeId
+                      );
+                      return (
+                        <div
+                          key={idx}
+                          className="flex gap-3 items-center p-3 bg-gray-50 rounded-lg"
+                        >
+                          <select
+                            className="border border-gray-300 rounded px-3 py-2 min-w-[140px] text-sm focus:outline-none focus:ring-1 focus:ring-[#30CFED] focus:border-[#30CFED]"
+                            value={av.attributeId}
+                            onChange={(e) =>
+                              handleAttributeChange(idx, e.target.value)
+                            }
+                            disabled={isLoading}
+                          >
+                            <option value="">Select attribute</option>
+                            {availableAttributes.map((attr) => (
+                              <option key={attr.id} value={attr.id}>
+                                {attr.name}
+                              </option>
+                            ))}
+                            {selectedAttribute &&
+                              !availableAttributes.some(
+                                (attr) => attr.id === selectedAttribute.id
+                              ) && (
+                                <option value={selectedAttribute.id}>
+                                  {selectedAttribute.name}
+                                </option>
+                              )}
+                          </select>
+                          {selectedAttribute && (
+                            <>
+                              <Input
+                                type={
+                                  selectedAttribute.type === "NUMBER"
+                                    ? "number"
+                                    : "text"
+                                }
+                                value={av.value}
+                                onChange={(e) =>
+                                  handleAttributeValueChange(
+                                    idx,
+                                    e.target.value
+                                  )
+                                }
+                                placeholder={`Enter ${selectedAttribute.name}`}
+                                className="flex-1"
+                                disabled={isLoading}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleRemoveAttribute(idx)}
+                                disabled={isLoading}
+                                title="Remove attribute"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </form>
+          </div>
+
+          {/* Fixed Footer with Action Buttons */}
+          <div className="flex gap-3 p-6 border-t border-gray-200 flex-shrink-0">
             <Button
               type="button"
               variant="outline"
@@ -259,14 +360,15 @@ const AddContactModal = ({ isOpen, onClose, onSubmit, isLoading, editContact }: 
               type="submit"
               className="flex-1"
               disabled={isLoading}
+              onClick={handleSubmit}
             >
               {submitText}
             </Button>
           </div>
-        </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
-export default AddContactModal; 
+export default AddContactModal;

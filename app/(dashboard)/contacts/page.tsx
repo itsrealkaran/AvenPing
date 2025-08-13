@@ -15,42 +15,49 @@ import { toast } from "sonner";
 // Utility function to convert contacts to CSV format
 const exportContactsToCSV = (contacts: Contact[]) => {
   // Define CSV headers
-  const headers = ['Name', 'Phone Number', 'Status', 'Group', 'Created At', 'Has Conversation'];
-  
+  const headers = [
+    "Name",
+    "Phone Number",
+    "Status",
+    "Group",
+    "Created At",
+    "Has Conversation",
+  ];
+
   // Convert contacts to CSV rows
-  const rows = contacts.map(contact => [
-    contact.name || 'No name',
+  const rows = contacts.map((contact) => [
+    contact.name || "No name",
     normalizePhoneNumber(contact.phoneNumber),
-    contact.status || 'N/A',
-    contact.group || 'N/A',
-    new Date(contact.createdAt).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    contact.status || "N/A",
+    contact.group || "N/A",
+    new Date(contact.createdAt).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }),
-    contact.hasConversation ? 'Yes' : 'No'
+    contact.hasConversation ? "Yes" : "No",
   ]);
-  
+
   // Combine headers and rows
   const csvContent = [headers, ...rows]
-    .map(row => row.map(field => `"${field}"`).join(','))
-    .join('\n');
-  
+    .map((row) => row.map((field) => `"${field}"`).join(","))
+    .join("\n");
+
   return csvContent;
 };
 
 // Utility function to download CSV file
 const downloadCSV = (csvContent: string, filename: string) => {
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+
   if (link.download !== undefined) {
     const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -58,7 +65,21 @@ const downloadCSV = (csvContent: string, filename: string) => {
 };
 
 export default function ContactsPage() {
-  const { contacts, isLoading, error, createContact, updateContact, deleteContacts, isCreating, isUpdating, isDeleting, createError, updateError, deleteError, attributes } = useContacts();
+  const {
+    contacts,
+    isLoading,
+    error,
+    createContact,
+    updateContact,
+    deleteContacts,
+    isCreating,
+    isUpdating,
+    isDeleting,
+    createError,
+    updateError,
+    deleteError,
+    attributes,
+  } = useContacts();
   const { userInfo } = useUser();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -66,7 +87,7 @@ export default function ContactsPage() {
 
   const handleDeleteContact = (contact: Contact) => {
     deleteContacts([contact.id]);
-    toast.success('Contact deleted successfully');
+    toast.success("Contact deleted successfully");
   };
 
   const handleDeleteContacts = (contacts: Contact[]) => {
@@ -79,7 +100,11 @@ export default function ContactsPage() {
     setShowAddModal(true);
   };
 
-  const handleCreateContact = async (data: { name: string; phoneNumber: string; attributes: { name: string; value: string }[] }) => {
+  const handleCreateContact = async (data: {
+    name: string;
+    phoneNumber: string;
+    attributes: { name: string; value: string }[];
+  }) => {
     if (editingContact) {
       // Update existing contact
       await updateContact({
@@ -88,21 +113,21 @@ export default function ContactsPage() {
         phoneNumber: data.phoneNumber,
         attributes: data.attributes,
       });
-      toast.success('Contact updated successfully');
+      toast.success("Contact updated successfully");
     } else {
       // Create new contact
       if (!userInfo?.whatsappAccount?.phoneNumbers?.[0]?.id) {
         toast.error("No phone number available");
         return;
       }
-      
+
       await createContact({
         name: data.name,
         phoneNumber: data.phoneNumber,
         phoneNumberId: userInfo.whatsappAccount.phoneNumbers[0].id,
         attributes: data.attributes,
       });
-      toast.success('Contact created successfully');
+      toast.success("Contact created successfully");
     }
   };
 
@@ -135,20 +160,23 @@ export default function ContactsPage() {
 
   const handleExportContacts = () => {
     if (contacts?.length === 0) {
-      toast.info('Please select at least one contact to export.');
+      toast.info("Please select at least one contact to export.");
       return;
     }
 
     try {
       const csvContent = exportContactsToCSV(contacts || []);
-      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      const timestamp = new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace(/:/g, "-");
       const filename = `contacts_export_${timestamp}.csv`;
-      
+
       downloadCSV(csvContent, filename);
       toast.success(`Exported ${contacts?.length} contacts to ${filename}`);
     } catch (error) {
-      console.error('Error exporting contacts:', error);
-      toast.error('Failed to export contacts. Please try again.');
+      console.error("Error exporting contacts:", error);
+      toast.error("Failed to export contacts. Please try again.");
     }
   };
 
@@ -163,14 +191,10 @@ export default function ContactsPage() {
       header: "Phone Number",
     },
     {
-      accessorKey: "group",
-      header: "Group",
-    },
-    {
       accessorKey: "source",
       header: "Source",
       Cell: ({ row }) => {
-        const value = row.original.source?.replace(/_/g, ' ');
+        const value = row.original.source?.replace(/_/g, " ");
         return value || "N/A";
       },
     },
@@ -185,7 +209,7 @@ export default function ContactsPage() {
               value === "UNDELIVERED"
                 ? "bg-red-100 text-red-800"
                 : value === "UNREAD"
-                ? "bg-amber-100 text-amber-800" 
+                ? "bg-amber-100 text-amber-800"
                 : value === "READ"
                 ? "bg-green-100 text-green-800"
                 : value === "REPLIED"
@@ -202,7 +226,9 @@ export default function ContactsPage() {
       accessorKey: attribute.name,
       header: attribute.name,
       Cell: ({ row }: { row: MRT_Row<Contact> }) => {
-        const value = row.original.attributeValues?.find((av) => av.name === attribute.name)?.value;
+        const value = row.original.attributeValues?.find(
+          (av) => av.name === attribute.name
+        )?.value;
         return value || "N/A";
       },
     })),
@@ -273,7 +299,7 @@ export default function ContactsPage() {
       onClick: () => {
         handleExportContacts();
       },
-    }
+    },
   ];
 
   return (
@@ -293,7 +319,7 @@ export default function ContactsPage() {
           isSaving={isCreating || isUpdating || isDeleting}
         />
       </Body>
-      
+
       <AddContactModal
         isOpen={showAddModal}
         onClose={handleCloseModal}
@@ -301,7 +327,7 @@ export default function ContactsPage() {
         isLoading={editingContact ? isUpdating : isCreating}
         editContact={editingContact}
       />
-      
+
       <ImportContactsModal
         isOpen={showImportModal}
         onClose={handleCloseImportModal}
