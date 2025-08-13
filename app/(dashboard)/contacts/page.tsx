@@ -1,7 +1,7 @@
 "use client";
 
 import Body from "@/components/layout/body";
-import { Edit, Trash, Pause, Play, FileUp, Send, Download } from "lucide-react";
+import { Edit, Trash, Pause, Play, FileUp, Download } from "lucide-react";
 import React, { useState } from "react";
 import Table, { ActionMenuItem, ToolbarAction } from "@/components/ui/table";
 import { MRT_ColumnDef, MRT_Row } from "material-react-table";
@@ -9,6 +9,7 @@ import { useContacts, Contact } from "@/context/contact-provider";
 import { useUser } from "@/context/user-context";
 import AddContactModal from "@/components/contacts/add-contact-modal";
 import ImportContactsModal from "@/components/contacts/import-contacts-modal";
+import { normalizePhoneNumber } from "@/lib/utils";
 
 // Utility function to convert contacts to CSV format
 const exportContactsToCSV = (contacts: Contact[]) => {
@@ -18,7 +19,7 @@ const exportContactsToCSV = (contacts: Contact[]) => {
   // Convert contacts to CSV rows
   const rows = contacts.map(contact => [
     contact.name || 'No name',
-    contact.phoneNumber,
+    normalizePhoneNumber(contact.phoneNumber),
     contact.status || 'N/A',
     contact.group || 'N/A',
     new Date(contact.createdAt).toLocaleDateString('en-US', {

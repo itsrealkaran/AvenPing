@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useContacts } from "@/context/contact-provider";
+import { normalizePhoneNumber } from "@/lib/utils";
 
 interface Contact {
   id: string;
@@ -173,7 +174,7 @@ const AddContactModal = ({ isOpen, onClose, onSubmit, isLoading, editContact }: 
             <Input
               id="phoneNumber"
               type="tel"
-              value={phoneNumber}
+              value={normalizePhoneNumber(phoneNumber)}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+1 (555) 123-4567"
               className={`mt-1 ${errors.phoneNumber ? 'border-red-500' : ''}`}
