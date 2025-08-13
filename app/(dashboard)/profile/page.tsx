@@ -3,13 +3,11 @@
 import { useState, useRef, useEffect } from "react";
 import Body from "@/components/layout/body";
 import {
-  User,
   Camera,
   ArrowLeft,
   MoreVertical,
   X,
   Edit3,
-  Check,
   CheckCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -19,6 +17,7 @@ import Card from "@/components/messages/message-card";
 import { useProfile } from "@/context/profile-provider";
 import { useUser } from "@/context/user-context";
 import SearchableDropdown from "@/components/ui/searchable-dropdown";
+import { formatPhoneNumber } from "@/lib/utils";
 
 export default function ProfilePage() {
   // Profile state
@@ -57,9 +56,6 @@ export default function ProfilePage() {
       });
     }
   }, [profileDetails, userInfo]);
-
-  // Reference for the hidden file input
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle form field changes
   const handleChange = (
@@ -105,7 +101,9 @@ export default function ProfilePage() {
     input.accept = "image/*";
     input.onchange = (e) => {
       const target = e.target as HTMLInputElement;
-      handleProfilePictureChange({ target } as React.ChangeEvent<HTMLInputElement>);
+      handleProfilePictureChange({
+        target,
+      } as React.ChangeEvent<HTMLInputElement>);
     };
     input.click();
   };
@@ -118,25 +116,25 @@ export default function ProfilePage() {
       try {
         // Create FormData for file upload
         const formData = new FormData();
-        formData.append('file', file);
-        formData.append('type', 'profile_picture');
+        formData.append("file", file);
+        formData.append("type", "profile_picture");
 
         // Upload file to WhatsApp
-        const uploadResponse = await fetch('/api/whatsapp/upload-file', {
-          method: 'POST',
+        const uploadResponse = await fetch("/api/whatsapp/upload-file", {
+          method: "POST",
           body: formData,
         });
 
         if (!uploadResponse.ok) {
-          throw new Error('Failed to upload file');
+          throw new Error("Failed to upload file");
         }
 
         const uploadResult = await uploadResponse.json();
-        
+
         // Update profile with the uploaded image URL
         const updatedProfile = {
           ...profile,
-          profile_picture_url: uploadResult.h
+          profile_picture_url: uploadResult.h,
         };
 
         // Update the profile in WhatsApp
@@ -144,9 +142,8 @@ export default function ProfilePage() {
 
         // Update local state for immediate UI feedback
         setProfile(updatedProfile);
-
       } catch (error) {
-        console.error('Error uploading profile picture:', error);
+        console.error("Error uploading profile picture:", error);
         // Fallback to local preview
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -183,27 +180,27 @@ export default function ProfilePage() {
   // Helper function to get category display name
   const getCategoryDisplayName = (categoryValue: string) => {
     const categoryMap: { [key: string]: string } = {
-      'ALCOHOL': 'Alcoholic Beverages',
-      'APPAREL': 'Clothing and Apparel',
-      'AUTO': 'Automotive',
-      'BEAUTY': 'Beauty, Spa and Salon',
-      'EDU': 'Education',
-      'ENTERTAIN': 'Entertainment',
-      'EVENT_PLAN': 'Event Planning and Service',
-      'FINANCE': 'Finance and Banking',
-      'GOVT': 'Public Service',
-      'GROCERY': 'Food and Grocery',
-      'HEALTH': 'Medical and Health',
-      'HOTEL': 'Hotel and Lodging',
-      'NONPROFIT': 'Non-profit',
-      'ONLINE_GAMBLING': 'Online Gambling & Gaming',
-      'OTC_DRUGS': 'Over-the-Counter Drugs',
-      'OTHER': 'Other',
-      'PHYSICAL_GAMBLING': 'Non-Online Gambling & Gaming (E.g. Brick and mortar)',
-      'PROF_SERVICES': 'Professional Services',
-      'RESTAURANT': 'Restaurant',
-      'RETAIL': 'Shopping and Retail',
-      'TRAVEL': 'Travel and Transportation',
+      ALCOHOL: "Alcoholic Beverages",
+      APPAREL: "Clothing and Apparel",
+      AUTO: "Automotive",
+      BEAUTY: "Beauty, Spa and Salon",
+      EDU: "Education",
+      ENTERTAIN: "Entertainment",
+      EVENT_PLAN: "Event Planning and Service",
+      FINANCE: "Finance and Banking",
+      GOVT: "Public Service",
+      GROCERY: "Food and Grocery",
+      HEALTH: "Medical and Health",
+      HOTEL: "Hotel and Lodging",
+      NONPROFIT: "Non-profit",
+      ONLINE_GAMBLING: "Online Gambling & Gaming",
+      OTC_DRUGS: "Over-the-Counter Drugs",
+      OTHER: "Other",
+      PHYSICAL_GAMBLING: "Non-Online Gambling & Gaming (E.g. Brick and mortar)",
+      PROF_SERVICES: "Professional Services",
+      RESTAURANT: "Restaurant",
+      RETAIL: "Shopping and Retail",
+      TRAVEL: "Travel and Transportation",
     };
     return categoryMap[categoryValue] || categoryValue;
   };
@@ -277,7 +274,7 @@ export default function ProfilePage() {
                       className="w-full"
                       disabled={!isEditing}
                     />
-                  </div> 
+                  </div>
 
                   {/* Right Column: About */}
                   <div>
@@ -323,47 +320,80 @@ export default function ProfilePage() {
               </div>
             </div>
 
-             {/* Right Column: Category */}
-             <div>
-                    <label
-                      htmlFor="vertical"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Category
-                    </label>
-                    <SearchableDropdown
-                      items={[
-                        { id: "1", label: "Select a category", value: "" },
-                        { id: "2", label: "Alcoholic Beverages", value: "ALCOHOL" },
-                        { id: "3", label: "Clothing and Apparel", value: "APPAREL" },
-                        { id: "4", label: "Automotive", value: "AUTO" },
-                        { id: "5", label: "Beauty, Spa and Salon", value: "BEAUTY" },
-                        { id: "6", label: "Education", value: "EDU" },
-                        { id: "7", label: "Entertainment", value: "ENTERTAIN" },
-                        { id: "8", label: "Event Planning and Service", value: "EVENT_PLAN" },
-                        { id: "9", label: "Finance and Banking", value: "FINANCE" },
-                        { id: "10", label: "Public Service", value: "GOVT" },
-                        { id: "11", label: "Food and Grocery", value: "GROCERY" },
-                        { id: "12", label: "Medical and Health", value: "HEALTH" },
-                        { id: "13", label: "Hotel and Lodging", value: "HOTEL" },
-                        { id: "14", label: "Non-profit", value: "NONPROFIT" },
-                        { id: "15", label: "Online Gambling & Gaming", value: "ONLINE_GAMBLING" },
-                        { id: "16", label: "Over-the-Counter Drugs", value: "OTC_DRUGS" },
-                        { id: "17", label: "Other", value: "OTHER" },
-                        { id: "18", label: "Non-Online Gambling & Gaming (E.g. Brick and mortar)", value: "PHYSICAL_GAMBLING" },
-                        { id: "19", label: "Professional Services", value: "PROF_SERVICES" },
-                        { id: "20", label: "Restaurant", value: "RESTAURANT" },
-                        { id: "21", label: "Shopping and Retail", value: "RETAIL" },
-                        { id: "22", label: "Travel and Transportation", value: "TRAVEL" },
-                      ]}
-                      placeholder="Select a category"
-                      onSelect={(item) => !isEditing ? null : handleDropdownChange(item.value)}
-                      variant="outline"
-                      disabled={!isEditing}
-                      className={`w-full ${!isEditing ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      selectedLabel={profile.vertical ? getCategoryDisplayName(profile.vertical) : null}
-                    />
-                  </div>
+            {/* Right Column: Category */}
+            <div>
+              <label
+                htmlFor="vertical"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Category
+              </label>
+              <SearchableDropdown
+                items={[
+                  { id: "1", label: "Select a category", value: "" },
+                  { id: "2", label: "Alcoholic Beverages", value: "ALCOHOL" },
+                  { id: "3", label: "Clothing and Apparel", value: "APPAREL" },
+                  { id: "4", label: "Automotive", value: "AUTO" },
+                  { id: "5", label: "Beauty, Spa and Salon", value: "BEAUTY" },
+                  { id: "6", label: "Education", value: "EDU" },
+                  { id: "7", label: "Entertainment", value: "ENTERTAIN" },
+                  {
+                    id: "8",
+                    label: "Event Planning and Service",
+                    value: "EVENT_PLAN",
+                  },
+                  { id: "9", label: "Finance and Banking", value: "FINANCE" },
+                  { id: "10", label: "Public Service", value: "GOVT" },
+                  { id: "11", label: "Food and Grocery", value: "GROCERY" },
+                  { id: "12", label: "Medical and Health", value: "HEALTH" },
+                  { id: "13", label: "Hotel and Lodging", value: "HOTEL" },
+                  { id: "14", label: "Non-profit", value: "NONPROFIT" },
+                  {
+                    id: "15",
+                    label: "Online Gambling & Gaming",
+                    value: "ONLINE_GAMBLING",
+                  },
+                  {
+                    id: "16",
+                    label: "Over-the-Counter Drugs",
+                    value: "OTC_DRUGS",
+                  },
+                  { id: "17", label: "Other", value: "OTHER" },
+                  {
+                    id: "18",
+                    label:
+                      "Non-Online Gambling & Gaming (E.g. Brick and mortar)",
+                    value: "PHYSICAL_GAMBLING",
+                  },
+                  {
+                    id: "19",
+                    label: "Professional Services",
+                    value: "PROF_SERVICES",
+                  },
+                  { id: "20", label: "Restaurant", value: "RESTAURANT" },
+                  { id: "21", label: "Shopping and Retail", value: "RETAIL" },
+                  {
+                    id: "22",
+                    label: "Travel and Transportation",
+                    value: "TRAVEL",
+                  },
+                ]}
+                placeholder="Select a category"
+                onSelect={(item) =>
+                  !isEditing ? null : handleDropdownChange(item.value)
+                }
+                variant="outline"
+                disabled={!isEditing}
+                className={`w-full ${
+                  !isEditing ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                selectedLabel={
+                  profile.vertical
+                    ? getCategoryDisplayName(profile.vertical)
+                    : null
+                }
+              />
+            </div>
 
             {/* Section 4: Contact Info */}
             <div className="grid grid-cols-2 gap-4">
@@ -484,7 +514,9 @@ export default function ProfilePage() {
               {userInfo &&
                 userInfo.whatsappAccount &&
                 userInfo.whatsappAccount.activePhoneNumber &&
-                userInfo.whatsappAccount.activePhoneNumber.phoneNumber}
+                formatPhoneNumber(
+                  userInfo.whatsappAccount.activePhoneNumber.phoneNumber
+                )}
             </p>
 
             {/* Share button */}
@@ -543,7 +575,9 @@ export default function ProfilePage() {
                     }}
                   />
                 </div>
-                <p className="text-xs text-gray-500">{getCategoryDisplayName(profile.vertical)}</p>
+                <p className="text-xs text-gray-500">
+                  {getCategoryDisplayName(profile.vertical)}
+                </p>
               </div>
             )}
 

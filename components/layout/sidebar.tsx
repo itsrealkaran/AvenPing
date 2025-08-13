@@ -36,7 +36,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, formatPhoneNumber } from "@/lib/utils";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/context/user-context";
@@ -243,7 +243,7 @@ export default function Sidebar({
                       {accountInfo[0].name}
                     </span>
                     <p className="text-xs text-gray-400">
-                      {accountInfo[0].number}
+                      {formatPhoneNumber(accountInfo[0].number)}
                     </p>
                   </div>
                 </div>
@@ -277,7 +277,7 @@ export default function Sidebar({
                         >
                           <div className="font-medium">{acc.name}</div>
                           <div className="text-xs text-gray-400">
-                            {acc.number}
+                            {formatPhoneNumber(acc.number)}
                           </div>
                         </li>
                       ))

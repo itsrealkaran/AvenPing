@@ -39,12 +39,14 @@ export const loadScript = (src: string): Promise<void> => {
   });
 };
 
-// Helper to normalize phone numbers: remove +, -, spaces, etc.
 export function normalizePhoneNumber(phone: string) {
   return phone.replace(/[^\d]/g, "");
 }
 
-// Helper to format PIN: add a dash after every digit typed (except after the last digit)
+export function formatPhoneNumber(phone: string) {
+  return `+${phone}`;
+}
+
 export function formatPin(pin: string) {
   const digits = pin.replace(/[^\d]/g, "").slice(0, 6);
   return digits
@@ -53,7 +55,6 @@ export function formatPin(pin: string) {
     .join("");
 }
 
-// Helper to unformat PIN: remove all dashes
 export function unformatPin(formatted: string) {
   return formatted.replace(/-/g, "");
 }
