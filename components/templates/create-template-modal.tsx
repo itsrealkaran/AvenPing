@@ -1,16 +1,30 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Info, Plus, Trash2, X, Upload, Image, Video, FileText } from 'lucide-react';
-import { toast } from 'sonner';
+import { useEffect, useState } from "react";
+import {
+  Info,
+  Plus,
+  Trash2,
+  X,
+  Upload,
+  Image,
+  Video,
+  FileText,
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useTemplates } from '@/context/template-provider';
-import { useUser } from '@/context/user-context';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useTemplates } from "@/context/template-provider";
+import { useUser } from "@/context/user-context";
 
 interface CreateTemplateModalProps {
   open: boolean;
@@ -19,7 +33,7 @@ interface CreateTemplateModalProps {
   editingTemplate?: any;
 }
 
-type HeaderFormat = 'TEXT' | 'IMAGE' | 'VIDEO' | 'DOCUMENT';
+type HeaderFormat = "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT";
 
 export function CreateTemplateModal({
   open,
@@ -28,28 +42,35 @@ export function CreateTemplateModal({
   editingTemplate,
 }: CreateTemplateModalProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [name, setName] = useState(editingTemplate?.name || '');
-  const [language, setLanguage] = useState(editingTemplate?.language || 'en_US');
-  const [category, setCategory] = useState(editingTemplate?.category || 'MARKETING');
-  
+  const [name, setName] = useState(editingTemplate?.name || "");
+  const [language, setLanguage] = useState(
+    editingTemplate?.language || "en_US"
+  );
+  const [category, setCategory] = useState(
+    editingTemplate?.category || "MARKETING"
+  );
+
   // Header state
-  const [headerFormat, setHeaderFormat] = useState<HeaderFormat>('TEXT');
+  const [headerFormat, setHeaderFormat] = useState<HeaderFormat>("TEXT");
   const [headerText, setHeaderText] = useState(
-    editingTemplate?.components?.find((c: any) => c.type === 'HEADER')?.text || ''
+    editingTemplate?.components?.find((c: any) => c.type === "HEADER")?.text ||
+      ""
   );
   const [headerExamples, setHeaderExamples] = useState<string[]>(
-    editingTemplate?.components?.find((c: any) => c.type === 'HEADER')?.example?.header_text || []
+    editingTemplate?.components?.find((c: any) => c.type === "HEADER")?.example
+      ?.header_text || []
   );
   const [headerMediaFile, setHeaderMediaFile] = useState<File | null>(null);
-  const [headerMediaId, setHeaderMediaId] = useState<string>('');
+  const [headerMediaId, setHeaderMediaId] = useState<string>("");
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
-  
+
   // Body state
   const [bodyText, setBodyText] = useState(
-    editingTemplate?.components?.find((c: any) => c.type === 'BODY')?.text || ''
+    editingTemplate?.components?.find((c: any) => c.type === "BODY")?.text || ""
   );
   const [bodyExamples, setBodyExamples] = useState<string[]>(
-    editingTemplate?.components?.find((c: any) => c.type === 'BODY')?.example?.body_text?.[0] || []
+    editingTemplate?.components?.find((c: any) => c.type === "BODY")?.example
+      ?.body_text?.[0] || []
   );
   const [showRules, setShowRules] = useState(false);
 
@@ -63,21 +84,21 @@ export function CreateTemplateModal({
 
   const uploadMediaFile = async (file: File): Promise<string> => {
     if (!userInfo?.whatsappAccount?.id) {
-      throw new Error('WhatsApp account not found');
+      throw new Error("WhatsApp account not found");
     }
 
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('userId', userInfo.whatsappAccount.id);
+    formData.append("file", file);
+    formData.append("userId", userInfo.whatsappAccount.id);
 
-    const response = await fetch('/api/whatsapp/upload-session', {
-      method: 'POST',
+    const response = await fetch("/api/whatsapp/upload-session", {
+      method: "POST",
       body: formData,
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to upload media');
+      throw new Error(errorData.error || "Failed to upload media");
     }
 
     const data = await response.json();
@@ -86,7 +107,7 @@ export function CreateTemplateModal({
 
   const handleHeaderMediaUpload = async () => {
     if (!headerMediaFile) {
-      toast.error('Please select a file first');
+      toast.error("Please select a file first");
       return;
     }
 
@@ -94,10 +115,10 @@ export function CreateTemplateModal({
     try {
       const mediaId = await uploadMediaFile(headerMediaFile);
       setHeaderMediaId(mediaId);
-      toast.success('Media uploaded successfully!');
+      toast.success("Media uploaded successfully!");
     } catch (error) {
-      console.error('Media upload error:', error);
-      toast.error('Failed to upload media');
+      console.error("Media upload error:", error);
+      toast.error("Failed to upload media");
     } finally {
       setIsUploadingMedia(false);
     }
@@ -105,36 +126,36 @@ export function CreateTemplateModal({
 
   const handleSubmit = async () => {
     if (!name || !language || !category || !bodyText) {
-      toast.error('Please fill in all required fields');
+      toast.error("Please fill in all required fields");
       return;
     }
 
     if (!selectedWhatsAppAccountId) {
-      toast.error('No WhatsApp account selected');
+      toast.error("No WhatsApp account selected");
       return;
     }
 
     // Validate header based on format
-    if (headerFormat === 'TEXT' && !headerText.trim()) {
-      toast.error('Please enter header text');
+    if (headerFormat === "TEXT" && !headerText.trim()) {
+      toast.error("Please enter header text");
       return;
     }
 
-    if (headerFormat !== 'TEXT' && !headerMediaId) {
-      toast.error('Please upload media for header');
+    if (headerFormat !== "TEXT" && !headerMediaId) {
+      toast.error("Please upload media for header");
       return;
     }
 
     // Fix variable numbering in text components
-    const fixedHeaderText = headerText ? fixVariableNumbering(headerText) : '';
+    const fixedHeaderText = headerText ? fixVariableNumbering(headerText) : "";
     const fixedBodyText = fixVariableNumbering(bodyText);
 
     // Validate variable numbering in header and body text
-    const headerVariables = (fixedHeaderText.match(/{{(\d+)}}/g) || []).map((match: string) =>
-      parseInt(match.match(/\d+/)![0])
+    const headerVariables = (fixedHeaderText.match(/{{(\d+)}}/g) || []).map(
+      (match: string) => parseInt(match.match(/\d+/)![0])
     );
-    const bodyVariables = (fixedBodyText.match(/{{(\d+)}}/g) || []).map((match: string) =>
-      parseInt(match.match(/\d+/)![0])
+    const bodyVariables = (fixedBodyText.match(/{{(\d+)}}/g) || []).map(
+      (match: string) => parseInt(match.match(/\d+/)![0])
     );
 
     // Check if variables start from 1 and are sequential
@@ -149,14 +170,18 @@ export function CreateTemplateModal({
 
     if (!isHeaderSequential && headerVariables.length > 0) {
       toast.error(
-        `Header variables must start from 1 and be sequential. Found: ${headerVariables.join(', ')}`
+        `Header variables must start from 1 and be sequential. Found: ${headerVariables.join(
+          ", "
+        )}`
       );
       return;
     }
 
     if (!isBodySequential && bodyVariables.length > 0) {
       toast.error(
-        `Body variables must start from 1 and be sequential. Found: ${bodyVariables.join(', ')}`
+        `Body variables must start from 1 and be sequential. Found: ${bodyVariables.join(
+          ", "
+        )}`
       );
       return;
     }
@@ -166,16 +191,24 @@ export function CreateTemplateModal({
     const bodyVarCount = bodyVariables.length;
 
     // Validate examples match variables
-    if (headerFormat === 'TEXT' && headerText && headerExamples.length !== headerVarCount) {
+    if (
+      headerFormat === "TEXT" &&
+      headerText &&
+      headerExamples.length !== headerVarCount
+    ) {
       toast.error(
-        `Please provide ${headerVarCount} example${headerVarCount !== 1 ? 's' : ''} for the header variables`
+        `Please provide ${headerVarCount} example${
+          headerVarCount !== 1 ? "s" : ""
+        } for the header variables`
       );
       return;
     }
 
     if (bodyExamples.length !== bodyVarCount) {
       toast.error(
-        `Please provide ${bodyVarCount} example${bodyVarCount !== 1 ? 's' : ''} for the body variables`
+        `Please provide ${bodyVarCount} example${
+          bodyVarCount !== 1 ? "s" : ""
+        } for the body variables`
       );
       return;
     }
@@ -184,25 +217,25 @@ export function CreateTemplateModal({
 
     try {
       const templateData = {
-        name: name.toLowerCase().replace(/ /g, '_'),
+        name: name.toLowerCase().replace(/ /g, "_"),
         language,
         category,
         components: [
-          ...(headerFormat === 'TEXT' && fixedHeaderText
+          ...(headerFormat === "TEXT" && fixedHeaderText
             ? [
                 {
-                  type: 'HEADER',
-                  format: 'TEXT',
+                  type: "HEADER",
+                  format: "TEXT",
                   text: fixedHeaderText,
                   example: {
                     header_text: headerExamples,
                   },
                 },
               ]
-            : headerFormat !== 'TEXT' && headerMediaId
+            : headerFormat !== "TEXT" && headerMediaId
             ? [
                 {
-                  type: 'HEADER',
+                  type: "HEADER",
                   format: headerFormat,
                   example: {
                     header_handle: [headerMediaId], // This should be the mediaId from WhatsApp
@@ -211,15 +244,15 @@ export function CreateTemplateModal({
               ]
             : []),
           {
-            type: 'BODY',
+            type: "BODY",
             text: fixedBodyText,
             example: {
-              body_text: [bodyExamples.map((example) => example || '')],
+              body_text: [bodyExamples.map((example) => example || "")],
             },
           },
           {
-            type: 'FOOTER',
-            text: 'Sent using AvenPing. Reply STOP to opt-out.',
+            type: "FOOTER",
+            text: "Sent using AvenPing. Reply STOP to opt-out.",
           },
         ],
       };
@@ -228,8 +261,12 @@ export function CreateTemplateModal({
       onCreateTemplate();
       onClose();
     } catch (error) {
-      console.error('Error creating/updating template:', error);
-      toast.error(editingTemplate ? 'Failed to update template' : 'Failed to create template');
+      console.error("Error creating/updating template:", error);
+      toast.error(
+        editingTemplate
+          ? "Failed to update template"
+          : "Failed to create template"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -244,9 +281,9 @@ export function CreateTemplateModal({
   const addHeaderExample = () => {
     const headerVariables = (headerText.match(/{{(\d+)}}/g) || []).length;
     if (headerExamples.length < headerVariables) {
-      setHeaderExamples([...headerExamples, '']);
+      setHeaderExamples([...headerExamples, ""]);
     } else {
-      toast.error('Maximum number of examples reached for header variables');
+      toast.error("Maximum number of examples reached for header variables");
     }
   };
 
@@ -263,9 +300,9 @@ export function CreateTemplateModal({
   const addBodyExample = () => {
     const bodyVariables = (bodyText.match(/{{(\d+)}}/g) || []).length;
     if (bodyExamples.length < bodyVariables) {
-      setBodyExamples([...bodyExamples, '']);
+      setBodyExamples([...bodyExamples, ""]);
     } else {
-      toast.error('Maximum number of examples reached for body variables');
+      toast.error("Maximum number of examples reached for body variables");
     }
   };
 
@@ -284,7 +321,7 @@ export function CreateTemplateModal({
     } else if (headerExamples.length < headerVariables) {
       setHeaderExamples([
         ...headerExamples,
-        ...Array(headerVariables - headerExamples.length).fill(''),
+        ...Array(headerVariables - headerExamples.length).fill(""),
       ]);
     }
 
@@ -292,22 +329,25 @@ export function CreateTemplateModal({
     if (bodyExamples.length > bodyVariables) {
       setBodyExamples(bodyExamples.slice(0, bodyVariables));
     } else if (bodyExamples.length < bodyVariables) {
-      setBodyExamples([...bodyExamples, ...Array(bodyVariables - bodyExamples.length).fill('')]);
+      setBodyExamples([
+        ...bodyExamples,
+        ...Array(bodyVariables - bodyExamples.length).fill(""),
+      ]);
     }
   }, [headerText, bodyText]);
 
   // Reset form when modal opens/closes
   useEffect(() => {
     if (open && !editingTemplate) {
-      setName('');
-      setLanguage('en_US');
-      setCategory('MARKETING');
-      setHeaderFormat('TEXT');
-      setHeaderText('');
+      setName("");
+      setLanguage("en_US");
+      setCategory("MARKETING");
+      setHeaderFormat("TEXT");
+      setHeaderText("");
       setHeaderExamples([]);
       setHeaderMediaFile(null);
-      setHeaderMediaId('');
-      setBodyText('');
+      setHeaderMediaId("");
+      setBodyText("");
       setBodyExamples([]);
     }
   }, [open, editingTemplate]);
@@ -317,20 +357,20 @@ export function CreateTemplateModal({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 z-50" onClick={onClose} />
-      
+      <div className="fixed inset-0 bg-black/50 z-100" onClick={onClose} />
+
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg max-w-[700px] w-full max-h-[90vh] flex flex-col">
+      <div className="fixed inset-0 z-110 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg max-w-[700px] w-full max-h-[80vh] flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between p-4 pb-2 border-b border-gray-200">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                {editingTemplate ? 'Edit Template' : 'Create Template'}
+              <h2 className="text-lg font-semibold text-gray-900">
+                {editingTemplate ? "Edit Template" : "Create Template"}
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Create a new WhatsApp message template. Templates must be approved by Meta before they
-                can be used.
+              <p className="text-sm text-gray-600">
+                Create a new WhatsApp message template. Templates must be
+                approved by Meta before they can be used.
               </p>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose}>
@@ -343,11 +383,16 @@ export function CreateTemplateModal({
             <div className="space-y-6">
               {/* Basic Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Basic Information</h3>
-                
+                <h3 className="text-lg font-medium text-gray-900">
+                  Basic Information
+                </h3>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                    <Label
+                      htmlFor="name"
+                      className="text-sm font-medium text-gray-700"
+                    >
                       Template Name
                     </Label>
                     <Input
@@ -359,7 +404,10 @@ export function CreateTemplateModal({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="language" className="text-sm font-medium text-gray-700">
+                    <Label
+                      htmlFor="language"
+                      className="text-sm font-medium text-gray-700"
+                    >
                       Language
                     </Label>
                     <select
@@ -385,7 +433,10 @@ export function CreateTemplateModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="category" className="text-sm font-medium text-gray-700">
+                  <Label
+                    htmlFor="category"
+                    className="text-sm font-medium text-gray-700"
+                  >
                     Category
                   </Label>
                   <select
@@ -415,13 +466,18 @@ export function CreateTemplateModal({
 
               {/* Template Content */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Template Content</h3>
+                <h3 className="text-lg font-medium text-gray-900">
+                  Template Content
+                </h3>
 
                 {/* Header Section */}
                 <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="header" className="text-sm font-medium text-gray-700">
+                      <Label
+                        htmlFor="header"
+                        className="text-sm font-medium text-gray-700"
+                      >
                         Header (Optional)
                       </Label>
                       <TooltipProvider>
@@ -430,18 +486,22 @@ export function CreateTemplateModal({
                             <Info className="h-4 w-4 text-gray-400" />
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Optional header text or media for your template</p>
+                            <p>
+                              Optional header text or media for your template
+                            </p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     </div>
-                    
+
                     {/* Header Format Selector */}
                     <div className="flex items-center gap-2">
                       <Label className="text-sm text-gray-600">Format:</Label>
                       <select
                         value={headerFormat}
-                        onChange={(e) => setHeaderFormat(e.target.value as HeaderFormat)}
+                        onChange={(e) =>
+                          setHeaderFormat(e.target.value as HeaderFormat)
+                        }
                         className="text-sm border border-gray-300 rounded px-2 py-1"
                       >
                         <option value="TEXT">Text</option>
@@ -453,7 +513,7 @@ export function CreateTemplateModal({
                   </div>
 
                   {/* Text Header */}
-                  {headerFormat === 'TEXT' && (
+                  {headerFormat === "TEXT" && (
                     <>
                       <Input
                         id="header"
@@ -464,7 +524,9 @@ export function CreateTemplateModal({
                       />
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <Label className="text-sm font-medium text-gray-600">Variable Examples</Label>
+                          <Label className="text-sm font-medium text-gray-600">
+                            Variable Examples
+                          </Label>
                           <Button
                             type="button"
                             variant="outline"
@@ -480,7 +542,9 @@ export function CreateTemplateModal({
                           <div key={index} className="flex gap-2">
                             <Input
                               value={example}
-                              onChange={(e) => handleHeaderExampleChange(index, e.target.value)}
+                              onChange={(e) =>
+                                handleHeaderExampleChange(index, e.target.value)
+                              }
                               placeholder={`Example ${index + 1}`}
                               className="flex-1"
                             />
@@ -500,31 +564,39 @@ export function CreateTemplateModal({
                   )}
 
                   {/* Media Header */}
-                  {headerFormat !== 'TEXT' && (
+                  {headerFormat !== "TEXT" && (
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        {headerFormat === 'IMAGE' && <Image className="h-4 w-4" />}
-                        {headerFormat === 'VIDEO' && <Video className="h-4 w-4" />}
-                        {headerFormat === 'DOCUMENT' && <FileText className="h-4 w-4" />}
+                        {headerFormat === "IMAGE" && (
+                          <Image className="h-4 w-4" />
+                        )}
+                        {headerFormat === "VIDEO" && (
+                          <Video className="h-4 w-4" />
+                        )}
+                        {headerFormat === "DOCUMENT" && (
+                          <FileText className="h-4 w-4" />
+                        )}
                         <span className="text-sm text-gray-600">
                           Upload {headerFormat.toLowerCase()} for header
                         </span>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <input
                           type="file"
                           accept={
-                            headerFormat === 'IMAGE' 
-                              ? 'image/*' 
-                              : headerFormat === 'VIDEO' 
-                              ? 'video/*' 
-                              : '.pdf,.doc,.docx,.txt'
+                            headerFormat === "IMAGE"
+                              ? "image/*"
+                              : headerFormat === "VIDEO"
+                              ? "video/*"
+                              : ".pdf,.doc,.docx,.txt"
                           }
-                          onChange={(e) => setHeaderMediaFile(e.target.files?.[0] || null)}
+                          onChange={(e) =>
+                            setHeaderMediaFile(e.target.files?.[0] || null)
+                          }
                           className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#D3F8FF] file:text-[#30CFED] hover:file:bg-[#D3F8FF]/80"
                         />
-                        
+
                         {headerMediaFile && (
                           <div className="flex items-center gap-2">
                             <Button
@@ -536,10 +608,14 @@ export function CreateTemplateModal({
                               className="text-[#30CFED] border-[#30CFED] hover:bg-[#D3F8FF]"
                             >
                               <Upload className="h-4 w-4 mr-2" />
-                              {isUploadingMedia ? 'Uploading...' : 'Upload Media'}
+                              {isUploadingMedia
+                                ? "Uploading..."
+                                : "Upload Media"}
                             </Button>
                             {headerMediaId && (
-                              <span className="text-sm text-green-600">✓ Uploaded</span>
+                              <span className="text-sm text-green-600">
+                                ✓ Uploaded
+                              </span>
                             )}
                           </div>
                         )}
@@ -551,7 +627,10 @@ export function CreateTemplateModal({
                 {/* Body Section */}
                 <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-center gap-2">
-                    <Label htmlFor="body" className="text-sm font-medium text-gray-700">
+                    <Label
+                      htmlFor="body"
+                      className="text-sm font-medium text-gray-700"
+                    >
                       Body (Required)
                     </Label>
                     <TooltipProvider>
@@ -561,7 +640,8 @@ export function CreateTemplateModal({
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>
-                            The main content of your template. Use &#123;&#123;1&#125;&#125;,
+                            The main content of your template. Use
+                            &#123;&#123;1&#125;&#125;,
                             &#123;&#123;2&#125;&#125;, etc. for variables.
                           </p>
                         </TooltipContent>
@@ -577,7 +657,9 @@ export function CreateTemplateModal({
                   />
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium text-gray-600">Variable Examples</Label>
+                      <Label className="text-sm font-medium text-gray-600">
+                        Variable Examples
+                      </Label>
                       <Button
                         type="button"
                         variant="outline"
@@ -593,7 +675,9 @@ export function CreateTemplateModal({
                       <div key={index} className="flex gap-2">
                         <Input
                           value={example}
-                          onChange={(e) => handleBodyExampleChange(index, e.target.value)}
+                          onChange={(e) =>
+                            handleBodyExampleChange(index, e.target.value)
+                          }
                           placeholder={`Example ${index + 1}`}
                           className="flex-1"
                         />
@@ -620,7 +704,11 @@ export function CreateTemplateModal({
               Cancel
             </Button>
             <Button onClick={handleSubmit} disabled={isLoading}>
-              {isLoading ? 'Creating...' : editingTemplate ? 'Update Template' : 'Create Template'}
+              {isLoading
+                ? "Creating..."
+                : editingTemplate
+                ? "Update Template"
+                : "Create Template"}
             </Button>
           </div>
         </div>
@@ -629,36 +717,51 @@ export function CreateTemplateModal({
       {/* Rules Modal */}
       {showRules && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-[60]" onClick={() => setShowRules(false)} />
+          <div
+            className="fixed inset-0 bg-black/50 z-[60]"
+            onClick={() => setShowRules(false)}
+          />
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
             <div className="bg-white rounded-lg shadow-lg max-w-[500px] w-full">
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">WhatsApp Template Verification Rules</h3>
-                <Button variant="ghost" size="icon" onClick={() => setShowRules(false)}>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  WhatsApp Template Verification Rules
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowRules(false)}
+                >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
               <div className="p-6 space-y-4">
                 <p className="text-sm text-gray-600">
-                  Follow these rules to ensure your template gets approved by the WhatsApp team.
+                  Follow these rules to ensure your template gets approved by
+                  the WhatsApp team.
                 </p>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <h4 className="font-medium text-gray-900">Variable Format</h4>
+                    <h4 className="font-medium text-gray-900">
+                      Variable Format
+                    </h4>
                     <p className="text-sm text-gray-600">
-                      • Variables must use the correct format:{' '}
+                      • Variables must use the correct format:{" "}
                       <code className="font-mono bg-gray-100 px-1 rounded">
                         &#123;&#123;1&#125;&#125;
                       </code>
                     </p>
                     <p className="text-sm text-gray-600">
-                      • Variables must be sequential (e.g., &#123;&#123;1&#125;&#125;,
-                      &#123;&#123;2&#125;&#125;, &#123;&#123;3&#125;&#125;)
+                      • Variables must be sequential (e.g.,
+                      &#123;&#123;1&#125;&#125;, &#123;&#123;2&#125;&#125;,
+                      &#123;&#123;3&#125;&#125;)
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <h4 className="font-medium text-gray-900">Variable Restrictions</h4>
+                    <h4 className="font-medium text-gray-900">
+                      Variable Restrictions
+                    </h4>
                     <p className="text-sm text-gray-600">
                       • Variables cannot contain special characters (#, $, %)
                     </p>
@@ -668,9 +771,12 @@ export function CreateTemplateModal({
                   </div>
 
                   <div className="space-y-2">
-                    <h4 className="font-medium text-gray-900">Message Length</h4>
+                    <h4 className="font-medium text-gray-900">
+                      Message Length
+                    </h4>
                     <p className="text-sm text-gray-600">
-                      • Message length should be proportional to the number of variables
+                      • Message length should be proportional to the number of
+                      variables
                     </p>
                     <p className="text-sm text-gray-600">
                       • Too many variables in a short message may be rejected
@@ -692,9 +798,7 @@ export function CreateTemplateModal({
                 </div>
               </div>
               <div className="flex justify-end p-6 border-t border-gray-200">
-                <Button onClick={() => setShowRules(false)}>
-                  Got it!
-                </Button>
+                <Button onClick={() => setShowRules(false)}>Got it!</Button>
               </div>
             </div>
           </div>
