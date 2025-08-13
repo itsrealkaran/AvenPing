@@ -25,7 +25,7 @@ export function RecipientStatsModal({ open, onClose, stats, chartData }: { open:
   });
   const filtered = stats?.filter((r: any) => r.status?.toUpperCase() === activeFilter) || [];
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/40">
       <div className="relative w-full max-w-2xl mx-auto">
         <Card
           title="Recipient Stats"
