@@ -38,3 +38,22 @@ export const loadScript = (src: string): Promise<void> => {
     document.head.appendChild(script);
   });
 };
+
+// Helper to normalize phone numbers: remove +, -, spaces, etc.
+export function normalizePhoneNumber(phone: string) {
+  return phone.replace(/[^\d]/g, "");
+}
+
+// Helper to format PIN: add a dash after every digit typed (except after the last digit)
+export function formatPin(pin: string) {
+  const digits = pin.replace(/[^\d]/g, "").slice(0, 6);
+  return digits
+    .split("")
+    .map((digit, idx, arr) => (idx < arr.length - 1 ? digit + "-" : digit))
+    .join("");
+}
+
+// Helper to unformat PIN: remove all dashes
+export function unformatPin(formatted: string) {
+  return formatted.replace(/-/g, "");
+}

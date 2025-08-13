@@ -8,31 +8,12 @@ import { useUser } from "@/context/user-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { normalizePhoneNumber, formatPin, unformatPin } from "@/lib/utils";
 
 interface RegisterNumberModalProps {
   isOpen: boolean;
   onClose: () => void;
   onRegister: (pin: string, phoneNumberId: string) => void;
-}
-
-// Helper to normalize phone numbers: remove +, -, spaces, etc.
-function normalizePhoneNumber(phone: string) {
-  return phone.replace(/[^\d]/g, "");
-}
-
-// Helper to format PIN: add a dash after every digit typed (except after the last digit)
-function formatPin(pin: string) {
-  // Only keep digits, then add a dash after each digit except the last
-  const digits = pin.replace(/[^\d]/g, "").slice(0, 6);
-  return digits
-    .split("")
-    .map((digit, idx, arr) => (idx < arr.length - 1 ? digit + "-" : digit))
-    .join("");
-}
-
-// Helper to unformat PIN: remove all dashes
-function unformatPin(formatted: string) {
-  return formatted.replace(/-/g, "");
 }
 
 export default function RegisterNumberModal({
@@ -42,7 +23,7 @@ export default function RegisterNumberModal({
 }: RegisterNumberModalProps) {
   const [step, setStep] = useState(1);
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [pin, setPin] = useState(""); // store only digits, not formatted
+  const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const { userInfo } = useUser();
 
