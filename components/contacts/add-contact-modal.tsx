@@ -169,16 +169,16 @@ const AddContactModal = ({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 z-50" onClick={handleClose} />
+      <div className="fixed inset-0 bg-black/50 z-100" onClick={handleClose} />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg max-w-md w-full max-h-[80vh] flex flex-col">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 z-120">
+        <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[80vh] flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center justify-between p-4 pb-2 border-b border-gray-200 flex-shrink-0">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+              <p className="text-sm text-gray-600">
                 {isEditing
                   ? "Update contact information"
                   : "Add a new contact to your list"}
@@ -198,54 +198,56 @@ const AddContactModal = ({
                   Basic Information
                 </h3>
 
-                <div>
-                  <Label
-                    htmlFor="name"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Name *
-                  </Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter contact name"
-                    className={`mt-1 ${
-                      errors.name ? "border-red-500 focus:ring-red-500" : ""
-                    }`}
-                    disabled={isLoading}
-                  />
-                  {errors.name && (
-                    <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-                  )}
-                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label
+                      htmlFor="name"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Name *
+                    </Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter contact name"
+                      className={`mt-1 ${
+                        errors.name ? "border-red-500 focus:ring-red-500" : ""
+                      }`}
+                      disabled={isLoading}
+                    />
+                    {errors.name && (
+                      <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                    )}
+                  </div>
 
-                <div>
-                  <Label
-                    htmlFor="phoneNumber"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Phone Number *
-                  </Label>
-                  <Input
-                    id="phoneNumber"
-                    type="tel"
-                    value={normalizePhoneNumber(phoneNumber)}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="+1 (555) 123-4567"
-                    className={`mt-1 ${
-                      errors.phoneNumber
-                        ? "border-red-500 focus:ring-red-500"
-                        : ""
-                    }`}
-                    disabled={isLoading}
-                  />
-                  {errors.phoneNumber && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {errors.phoneNumber}
-                    </p>
-                  )}
+                  <div>
+                    <Label
+                      htmlFor="phoneNumber"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Phone Number *
+                    </Label>
+                    <Input
+                      id="phoneNumber"
+                      type="tel"
+                      value={normalizePhoneNumber(phoneNumber)}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="+1 (555) 123-4567"
+                      className={`mt-1 ${
+                        errors.phoneNumber
+                          ? "border-red-500 focus:ring-red-500"
+                          : ""
+                      }`}
+                      disabled={isLoading}
+                    />
+                    {errors.phoneNumber && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.phoneNumber}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -279,62 +281,74 @@ const AddContactModal = ({
                       return (
                         <div
                           key={idx}
-                          className="flex gap-3 items-center p-3 bg-gray-50 rounded-lg"
+                          className="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded-lg"
                         >
-                          <select
-                            className="border border-gray-300 rounded px-3 py-2 min-w-[140px] text-sm focus:outline-none focus:ring-1 focus:ring-[#30CFED] focus:border-[#30CFED]"
-                            value={av.attributeId}
-                            onChange={(e) =>
-                              handleAttributeChange(idx, e.target.value)
-                            }
-                            disabled={isLoading}
-                          >
-                            <option value="">Select attribute</option>
-                            {availableAttributes.map((attr) => (
-                              <option key={attr.id} value={attr.id}>
-                                {attr.name}
-                              </option>
-                            ))}
-                            {selectedAttribute &&
-                              !availableAttributes.some(
-                                (attr) => attr.id === selectedAttribute.id
-                              ) && (
-                                <option value={selectedAttribute.id}>
-                                  {selectedAttribute.name}
+                          <div>
+                            <Label className="text-xs text-gray-600 mb-1 block">
+                              Attribute
+                            </Label>
+                            <select
+                              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#30CFED] focus:border-[#30CFED]"
+                              value={av.attributeId}
+                              onChange={(e) =>
+                                handleAttributeChange(idx, e.target.value)
+                              }
+                              disabled={isLoading}
+                            >
+                              <option value="">Select attribute</option>
+                              {availableAttributes.map((attr) => (
+                                <option key={attr.id} value={attr.id}>
+                                  {attr.name}
                                 </option>
-                              )}
-                          </select>
+                              ))}
+                              {selectedAttribute &&
+                                !availableAttributes.some(
+                                  (attr) => attr.id === selectedAttribute.id
+                                ) && (
+                                  <option value={selectedAttribute.id}>
+                                    {selectedAttribute.name}
+                                  </option>
+                                )}
+                            </select>
+                          </div>
+
                           {selectedAttribute && (
-                            <>
-                              <Input
-                                type={
-                                  selectedAttribute.type === "NUMBER"
-                                    ? "number"
-                                    : "text"
-                                }
-                                value={av.value}
-                                onChange={(e) =>
-                                  handleAttributeValueChange(
-                                    idx,
-                                    e.target.value
-                                  )
-                                }
-                                placeholder={`Enter ${selectedAttribute.name}`}
-                                className="flex-1"
-                                disabled={isLoading}
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => handleRemoveAttribute(idx)}
-                                disabled={isLoading}
-                                title="Remove attribute"
-                              >
-                                <Trash2 size={16} />
-                              </Button>
-                            </>
+                            <div className="flex gap-2">
+                              <div className="flex-1">
+                                <Label className="text-xs text-gray-600 mb-1 block">
+                                  Value
+                                </Label>
+                                <Input
+                                  type={
+                                    selectedAttribute.type === "NUMBER"
+                                      ? "number"
+                                      : "text"
+                                  }
+                                  value={av.value}
+                                  onChange={(e) =>
+                                    handleAttributeValueChange(
+                                      idx,
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder={`Enter ${selectedAttribute.name}`}
+                                  disabled={isLoading}
+                                />
+                              </div>
+                              <div className="flex items-end">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 h-10"
+                                  onClick={() => handleRemoveAttribute(idx)}
+                                  disabled={isLoading}
+                                  title="Remove attribute"
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              </div>
+                            </div>
                           )}
                         </div>
                       );
