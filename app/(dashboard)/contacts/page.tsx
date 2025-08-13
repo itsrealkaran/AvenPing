@@ -10,6 +10,7 @@ import { useUser } from "@/context/user-context";
 import AddContactModal from "@/components/contacts/add-contact-modal";
 import ImportContactsModal from "@/components/contacts/import-contacts-modal";
 import { normalizePhoneNumber } from "@/lib/utils";
+import { toast } from "sonner";
 
 // Utility function to convert contacts to CSV format
 const exportContactsToCSV = (contacts: Contact[]) => {
@@ -65,10 +66,12 @@ export default function ContactsPage() {
 
   const handleDeleteContact = (contact: Contact) => {
     deleteContacts([contact.id]);
+    toast.success('Contact deleted successfully');
   };
 
   const handleDeleteContacts = (contacts: Contact[]) => {
     deleteContacts(contacts.map((c) => c.id));
+    toast.success(`Deleted ${contacts.length} contacts`);
   };
 
   const handleAddContact = () => {
@@ -85,10 +88,12 @@ export default function ContactsPage() {
         phoneNumber: data.phoneNumber,
         attributes: data.attributes,
       });
+      toast.success('Contact updated successfully');
     } else {
       // Create new contact
       if (!userInfo?.whatsappAccount?.phoneNumbers?.[0]?.id) {
-        throw new Error("No phone number available");
+        toast.error("No phone number available");
+        return;
       }
       
       await createContact({
@@ -97,6 +102,7 @@ export default function ContactsPage() {
         phoneNumberId: userInfo.whatsappAccount.phoneNumbers[0].id,
         attributes: data.attributes,
       });
+      toast.success('Contact created successfully');
     }
   };
 
@@ -129,7 +135,7 @@ export default function ContactsPage() {
 
   const handleExportContacts = () => {
     if (contacts?.length === 0) {
-      alert('Please select at least one contact to export.');
+      toast.info('Please select at least one contact to export.');
       return;
     }
 
@@ -139,11 +145,10 @@ export default function ContactsPage() {
       const filename = `contacts_export_${timestamp}.csv`;
       
       downloadCSV(csvContent, filename);
-      
-      console.log(`Exported ${contacts?.length} contacts to ${filename}`);
+      toast.success(`Exported ${contacts?.length} contacts to ${filename}`);
     } catch (error) {
       console.error('Error exporting contacts:', error);
-      alert('Failed to export contacts. Please try again.');
+      toast.error('Failed to export contacts. Please try again.');
     }
   };
 
@@ -285,6 +290,7 @@ export default function ContactsPage() {
           deleteButtonLabel="Delete Contact"
           searchPlaceholder="Search contacts..."
           toolbarActions={toolbarActions}
+          isSaving={isCreating || isUpdating || isDeleting}
         />
       </Body>
       

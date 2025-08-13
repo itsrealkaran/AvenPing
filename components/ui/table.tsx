@@ -62,6 +62,7 @@ export type TableProps<T extends Record<string, any>> = {
   Delete?: LucideIcon;
   onRowClick?: (row: T) => void;
   renderTopToolbar?: (props: { table: any }) => React.ReactNode;
+  isSaving?: boolean;
 };
 
 export default function Table<T extends Record<string, any>>({
@@ -90,6 +91,7 @@ export default function Table<T extends Record<string, any>>({
   Delete,
   onRowClick,
   renderTopToolbar,
+  isSaving
 }: TableProps<T>) {
   const [tableHeight, setTableHeight] = useState(propTableHeight || "450px");
 
@@ -132,6 +134,10 @@ export default function Table<T extends Record<string, any>>({
         right: ["mrt-row-actions"],
       },
       density,
+    },
+    state: {
+      isLoading: isLoading,
+      isSaving: isSaving,
     },
     muiTablePaperProps: {
       elevation: 0,
@@ -179,75 +185,79 @@ export default function Table<T extends Record<string, any>>({
         borderBottom: "1px solid #e5e7eb",
       },
     },
-    renderTopToolbar: renderTopToolbar || (({ table }) => {
-      const selectedRowCount = table.getSelectedRowModel().rows.length;
+    renderTopToolbar:
+      renderTopToolbar ||
+      (({ table }) => {
+        const selectedRowCount = table.getSelectedRowModel().rows.length;
 
-      return (
-        <div className="flex justify-between items-center pb-3 bg-transparent">
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder={searchPlaceholder}
-                value={(table.getState().globalFilter as string) ?? ""}
-                onChange={(e) => table.setGlobalFilter(e.target.value)}
-                className="pl-10 w-64 bg-white"
-              />
+        return (
+          <div className="flex justify-between items-center pb-3 bg-transparent">
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder={searchPlaceholder}
+                  value={(table.getState().globalFilter as string) ?? ""}
+                  onChange={(e) => table.setGlobalFilter(e.target.value)}
+                  className="pl-10 w-64 bg-white"
+                />
+              </div>
+              <MRT_ToggleFiltersButton table={table} />
             </div>
-            <MRT_ToggleFiltersButton table={table} />
-          </div>
 
-          <div className="flex items-center gap-2">
-            {toolbarActions.length > 0 &&
-              toolbarActions.map((action) => {
-                const Icon = action.icon;
-                return (
-                  <Button
-                    key={action.key}
-                    variant={action.variant || "outline"}
-                    onClick={() =>
-                      action.onClick(
-                        table.getSelectedRowModel().rows.map((r) => r.original)
-                      )
-                    }
-                    disabled={isLoading}
-                    className={action.className}
-                  >
-                    {Icon && <Icon className="h-4 w-4 mr-2" />}
-                    {action.label}
-                  </Button>
-                );
-              })}
-
-            {selectedRowCount > 0 && onDelete && (
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  onDelete(
-                    table.getSelectedRowModel().rows.map((r) => r.original)
+            <div className="flex items-center gap-2">
+              {toolbarActions.length > 0 &&
+                toolbarActions.map((action) => {
+                  const Icon = action.icon;
+                  return (
+                    <Button
+                      key={action.key}
+                      variant={action.variant || "outline"}
+                      onClick={() =>
+                        action.onClick(
+                          table
+                            .getSelectedRowModel()
+                            .rows.map((r) => r.original)
+                        )
+                      }
+                      disabled={isLoading}
+                      className={action.className}
+                    >
+                      {Icon && <Icon className="h-4 w-4 mr-2" />}
+                      {action.label}
+                    </Button>
                   );
-                  table.resetRowSelection();
-                }}
-                disabled={isLoading}
-              >
-                {Delete && <Delete className="h-4 w-4 mr-2" />}
-                {deleteButtonLabel} ({selectedRowCount})
-              </Button>
-            )}
+                })}
 
-            {onAddItem && (
-              <Button
-                onClick={onAddItem}
-                disabled={isLoading || selectedRowCount > 0}
-              >
-                {Add && <Add className="h-4 w-4 mr-2" />}
-                {addButtonLabel}
-              </Button>
-            )}
+              {selectedRowCount > 0 && onDelete && (
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    onDelete(
+                      table.getSelectedRowModel().rows.map((r) => r.original)
+                    );
+                    table.resetRowSelection();
+                  }}
+                  disabled={isLoading}
+                >
+                  {Delete && <Delete className="h-4 w-4 mr-2" />}
+                  {deleteButtonLabel} ({selectedRowCount})
+                </Button>
+              )}
+
+              {onAddItem && (
+                <Button
+                  onClick={onAddItem}
+                  disabled={isLoading || selectedRowCount > 0}
+                >
+                  {Add && <Add className="h-4 w-4 mr-2" />}
+                  {addButtonLabel}
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-      );
-    }),
+        );
+      }),
     renderRowActionMenuItems:
       actionMenuItems.length > 0
         ? ({ row, closeMenu }) =>
@@ -276,12 +286,9 @@ export default function Table<T extends Record<string, any>>({
     muiTableBodyRowProps: onRowClick
       ? ({ row }) => ({
           onClick: () => onRowClick(row.original),
-          style: { cursor: 'pointer' },
+          style: { cursor: "pointer" },
         })
       : undefined,
-    state: {
-      isLoading,
-    },
   });
 
   return (
@@ -290,8 +297,6 @@ export default function Table<T extends Record<string, any>>({
     </div>
   );
 }
-
-
 
 /* Custom Button Example Usage */
 // const toolbarActions: ToolbarAction<Contact>[] = [

@@ -1,7 +1,7 @@
 "use client";
 
 import Body from "@/components/layout/body";
-import { Send, Edit, Trash, Pause, Play, Plus, BarChart } from "lucide-react";
+import { Edit, Trash, BarChart } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import Table, { ActionMenuItem } from "@/components/ui/table";
 import { MRT_ColumnDef } from "material-react-table";
