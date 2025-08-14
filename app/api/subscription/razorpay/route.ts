@@ -124,6 +124,7 @@ export async function GET(request: NextRequest) {
       const order = await instance.orders.fetch(orderId)
       const userId = order.notes?.userId as string
       const planId = order.notes?.planId as string
+      const planName = order.notes?.planName as string
       const planPeriod = order.notes?.planPeriod as string
       let expiryDate;
 
@@ -141,8 +142,11 @@ export async function GET(request: NextRequest) {
           where: { id: userId },
           data: {
             plans: {
-              connect: {
-                id: planId,
+              push: {
+                planName: planName,
+                period: planPeriod,
+                isAddOn: false,
+                endDate: expiryDate,
               },
             },
           },

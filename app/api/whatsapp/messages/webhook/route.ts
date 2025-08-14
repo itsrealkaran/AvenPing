@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendMessageToUserSafe } from "@/lib/websocket-utils";
 import { flowRunner } from "@/lib/flow-runner";
+import { storeWhatsAppMessage } from "@/lib/store-message";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -189,16 +190,13 @@ export async function POST(req: NextRequest) {
                       },
                     });
                   }
-                  newMessage = await prisma.whatsAppMessage.create({
-                    data: {
-                      recipientId: recipient.id,
-                      phoneNumber: message.from,
-                      wamid: message.id,
-                      message: messageText,
-                      sentAt: new Date(message.timestamp * 1000),
-                      status: "PENDING",
-                      whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
-                    },
+                  newMessage = await storeWhatsAppMessage({
+                    recipientId: recipient.id,
+                    phoneNumber: message.from,
+                    wamid: message.id,
+                    message: messageText,
+                    timestamp: message.timestamp,
+                    whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
                   });
 
                   if (!recipient.hasConversation) {
@@ -222,16 +220,13 @@ export async function POST(req: NextRequest) {
                         source: "AI_SYNC",
                       },
                     });
-                    newMessage = await tx.whatsAppMessage.create({
-                      data: {
-                        recipientId: newRecipient.id,
-                        wamid: message.id,
-                        phoneNumber: message.from,
-                        message: messageText,
-                        sentAt: new Date(message.timestamp * 1000),
-                        status: "PENDING",
-                        whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
-                      },
+                    newMessage = await storeWhatsAppMessage({
+                      recipientId: newRecipient.id,
+                      phoneNumber: message.from,
+                      wamid: message.id,
+                      message: messageText,
+                      timestamp: message.timestamp,
+                      whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
                     });
 
                     if (!newRecipient.hasConversation) {

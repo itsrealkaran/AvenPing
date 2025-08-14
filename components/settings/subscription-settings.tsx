@@ -20,7 +20,9 @@ interface Plan {
   isAddOn: boolean
   isCurrent?: boolean
   isUpgrade?: boolean
+  isDowngrade?: boolean
   isActive?: boolean
+  period: "month" | "year"
 }
 
 interface Addon {
@@ -37,6 +39,8 @@ interface Addon {
 interface SubscriptionData {
   activePlan: Plan | null
   nextPlan: Plan | null
+  downgradePlan: Plan | null
+  allPlans: Plan[]
   addons: Addon[]
 }
 
@@ -76,12 +80,14 @@ const PlanDetailCard: React.FC<PlanDetailCardProps> = ({
   const price = getPrice()
   const currencySymbol = getCurrencySymbol()
 
+  console.log(plan, "olan")
+
   return (
     <div className="relative">
       {/* Card Header */}
       <div className="mb-4">
         <span className="text-sm font-bold text-gray-900">
-          {plan.isCurrent ? "Current Plan" : "Upgrade Your Plan"}
+          {plan.isCurrent ? `Current Plan (${plan.period === "month" ? "Monthly" : "Yearly"})` : plan.isDowngrade ? "Downgrade Your Plan" : "Upgrade Your Plan"}
         </span>
       </div>
 
@@ -89,6 +95,8 @@ const PlanDetailCard: React.FC<PlanDetailCardProps> = ({
       <div className={`rounded-xl p-6 relative shadow-sm hover:shadow-md transition-all duration-200 ${
         plan.isCurrent 
           ? "bg-gradient-to-br from-cyan-50 via-cyan-50 to-cyan-100 border border-cyan-200" 
+          : plan.isDowngrade
+          ? "bg-gradient-to-br from-orange-50 via-orange-100 to-orange-200 border-2 border-dashed border-orange-300"
           : "bg-gradient-to-br from-cyan-50 via-cyan-100 to-cyan-200 border-2 border-dashed border-cyan-300"
       }`}>
         
@@ -119,14 +127,15 @@ const PlanDetailCard: React.FC<PlanDetailCardProps> = ({
           </div>
           
           {/* Price and Billing Toggle */}
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex flex-col items-left gap-3 mb-6">
             <span className="text-2xl font-bold text-gray-900">
               {price === 0 ? "Free" : `${currencySymbol}${price}/${period}`}
             </span>
             
             {price > 0 && (
-              <div className="flex bg-white/50 rounded-lg p-1">
+              <div className="flex bg-white/50 rounded-lg p-1 w-fit">
                 <button
+                  disabled={plan.isCurrent && plan.period === "year"}
                   onClick={() => onPeriodChange("year")}
                   className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                     period === "year" 
@@ -137,6 +146,7 @@ const PlanDetailCard: React.FC<PlanDetailCardProps> = ({
                   year
                 </button>
                 <button
+                  disabled={plan.isCurrent && plan.period === "month"}
                   onClick={() => onPeriodChange("month")}
                   className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                     period === "month" 
@@ -156,7 +166,9 @@ const PlanDetailCard: React.FC<PlanDetailCardProps> = ({
           {plan.features.length > 0 ? (
             plan.features.map((feature, index) => (
               <div key={index} className="flex items-start gap-3">
-                <div className="w-4 h-4 bg-cyan-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                  plan.isDowngrade ? "bg-orange-500" : "bg-cyan-500"
+                }`}>
                   <Check className="w-2.5 h-2.5 text-white" />
                 </div>
                 <span className="text-sm text-gray-700 leading-relaxed">{feature}</span>
@@ -169,12 +181,16 @@ const PlanDetailCard: React.FC<PlanDetailCardProps> = ({
 
         {/* View More Link */}
         <div className="mb-4">
-          <button className="text-cyan-500 text-sm font-medium hover:text-cyan-600 transition-colors">
+          <button className={`text-sm font-medium transition-colors ${
+            plan.isDowngrade 
+              ? "text-orange-500 hover:text-orange-600" 
+              : "text-cyan-500 hover:text-cyan-600"
+          }`}>
             view more (6)
           </button>
         </div>
 
-        {/* Upgrade Button */}
+        {/* Action Button */}
         {isUpgrade && onUpgrade && (
           <Button 
             onClick={onUpgrade}
@@ -183,11 +199,40 @@ const PlanDetailCard: React.FC<PlanDetailCardProps> = ({
             Upgrade Now
           </Button>
         )}
+        {plan.isDowngrade && onUpgrade && (
+          <Button 
+            onClick={onUpgrade}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 rounded-lg transition-colors"
+          >
+            Downgrade Now
+          </Button>
+        )}
+        {plan.isCurrent && (
+          plan.period === "month" ? (
+          <Button 
+            onClick={onUpgrade}
+            className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-medium py-3 rounded-lg transition-colors"
+          >
+            Change to Yearly
+          </Button>
+          ): plan.period === "year" ? (
+            <Button 
+              onClick={onUpgrade}
+              className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-medium py-3 rounded-lg transition-colors"
+            >
+              Change to Monthly
+            </Button>
+          ) : null
+        )}
 
         {/* Savings Text for Yearly Plans */}
         {period === "year" && price > 0 && (
           <div className="mt-3">
-            <span className="text-sm text-gray-500">Save with yearly billing</span>
+            <span className={`text-sm ${
+              plan.isDowngrade ? "text-orange-600" : "text-gray-500"
+            }`}>
+              Save with yearly billing
+            </span>
           </div>
         )}
       </div>
@@ -233,8 +278,10 @@ const AddOnsCard: React.FC = () => {
 }
 
 export default function SubscriptionSettings() {
-  const [currentPlanPeriod, setCurrentPlanPeriod] = useState<"month" | "year">("year")
+  const [currentPlanPeriod, setCurrentPlanPeriod] = useState<"month" | "year">("month")
   const [upgradePlanPeriod, setUpgradePlanPeriod] = useState<"month" | "year">("month")
+  const [downgradePlanPeriod, setDowngradePlanPeriod] = useState<"month" | "year">("month")
+  const [allPlansPeriod, setAllPlansPeriod] = useState<"month" | "year">("month")
   const [region, setRegion] = useState<"US" | "IND" | "ASIA">("US")
   const [addonPeriods, setAddonPeriods] = useState<{ [key: string]: "month" | "year" }>({
     flows: "year",
@@ -255,6 +302,9 @@ export default function SubscriptionSettings() {
     price: number
   } | null>(null)
 
+  // State for showing/hiding all plans
+  const [showAllPlans, setShowAllPlans] = useState(false)
+
   // Fetch subscription data from API
   useEffect(() => {
     const fetchSubscriptionData = async () => {
@@ -268,6 +318,7 @@ export default function SubscriptionSettings() {
         
         const data = await response.json()
         setSubscriptionData(data)
+        setCurrentPlanPeriod(data.activePlan?.period === "month" ? "year" : "month")
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
         console.error('Error fetching subscription data:', err)
@@ -283,6 +334,16 @@ export default function SubscriptionSettings() {
   const getPlanPrice = (plan: Plan | Addon, period: "month" | "year", region: "US" | "IND" | "ASIA") => {
     const priceJson = period === "month" ? plan.monthlyPriceJson : plan.yearlyPriceJson
     return priceJson[region]
+  }
+
+  // Helper function to get currency symbol based on region
+  const getCurrencySymbol = (region: "US" | "IND" | "ASIA") => {
+    switch (region) {
+      case "US": return "$"
+      case "IND": return "₹"
+      case "ASIA": return "$"
+      default: return "$"
+    }
   }
 
   // Get current plan from API data
@@ -311,6 +372,19 @@ export default function SubscriptionSettings() {
     }
   }
 
+  // Get downgrade plan from API data
+  const getDowngradePlan = (): Plan | null => {
+    if (!subscriptionData?.downgradePlan) {
+      return null
+    }
+
+    const plan = subscriptionData.downgradePlan
+    return {
+      ...plan,
+      isDowngrade: true
+    }
+  }
+
   // Get addons from API data
   const getAddons = (): Addon[] => {
     if (!subscriptionData?.addons) {
@@ -322,6 +396,26 @@ export default function SubscriptionSettings() {
       isActivated: addon.isActive,
       isActive: addon.isActive
     }))
+  }
+
+  // Get all plans from API data
+  const getAllPlans = (): Plan[] => {
+    if (!subscriptionData?.allPlans) {
+      return []
+    }
+
+    return subscriptionData.allPlans.map(plan => {
+      const isCurrent = plan.id === subscriptionData.activePlan?.id
+      const isUpgrade = plan.id === subscriptionData.nextPlan?.id
+      const isDowngrade = plan.id === subscriptionData.downgradePlan?.id
+      
+      return {
+        ...plan,
+        isCurrent,
+        isUpgrade,
+        isDowngrade
+      }
+    })
   }
 
   const handleUpgrade = (planName: string, period: "month" | "year") => {
@@ -339,6 +433,21 @@ export default function SubscriptionSettings() {
     setShowPaymentModal(true)
   }
 
+  const handleDowngrade = (planName: string, period: "month" | "year") => {
+    const downgradePlan = getDowngradePlan()
+    if (!downgradePlan) return
+
+    const price = getPlanPrice(downgradePlan, period, region)
+    const currency = region === "US" ? "$" : region === "IND" ? "₹" : "$"
+
+    setSelectedPlan({
+      name: planName,
+      period,
+      price
+    })
+    setShowPaymentModal(true)
+  }
+
   const handleClosePaymentModal = () => {
     setShowPaymentModal(false)
     setSelectedPlan(null)
@@ -346,10 +455,6 @@ export default function SubscriptionSettings() {
 
   const handleGetAddon = (addonId: string) => {
     console.log(`Get addon: ${addonId}`)
-  }
-
-  const handleBrowseMorePlans = () => {
-    console.log("Browse more plans")
   }
 
   if (loading) {
@@ -417,7 +522,23 @@ export default function SubscriptionSettings() {
         </div>
 
         {/* Plan Cards */}
-        <div className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className={`grid gap-8 max-w-7xl mx-auto ${
+          getDowngradePlan() ? 'lg:grid-cols-3' : 'lg:grid-cols-2'
+        }`}>
+
+          {/* Downgrade Plan Card or Add-ons Card */}
+          {getDowngradePlan() ? (
+            <PlanDetailCard
+              plan={getDowngradePlan()!}
+              period={downgradePlanPeriod}
+              region={region}
+              onPeriodChange={setDowngradePlanPeriod}
+              onRegionChange={setRegion}
+              onUpgrade={() => handleDowngrade(getDowngradePlan()!.name, downgradePlanPeriod)}
+              isUpgrade={false}
+            />
+          ) : null}
+
           {/* Current Plan Card */}
           {currentPlan ? (
             <PlanDetailCard
@@ -425,6 +546,7 @@ export default function SubscriptionSettings() {
               period={currentPlanPeriod}
               region={region}
               onPeriodChange={setCurrentPlanPeriod}
+              onUpgrade={() => handleUpgrade(currentPlan.name, currentPlan.period === "month" ? "year" : "month")}
               onRegionChange={setRegion}
             />
           ) : (
@@ -439,10 +561,8 @@ export default function SubscriptionSettings() {
             </div>
           )}
 
-          {/* Upgrade Plan Card or Add-ons Card */}
-          {!upgradePlan ? (
-            <AddOnsCard />
-          ) : (
+          {/* Upgrade Plan Card */}
+          {upgradePlan && (
             <PlanDetailCard
               plan={upgradePlan}
               period={upgradePlanPeriod}
@@ -455,13 +575,165 @@ export default function SubscriptionSettings() {
           )}
         </div>
 
+        {/* All Plans Section */}
+        {showAllPlans && getAllPlans().length > 0 && (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">All Available Plans</h2>
+              <p className="text-gray-600">Compare all available subscription plans and choose the one that fits your needs.</p>
+            </div>
+
+            {/* Period Selector for All Plans */}
+            <div className="flex justify-center">
+              <div className="flex bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
+                <button
+                  disabled={subscriptionData?.activePlan?.period === "month"}
+                  onClick={() => setAllPlansPeriod("month")}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    allPlansPeriod === "month" 
+                      ? "bg-cyan-500 text-white" 
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  disabled={subscriptionData?.activePlan?.period === "year"}
+                  onClick={() => setAllPlansPeriod("year")}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    allPlansPeriod === "year" 
+                      ? "bg-cyan-500 text-white" 
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Yearly
+                </button>
+              </div>
+            </div>
+
+            {/* All Plans Grid */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+              {getAllPlans().map((plan) => {
+                const isCurrent = plan.isCurrent
+                const isUpgrade = plan.isUpgrade
+                const isDowngrade = plan.isDowngrade
+                
+                return (
+                  <div key={plan.id} className={`rounded-xl p-6 relative shadow-sm hover:shadow-md transition-all duration-200 ${
+                    isCurrent 
+                      ? "bg-gradient-to-br from-cyan-50 via-cyan-50 to-cyan-100 border border-cyan-200" 
+                      : isDowngrade
+                      ? "bg-gradient-to-br from-orange-50 via-orange-100 to-orange-200 border-2 border-dashed border-orange-300"
+                      : isUpgrade
+                      ? "bg-gradient-to-br from-cyan-50 via-cyan-100 to-cyan-200 border-2 border-dashed border-cyan-300"
+                      : "bg-white border border-gray-200"
+                  }`}>
+                    
+                    {/* Plan Status Badge */}
+                    {isCurrent && (
+                      <div className="absolute top-4 right-4">
+                        <div className="w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="text-xs text-gray-500">Current {} Plan</span>
+                      </div>
+                    )}
+                    {isUpgrade && (
+                      <div className="absolute top-4 right-4">
+                        <span className="bg-cyan-100 text-cyan-600 text-xs font-medium px-2 py-1 rounded-full">
+                          Upgrade
+                        </span>
+                      </div>
+                    )}
+                    {isDowngrade && (
+                      <div className="absolute top-4 right-4">
+                        <span className="bg-orange-100 text-orange-600 text-xs font-medium px-2 py-1 rounded-full">
+                          Downgrade
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Plan Name */}
+                    <div className="mb-4">
+                      <h3 className="text-lg font-bold text-gray-900 mb-3">{plan.name}</h3>
+                      
+                      {/* Price Display */}
+                      <div className="mb-4">
+                        <div className="text-center">
+                          <span className="text-2xl font-bold text-gray-900">
+                            {getPlanPrice(plan, allPlansPeriod, region) === 0 ? "Free" : `${getCurrencySymbol(region)}${getPlanPrice(plan, allPlansPeriod, region)}/${allPlansPeriod}`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Features List */}
+                    <div className="space-y-3 mb-4">
+                      {plan.features.length > 0 ? (
+                        plan.features.slice(0, 3).map((feature, index) => (
+                          <div key={index} className="flex items-start gap-3">
+                            <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                              isDowngrade ? "bg-orange-500" : "bg-cyan-500"
+                            }`}>
+                              <Check className="w-2.5 h-2.5 text-white" />
+                            </div>
+                            <span className="text-sm text-gray-700 leading-relaxed">{feature}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-gray-500 italic">No features listed</div>
+                      )}
+                      
+                      {/* Show more features indicator */}
+                      {plan.features.length > 3 && (
+                        <div className="text-center pt-2">
+                          <span className="text-xs text-gray-500">+{plan.features.length - 3} more features</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Button */}
+                    {isCurrent ? (
+                      <button className="w-full bg-gray-100 text-gray-600 font-medium py-3 rounded-lg cursor-default">
+                        Current Plan
+                      </button>
+                    ) : isUpgrade ? (
+                      <Button 
+                        onClick={() => handleUpgrade(plan.name, allPlansPeriod)}
+                        className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-medium py-3 rounded-lg transition-colors"
+                      >
+                        Upgrade Now
+                      </Button>
+                    ) : isDowngrade ? (
+                      <Button 
+                        onClick={() => handleDowngrade(plan.name, allPlansPeriod)}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 rounded-lg transition-colors"
+                      >
+                        Downgrade Now
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={() => handleUpgrade(plan.name, allPlansPeriod)}
+                        className="w-full bg-gray-500 hover:bg-gray-600 text-white font-medium py-3 rounded-lg transition-colors"
+                      >
+                        Get Started
+                      </Button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Browse More Plans Link */}
         <div className="text-center">
           <button 
-            onClick={handleBrowseMorePlans}
+            onClick={() => setShowAllPlans(!showAllPlans)}
             className="inline-flex items-center gap-2 text-gray-700 font-medium hover:text-gray-900 transition-colors"
           >
-            Browse More Plans <ArrowRight className="w-4 h-4" />
+            {showAllPlans ? "Hide Plans" : "Browse More Plans"} 
+            <ArrowRight className={`w-4 h-4 transition-transform ${showAllPlans ? 'rotate-90' : ''}`} />
           </button>
         </div>
       </div>

@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
     if (payment.status === "captured") {
       const userId = order.notes?.userId as string
       const planId = order.notes?.planId as string
+      const planName = order.notes?.planName as string
+      const planPeriod = order.notes?.planPeriod as string
 
       if (userId && planId) {
         // Update user's plan
@@ -46,8 +48,11 @@ export async function POST(request: NextRequest) {
           where: { id: userId },
           data: {
             plans: {
-              connect: {
-                id: planId,
+              push: {
+                planName: planName,
+                period: planPeriod,
+                isAddOn: false,
+                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
               },
             },
             expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now

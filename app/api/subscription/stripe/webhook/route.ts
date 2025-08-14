@@ -60,6 +60,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   if (session.payment_status === "paid" && session.metadata) {
     const userId = session.metadata.userId
     const planId = session.metadata.planId
+    const planName = session.metadata.planName
     const planPeriod = session.metadata.planPeriod
     
     if (userId && planId) {
@@ -72,15 +73,26 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         // Default to monthly
         expiresAt.setMonth(expiresAt.getMonth() + 1)
       }
+
+      const userPlans = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          plans: true,
+        },
+      })
+
+      const existingPlans = (userPlans?.plans as any[]) || []
+      const newPlans = existingPlans.find((p: any) => p.planName === planName) ? existingPlans : [...existingPlans, {
+        planName: planName,
+        period: planPeriod,
+        isAddOn: existingPlans.find((p: any) => p.planName === planName)?.isAddOn || false,
+        endDate: expiresAt,
+      }]
       
       await prisma.user.update({
         where: { id: userId },
         data: {
-          plans: {
-            connect: {
-              id: planId,
-            },
-          },
+          plans: newPlans,
           expiresAt: expiresAt,
         },
       })
@@ -150,30 +162,27 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   console.log("Processing customer.subscription.deleted")
  
-  const customer = await stripe.customers.retrieve(subscription.customer as string)
+  // const customer = await stripe.customers.retrieve(subscription.customer as string)
   
-  if ('email' in customer && customer.email) {
-    const user = await prisma.user.findUnique({
-      where: { email: customer.email },
-      include: {
-        plans: true,
-      },
-    })
+  // if ('email' in customer && customer.email) {
+  //   const user = await prisma.user.findUnique({
+  //     where: { email: customer.email },
+  //   })
     
-    if (user) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          plans: {
-            disconnect: user.plans.map((plan) => ({ id: plan.id })),
-          },
-          expiresAt: null,
-        },
-      })
+  //   if (user) {
+  //     await prisma.user.update({
+  //       where: { id: user.id },
+  //       data: {
+  //         plans: {
+  //           disconnect: user.plans.map((plan) => ({ id: plan.id })),
+  //         },
+  //         expiresAt: null,
+  //       },
+  //     })
       
-      console.log(`Removed plan for user ${user.id}`)
-    }
-  }
+  //     console.log(`Removed plan for user ${user.id}`)
+  //   }
+  // }
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {

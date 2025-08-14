@@ -59,6 +59,7 @@ async function handlePaymentCaptured(payment: any) {
     const order = await instance.orders.fetch(orderId)
     const userId = order.notes?.userId as string
     const planId = order.notes?.planId as string
+    const planName = order.notes?.planName as string
     const planPeriod = order.notes?.planPeriod as string
     let expiryDate;
 
@@ -76,8 +77,11 @@ async function handlePaymentCaptured(payment: any) {
         where: { id: userId },
         data: {
           plans: {
-            connect: {
-              id: planId,
+            push: {
+              planName: planName,
+              period: planPeriod,
+              isAddOn: false,
+              endDate: expiryDate,
             },
           },
           expiresAt: expiryDate,
@@ -143,6 +147,7 @@ async function handleOrderPaid(order: any) {
   try {
     const userId = order.notes?.userId as string
     const planId = order.notes?.planId as string
+    const planName = order.notes?.planName as string
     const planPeriod = order.notes?.planPeriod as string
     let expiryDate;
     
@@ -155,15 +160,27 @@ async function handleOrderPaid(order: any) {
     }
 
     if (userId && planId) {
+
+      const userPlans = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          plans: true,
+        },
+      })
+
+      const existingPlans = (userPlans?.plans as any[]) || []
+      const newPlans = existingPlans.find((p: any) => p.planName === planName) ? existingPlans : [...existingPlans, {
+        planName: planName,
+        period: planPeriod,
+        isAddOn: existingPlans.find((p: any) => p.planName === planName)?.isAddOn || false,
+        endDate: expiryDate,
+      }]
+
       // Update user's plan
       await prisma.user.update({
         where: { id: userId },
         data: {
-          plans: {
-            connect: {
-              id: planId,
-            },
-          },
+          plans: newPlans,
           expiresAt: expiryDate,
         },
       })

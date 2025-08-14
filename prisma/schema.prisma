@@ -73,7 +73,7 @@ model User {
   status SubscriptionStatus @default(PENDING)
   expiresAt DateTime?
 
-  plans Plan[]
+  plans Json[] // { [planName: string, period: string, isAddOn: boolean, quantity?: number, endDate: string] }
 
   subscription Subscription[]
   settings    UserSetting?
@@ -257,8 +257,6 @@ model Plan {
 
   monthlyPriceJson Json? // { amount: number, currency: string }
   yearlyPriceJson Json? // { amount: number, currency: string }
-
-  users User[]
 
   features String[]
   

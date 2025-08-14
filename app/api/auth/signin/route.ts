@@ -30,7 +30,6 @@ export async function POST(request: Request) {
             phoneNumbers: true,
           },
         },
-        plans: true,
       }
     });
 
@@ -58,6 +57,8 @@ export async function POST(request: Request) {
       user.whatsAppAccount.phoneNumbers.length > 0
     );
 
+    const plan = (user.plans as any[]).find((plan: any) => plan.isAddOn === false)?.planName;
+
     // Create JWT token
     const token = await createToken({
       userId: user.id,
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
       name: user.name,
       accessToken: user.whatsAppAccount?.accessToken,
       hasWhatsAppAccount: hasWhatsAppAccount,
-      plan: user.plans.map((plan) => plan.name),
+      plan: plan,
       expiresAt: user.expiresAt,
     });
 

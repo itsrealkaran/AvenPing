@@ -105,17 +105,22 @@ export async function GET(request: NextRequest) {
       // Update user's plan
       const userId = session.metadata?.userId
       const planId = session.metadata?.planId
+      const planName = session.metadata?.planName
+      const planPeriod = session.metadata?.planPeriod
 
       if (userId && planId) {
         await prisma.user.update({
           where: { id: userId },
           data: {
             plans: {
-              connect: {
-                id: planId,
+              push: {
+                planName: planName,
+                period: planPeriod,
+                isAddOn: false,
+                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
               },
             },
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           },
         })
       }

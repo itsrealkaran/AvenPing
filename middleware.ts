@@ -50,22 +50,29 @@ const whatsappRequiredRoutes = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Allow public routes without any checks
-  if (publicRoutes.some((route) => pathname.startsWith(route))) {
-    return NextResponse.next();
-  }
-
-  // Check if the current path requires authentication
-  const requiresAuth = protectedRoutes.some((route) => pathname.startsWith(route));
-
-  if (!requiresAuth) {
-    // If it's not a protected route, proceed normally
-    return NextResponse.next();
-  }
-
+  
   try {
     const session = await getSessionFromRequest(request);
     
+    // Allow public routes without any checks
+    if (publicRoutes.some((route) => pathname.startsWith(route))) {
+      if (session && pathname.startsWith("/login")) {
+        const url = new URL('/dashboard', request.url);
+        const redirectResponse = NextResponse.redirect(url);
+        redirectResponse.headers.set('x-middleware-cache', 'no-cache');
+        return redirectResponse;
+      }
+      return NextResponse.next();
+    }
+  
+    // Check if the current path requires authentication
+    const requiresAuth = protectedRoutes.some((route) => pathname.startsWith(route));
+  
+    if (!requiresAuth) {
+      // If it's not a protected route, proceed normally
+      return NextResponse.next();
+    }
+
     // If no session exists, redirect to login
     if (!session) {
       const url = new URL('/login', request.url);
@@ -74,7 +81,7 @@ export async function middleware(request: NextRequest) {
       redirectResponse.headers.set('x-middleware-cache', 'no-cache');
       return redirectResponse;
     }
-
+    
     // Check if the current path requires WhatsApp account
     const requiresWhatsApp = whatsappRequiredRoutes.some((route) => pathname.startsWith(route));
     
