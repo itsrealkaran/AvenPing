@@ -62,18 +62,12 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     const planId = session.metadata.planId
     const planName = session.metadata.planName
     const planPeriod = session.metadata.planPeriod
+    const endDate = new Date(session.metadata.endDate)
+
+    console.log(planPeriod, "planPeriod")
+    console.log(session.metadata, "session.metadata")
     
     if (userId && planId) {
-      // Calculate expiration date based on plan period
-      const expiresAt = new Date()
-      
-      if (planPeriod === "YEARLY") {
-        expiresAt.setFullYear(expiresAt.getFullYear() + 1)
-      } else {
-        // Default to monthly
-        expiresAt.setMonth(expiresAt.getMonth() + 1)
-      }
-
       const userPlans = await prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -82,18 +76,33 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       })
 
       const existingPlans = (userPlans?.plans as any[]) || []
-      const newPlans = existingPlans.find((p: any) => p.planName === planName) ? existingPlans : [...existingPlans, {
+      // if there are plans with the name of BASIC, PREMIUM, ENTERPRISE, then remove them
+      const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
+      const premiumPlanIndex = existingPlans.findIndex((p: any) => p.planName === "PREMIUM")
+      const enterprisePlanIndex = existingPlans.findIndex((p: any) => p.planName === "ENTERPRISE")
+      
+      if (basicPlanIndex !== -1) {
+        existingPlans.splice(basicPlanIndex, 1)
+      }
+      if (premiumPlanIndex !== -1) {
+        existingPlans.splice(premiumPlanIndex, 1)
+      }
+      if (enterprisePlanIndex !== -1) {
+        existingPlans.splice(enterprisePlanIndex, 1)
+      }
+      
+      const newPlans = [...existingPlans, {
         planName: planName,
         period: planPeriod,
-        isAddOn: existingPlans.find((p: any) => p.planName === planName)?.isAddOn || false,
-        endDate: expiresAt,
+        isAddOn: false,
+        endDate: endDate,
       }]
       
       await prisma.user.update({
         where: { id: userId },
         data: {
           plans: newPlans,
-          expiresAt: expiresAt,
+          expiresAt: endDate,
         },
       })
       

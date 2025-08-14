@@ -4,7 +4,14 @@ import { NextResponse } from "next/server"
 import Razorpay from "razorpay"
 import { getSession } from "@/lib/jwt"
 import { PlanPeriod } from "@prisma/client"
+import { getPricingDetails } from "@/lib/get-pricing-details"
 import crypto from "crypto"
+
+interface PriceJson {
+  US: number
+  IND: number
+  ASIA: number
+}
 
 const instance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
@@ -35,7 +42,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "User not found" }, { status: 404 })
     }
 
-    // Find the plan
+    const planPeriodEnum = planPeriod === "YEARLY" ? "year" : "month"
+
+    // Get pricing details using the integrated function
+    const pricingDetails = await getPricingDetails(planName, planPeriodEnum, region as keyof PriceJson, user.plans as any)
+
+    if (!pricingDetails) {
+      return NextResponse.json({ message: "Unable to calculate pricing for this plan" }, { status: 400 })
+    }
+
+    // If it's a plan downgrade, return error
+    if (pricingDetails.price === null) {
+      return NextResponse.json({ message: "Plan downgrade not allowed" }, { status: 400 })
+    }
+
+    // Find the plan for additional metadata
     const plan = await prisma.plan.findFirst({
       where: {
         name: planName.toUpperCase(),
@@ -46,13 +67,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Plan not found" }, { status: 404 })
     }
 
-    const priceJson: any = planPeriod === "YEARLY" ? plan.yearlyPriceJson : plan.monthlyPriceJson
-    const price = region === "US" ? priceJson.US : region === "IND" ? priceJson.IND : region === "ASIA" ? priceJson.ASIA : priceJson.USD
+    // Determine currency based on region
     const currency = region === "US" ? "USD" : region === "IND" ? "INR" : region === "ASIA" ? "USD" : "USD"
 
-    console.log(price, currency)
+    console.log("Price:", pricingDetails.price, "Currency:", currency, "Period:", planPeriod)
 
-    const amountInPaise = Math.round(parseFloat(price) * 100) // Convert to paise
+    const amountInPaise = Math.round((pricingDetails.price || 0) * 100) // Convert to paise
 
     // Create Razorpay order
     const order = await instance.orders.create({
@@ -65,6 +85,7 @@ export async function POST(request: NextRequest) {
         planName: plan.name,
         planPeriod: planPeriod,
         userEmail: user.email,
+        endDate: pricingDetails.endDate.toString(),
       },
     })
 
@@ -75,8 +96,8 @@ export async function POST(request: NextRequest) {
         planName: plan.name,
         period: planPeriod as PlanPeriod,
         amount: amountInPaise,
-        currency: "INR",
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        currency: currency,
+        endDate: pricingDetails.endDate,
       },
     })
 
@@ -126,29 +147,48 @@ export async function GET(request: NextRequest) {
       const planId = order.notes?.planId as string
       const planName = order.notes?.planName as string
       const planPeriod = order.notes?.planPeriod as string
-      let expiryDate;
+      const endDate = new Date(order.notes?.endDate as string)
 
-      if (planPeriod === "MONTHLY") {
-        expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) 
-      } else if (planPeriod === "YEARLY") {
-        expiryDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)        
-      } else {
-        return NextResponse.json({ message: "Invalid plan period" }, { status: 400 })
-      }
+      if (userId && planId && payment.status === "captured") {
+        // Get current user plans
+        const userPlans = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            plans: true,
+          },
+        })
 
-      if (userId && planId) {
+        const existingPlans = (userPlans?.plans as any[]) || []
+        
+        // Remove existing BASIC, PREMIUM, ENTERPRISE plans
+        const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
+        const premiumPlanIndex = existingPlans.findIndex((p: any) => p.planName === "PREMIUM")
+        const enterprisePlanIndex = existingPlans.findIndex((p: any) => p.planName === "ENTERPRISE")
+        
+        if (basicPlanIndex !== -1) {
+          existingPlans.splice(basicPlanIndex, 1)
+        }
+        if (premiumPlanIndex !== -1) {
+          existingPlans.splice(premiumPlanIndex, 1)
+        }
+        if (enterprisePlanIndex !== -1) {
+          existingPlans.splice(enterprisePlanIndex, 1)
+        }
+        
+        // Add the new plan
+        const newPlans = [...existingPlans, {
+          planName: planName,
+          period: planPeriod,
+          isAddOn: false,
+          endDate: endDate,
+        }]
+
         // Update user's plan
         await prisma.user.update({
           where: { id: userId },
           data: {
-            plans: {
-              push: {
-                planName: planName,
-                period: planPeriod,
-                isAddOn: false,
-                endDate: expiryDate,
-              },
-            },
+            plans: newPlans,
+            expiresAt: endDate,
           },
         })
 
@@ -156,10 +196,12 @@ export async function GET(request: NextRequest) {
         await prisma.subscription.updateMany({
           where: {
             userId: userId,
-            endDate: expiryDate,
+            endDate: {
+              gte: new Date(),
+            },
           },
           data: {
-            endDate: expiryDate,
+            endDate: endDate,
           },
         })
       }

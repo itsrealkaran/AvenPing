@@ -61,30 +61,48 @@ async function handlePaymentCaptured(payment: any) {
     const planId = order.notes?.planId as string
     const planName = order.notes?.planName as string
     const planPeriod = order.notes?.planPeriod as string
-    let expiryDate;
-
-    if (planPeriod === "MONTHLY") {
-      expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) 
-    } else if (planPeriod === "YEARLY") {
-      expiryDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)        
-    } else {
-      return NextResponse.json({ message: "Invalid plan period" }, { status: 400 })
-    }
+    const endDate = new Date(order.notes?.endDate as string)
 
     if (userId && planId && payment.status === "captured") {
+      // Get current user plans
+      const userPlans = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          plans: true,
+        },
+      })
+
+      const existingPlans = (userPlans?.plans as any[]) || []
+      
+      // Remove existing BASIC, PREMIUM, ENTERPRISE plans
+      const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
+      const premiumPlanIndex = existingPlans.findIndex((p: any) => p.planName === "PREMIUM")
+      const enterprisePlanIndex = existingPlans.findIndex((p: any) => p.planName === "ENTERPRISE")
+      
+      if (basicPlanIndex !== -1) {
+        existingPlans.splice(basicPlanIndex, 1)
+      }
+      if (premiumPlanIndex !== -1) {
+        existingPlans.splice(premiumPlanIndex, 1)
+      }
+      if (enterprisePlanIndex !== -1) {
+        existingPlans.splice(enterprisePlanIndex, 1)
+      }
+      
+      // Add the new plan
+      const newPlans = [...existingPlans, {
+        planName: planName,
+        period: planPeriod,
+        isAddOn: false,
+        endDate: endDate,
+      }]
+
       // Update user's plan
       await prisma.user.update({
         where: { id: userId },
         data: {
-          plans: {
-            push: {
-              planName: planName,
-              period: planPeriod,
-              isAddOn: false,
-              endDate: expiryDate,
-            },
-          },
-          expiresAt: expiryDate,
+          plans: newPlans,
+          expiresAt: endDate,
         },
       })
 
@@ -97,7 +115,7 @@ async function handlePaymentCaptured(payment: any) {
           },
         },
         data: {
-          endDate: expiryDate,
+          endDate: endDate,
         },
       })
 
@@ -160,7 +178,7 @@ async function handleOrderPaid(order: any) {
     }
 
     if (userId && planId) {
-
+      // Get current user plans
       const userPlans = await prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -169,10 +187,27 @@ async function handleOrderPaid(order: any) {
       })
 
       const existingPlans = (userPlans?.plans as any[]) || []
-      const newPlans = existingPlans.find((p: any) => p.planName === planName) ? existingPlans : [...existingPlans, {
+      
+      // Remove existing BASIC, PREMIUM, ENTERPRISE plans
+      const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
+      const premiumPlanIndex = existingPlans.findIndex((p: any) => p.planName === "PREMIUM")
+      const enterprisePlanIndex = existingPlans.findIndex((p: any) => p.planName === "ENTERPRISE")
+      
+      if (basicPlanIndex !== -1) {
+        existingPlans.splice(basicPlanIndex, 1)
+      }
+      if (premiumPlanIndex !== -1) {
+        existingPlans.splice(premiumPlanIndex, 1)
+      }
+      if (enterprisePlanIndex !== -1) {
+        existingPlans.splice(enterprisePlanIndex, 1)
+      }
+      
+      // Add the new plan
+      const newPlans = [...existingPlans, {
         planName: planName,
         period: planPeriod,
-        isAddOn: existingPlans.find((p: any) => p.planName === planName)?.isAddOn || false,
+        isAddOn: false,
         endDate: expiryDate,
       }]
 

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react"
 import { ChevronRight, Check, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import PaymentGatewayModal from "./payment-gateway-modal"
+import DowngradeWarningModal from "./downgrade-warning-modal"
+import { toast } from "sonner"
 
 interface PriceJson {
   US: number
@@ -46,6 +48,7 @@ interface SubscriptionData {
 
 interface PlanDetailCardProps {
   plan: Plan
+  currentPlanPeriod?: "month" | "year"
   period: "month" | "year"
   region: "US" | "IND" | "ASIA"
   onPeriodChange: (period: "month" | "year") => void
@@ -56,6 +59,7 @@ interface PlanDetailCardProps {
 
 const PlanDetailCard: React.FC<PlanDetailCardProps> = ({
   plan,
+  currentPlanPeriod,
   period,
   region,
   onPeriodChange,
@@ -80,7 +84,7 @@ const PlanDetailCard: React.FC<PlanDetailCardProps> = ({
   const price = getPrice()
   const currencySymbol = getCurrencySymbol()
 
-  console.log(plan, "olan")
+  const yearlyLocked = currentPlanPeriod === "year"
 
   return (
     <div className="relative">
@@ -135,7 +139,6 @@ const PlanDetailCard: React.FC<PlanDetailCardProps> = ({
             {price > 0 && (
               <div className="flex bg-white/50 rounded-lg p-1 w-fit">
                 <button
-                  disabled={plan.isCurrent && plan.period === "year"}
                   onClick={() => onPeriodChange("year")}
                   className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                     period === "year" 
@@ -146,7 +149,7 @@ const PlanDetailCard: React.FC<PlanDetailCardProps> = ({
                   year
                 </button>
                 <button
-                  disabled={plan.isCurrent && plan.period === "month"}
+                  disabled={plan.isCurrent && plan.period === "month" || yearlyLocked}
                   onClick={() => onPeriodChange("month")}
                   className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                     period === "month" 
@@ -216,12 +219,7 @@ const PlanDetailCard: React.FC<PlanDetailCardProps> = ({
             Change to Yearly
           </Button>
           ): plan.period === "year" ? (
-            <Button 
-              onClick={onUpgrade}
-              className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-medium py-3 rounded-lg transition-colors"
-            >
-              Change to Monthly
-            </Button>
+            <p className="text-sm text-gray-500"> You are on a yearly plan</p>
           ) : null
         )}
 
@@ -278,10 +276,10 @@ const AddOnsCard: React.FC = () => {
 }
 
 export default function SubscriptionSettings() {
-  const [currentPlanPeriod, setCurrentPlanPeriod] = useState<"month" | "year">("month")
-  const [upgradePlanPeriod, setUpgradePlanPeriod] = useState<"month" | "year">("month")
-  const [downgradePlanPeriod, setDowngradePlanPeriod] = useState<"month" | "year">("month")
-  const [allPlansPeriod, setAllPlansPeriod] = useState<"month" | "year">("month")
+  const [currentPlanPeriod, setCurrentPlanPeriod] = useState<"month" | "year">("year")
+  const [upgradePlanPeriod, setUpgradePlanPeriod] = useState<"month" | "year">("year")
+  const [downgradePlanPeriod, setDowngradePlanPeriod] = useState<"month" | "year">("year")
+  const [allPlansPeriod, setAllPlansPeriod] = useState<"month" | "year">("year")
   const [region, setRegion] = useState<"US" | "IND" | "ASIA">("US")
   const [addonPeriods, setAddonPeriods] = useState<{ [key: string]: "month" | "year" }>({
     flows: "year",
@@ -305,28 +303,31 @@ export default function SubscriptionSettings() {
   // State for showing/hiding all plans
   const [showAllPlans, setShowAllPlans] = useState(false)
 
-  // Fetch subscription data from API
-  useEffect(() => {
-    const fetchSubscriptionData = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch('/api/subscription/get-next')
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch subscription data')
-        }
-        
-        const data = await response.json()
-        setSubscriptionData(data)
-        setCurrentPlanPeriod(data.activePlan?.period === "month" ? "year" : "month")
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
-        console.error('Error fetching subscription data:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
+  // State for downgrade warning modal
+  const [showDowngradeWarning, setShowDowngradeWarning] = useState(false)
 
+  // Fetch subscription data from API
+  const fetchSubscriptionData = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/subscription/get-next')
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscription data')
+      }
+      
+      const data = await response.json()
+      setSubscriptionData(data)
+      setCurrentPlanPeriod(data.activePlan?.period === "month" ? "year" : "month")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+      console.error('Error fetching subscription data:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchSubscriptionData()
   }, [])
 
@@ -419,11 +420,13 @@ export default function SubscriptionSettings() {
   }
 
   const handleUpgrade = (planName: string, period: "month" | "year") => {
-    const upgradePlan = getUpgradePlan()
-    if (!upgradePlan) return
+    // Find the actual plan that was clicked from all plans
+    const allPlans = getAllPlans()
+    const selectedPlan = allPlans.find(plan => plan.name === planName)
+    
+    if (!selectedPlan) return
 
-    const price = getPlanPrice(upgradePlan, period, region)
-    const currency = region === "US" ? "$" : region === "IND" ? "₹" : "$"
+    const price = getPlanPrice(selectedPlan, period, region)
 
     setSelectedPlan({
       name: planName,
@@ -433,19 +436,45 @@ export default function SubscriptionSettings() {
     setShowPaymentModal(true)
   }
 
-  const handleDowngrade = (planName: string, period: "month" | "year") => {
-    const downgradePlan = getDowngradePlan()
-    if (!downgradePlan) return
+  const handleDowngrade = async (planName: string, period: "month" | "year") => {
+    // Show warning modal first
+    setShowDowngradeWarning(true)
+  }
 
-    const price = getPlanPrice(downgradePlan, period, region)
-    const currency = region === "US" ? "$" : region === "IND" ? "₹" : "$"
+  const handleDowngradeConfirm = async (planName: string, period: "month" | "year") => {
+    try {
+      // Call the downgrade API
+      const response = await fetch('/api/subscription/downgrade', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          planName,
+          planPeriod: period === "month" ? "MONTHLY" : "YEARLY"
+        }),
+      })
 
-    setSelectedPlan({
-      name: planName,
-      period,
-      price
-    })
-    setShowPaymentModal(true)
+      const data = await response.json()
+
+      if (response.ok) {
+        // Plan downgraded successfully
+        toast.success(`Successfully downgraded to ${planName} plan`)
+        
+        // Refresh the subscription data
+        fetchSubscriptionData()
+        
+        // Close any open modals
+        setShowPaymentModal(false)
+        setSelectedPlan(null)
+        setShowDowngradeWarning(false)
+      } else {
+        throw new Error(data.message || 'Failed to downgrade plan')
+      }
+    } catch (error) {
+      console.error('Downgrade error:', error)
+      toast.error('Failed to downgrade plan. Please try again.')
+    }
   }
 
   const handleClosePaymentModal = () => {
@@ -530,6 +559,7 @@ export default function SubscriptionSettings() {
           {getDowngradePlan() ? (
             <PlanDetailCard
               plan={getDowngradePlan()!}
+              currentPlanPeriod={currentPlan?.period}
               period={downgradePlanPeriod}
               region={region}
               onPeriodChange={setDowngradePlanPeriod}
@@ -543,6 +573,7 @@ export default function SubscriptionSettings() {
           {currentPlan ? (
             <PlanDetailCard
               plan={currentPlan}
+              currentPlanPeriod={currentPlan?.period}
               period={currentPlanPeriod}
               region={region}
               onPeriodChange={setCurrentPlanPeriod}
@@ -565,6 +596,7 @@ export default function SubscriptionSettings() {
           {upgradePlan && (
             <PlanDetailCard
               plan={upgradePlan}
+              currentPlanPeriod={currentPlan?.period}
               period={upgradePlanPeriod}
               region={region}
               onPeriodChange={setUpgradePlanPeriod}
@@ -822,6 +854,21 @@ export default function SubscriptionSettings() {
           region={region}
           price={selectedPlan.price}
           currency={region === "US" ? "$" : region === "IND" ? "₹" : "$"}
+        />
+      )}
+
+      {/* Downgrade Warning Modal */}
+      {showDowngradeWarning && (
+        <DowngradeWarningModal
+          isOpen={showDowngradeWarning}
+          onClose={() => setShowDowngradeWarning(false)}
+          onConfirm={() => {
+            handleDowngradeConfirm(getDowngradePlan()!.name, downgradePlanPeriod);
+            setShowDowngradeWarning(false);
+          }}
+          planName={getDowngradePlan()!.name}
+          currentPlanName={getCurrentPlan()?.name || "Current Plan"}
+          period={downgradePlanPeriod}
         />
       )}
     </div>

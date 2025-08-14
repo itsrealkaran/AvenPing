@@ -4,6 +4,13 @@ import { NextResponse } from "next/server"
 import Stripe from "stripe"
 import { getSession } from "@/lib/jwt"
 import { PlanPeriod } from "@prisma/client"
+import { getPricingDetails } from "@/lib/get-pricing-details"
+
+interface PriceJson {
+  US: number
+  IND: number
+  ASIA: number
+}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-06-30.basil",
@@ -29,7 +36,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "User not found" }, { status: 404 })
     }
 
-    // Find the plan
+    const planPeriodEnum = planPeriod === "YEARLY" ? "year" : "month"
+    console.log(planPeriod, "planPeriod")
+    console.log(planPeriodEnum, "planPeriodEnum")
+
+    // Get pricing details using the integrated function
+    const pricingDetails = await getPricingDetails(planName, planPeriodEnum, region as keyof PriceJson, user.plans as any)
+
+    if (!pricingDetails) {
+      return NextResponse.json({ message: "Unable to calculate pricing for this plan" }, { status: 400 })
+    }
+
+    // If it's a plan downgrade, return error
+    if (pricingDetails.price === null) {
+      return NextResponse.json({ message: "Plan downgrade not allowed" }, { status: 400 })
+    }
+
+    // Find the plan for additional metadata
     const plan = await prisma.plan.findFirst({
       where: {
         name: planName,
@@ -40,12 +63,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Plan not found" }, { status: 404 })
     }
 
-    const priceJson: any = planPeriod === "YEARLY" ? plan.yearlyPriceJson : plan.monthlyPriceJson
-
-    const price = region === "US" ? priceJson.US : region === "IND" ? priceJson.IND : region === "ASIA" ? priceJson.ASIA : priceJson.USD
+    // Determine currency based on region
     const currency = region === "US" ? "usd" : region === "IND" ? "inr" : region === "ASIA" ? "usd" : "usd"
 
-    console.log(price, currency)
+    console.log("Price:", pricingDetails.price, "Currency:", currency, "Period:", planPeriod)
 
     // Create Stripe checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
@@ -58,7 +79,7 @@ export async function POST(request: NextRequest) {
               name: plan.name,
               description: `Subscription to ${plan.name} plan`,
             },
-            unit_amount: Math.round(parseFloat(price) * 100), // Convert to cents
+            unit_amount: Math.round((pricingDetails.price || 0) * 100), // Convert to cents
             recurring: {
               interval: planPeriod === "YEARLY" ? "year" : "month",
             },
@@ -75,6 +96,7 @@ export async function POST(request: NextRequest) {
         planId: plan.id,
         planName: plan.name,
         planPeriod: planPeriod,
+        endDate: pricingDetails.endDate.toString()
       },
     })
 
