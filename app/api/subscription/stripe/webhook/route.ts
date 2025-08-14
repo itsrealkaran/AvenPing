@@ -68,6 +68,10 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     console.log(session.metadata, "session.metadata")
     
     if (userId && planId) {
+      const isAddon = session.metadata.isAddon === "true"
+      const months = parseInt(session.metadata.months || "1")
+      const quantity = parseInt(session.metadata.quantity || "1")
+      
       const userPlans = await prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -76,37 +80,60 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       })
 
       const existingPlans = (userPlans?.plans as any[]) || []
-      // if there are plans with the name of BASIC, PREMIUM, ENTERPRISE, then remove them
-      const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
-      const premiumPlanIndex = existingPlans.findIndex((p: any) => p.planName === "PREMIUM")
-      const enterprisePlanIndex = existingPlans.findIndex((p: any) => p.planName === "ENTERPRISE")
       
-      if (basicPlanIndex !== -1) {
-        existingPlans.splice(basicPlanIndex, 1)
+      if (isAddon) {
+        // For addons, remove the existing plan with same name and add a new one
+        const filteredPlans = existingPlans.filter((p: any) => p.planName !== planName)
+        const newPlans = [...filteredPlans, {
+          planName: planName,
+          period: null,
+          isAddOn: true,
+          quantity: quantity,
+          endDate: endDate,
+        }]
+        
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            plans: newPlans,
+          },
+        })
+        
+        console.log(`Updated user ${userId} with addon ${planName} for ${quantity} × ${months} months`)
+      } else {
+        // For regular plans, remove existing BASIC, PREMIUM, ENTERPRISE plans
+        const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
+        const premiumPlanIndex = existingPlans.findIndex((p: any) => p.planName === "PREMIUM")
+        const enterprisePlanIndex = existingPlans.findIndex((p: any) => p.planName === "ENTERPRISE")
+        
+        if (basicPlanIndex !== -1) {
+          existingPlans.splice(basicPlanIndex, 1)
+        }
+        if (premiumPlanIndex !== -1) {
+          existingPlans.splice(premiumPlanIndex, 1)
+        }
+        if (enterprisePlanIndex !== -1) {
+          existingPlans.splice(enterprisePlanIndex, 1)
+        }
+        
+        const newPlans = [...existingPlans, {
+          planName: planName,
+          period: planPeriod,
+          isAddOn: false,
+          quantity: null,
+          endDate: endDate,
+        }]
+        
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            plans: newPlans,
+            expiresAt: endDate,
+          },
+        })
+        
+        console.log(`Updated user ${userId} with plan ${planId} for ${planPeriod} period`)
       }
-      if (premiumPlanIndex !== -1) {
-        existingPlans.splice(premiumPlanIndex, 1)
-      }
-      if (enterprisePlanIndex !== -1) {
-        existingPlans.splice(enterprisePlanIndex, 1)
-      }
-      
-      const newPlans = [...existingPlans, {
-        planName: planName,
-        period: planPeriod,
-        isAddOn: false,
-        endDate: endDate,
-      }]
-      
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          plans: newPlans,
-          expiresAt: endDate,
-        },
-      })
-      
-      console.log(`Updated user ${userId} with plan ${planId} for ${planPeriod} period`)
     }
   }
 }

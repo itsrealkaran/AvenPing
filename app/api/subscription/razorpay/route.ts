@@ -20,7 +20,14 @@ const instance = new Razorpay({
 
 export async function POST(request: NextRequest) {
   try {
-    const { planName, planPeriod, region }: { planName: string; planPeriod: string; region: string } = await request.json()
+    const { planName, planPeriod, region, isAddon, months, quantity }: { 
+      planName: string; 
+      planPeriod: string; 
+      region: string;
+      isAddon?: boolean;
+      months?: number;
+      quantity?: number;
+    } = await request.json()
 
     if (!planName || !planPeriod || !region) {
       return NextResponse.json({ message: "Invalid request" }, { status: 400 })
@@ -42,18 +49,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "User not found" }, { status: 404 })
     }
 
-    const planPeriodEnum = planPeriod === "YEARLY" ? "year" : "month"
-
-    // Get pricing details using the integrated function
-    const pricingDetails = await getPricingDetails(planName, planPeriodEnum, region as keyof PriceJson, user.plans as any)
-
-    if (!pricingDetails) {
-      return NextResponse.json({ message: "Unable to calculate pricing for this plan" }, { status: 400 })
-    }
-
-    // If it's a plan downgrade, return error
-    if (pricingDetails.price === null) {
-      return NextResponse.json({ message: "Plan downgrade not allowed" }, { status: 400 })
+    let pricingDetails;
+    let totalPrice;
+    
+    if (isAddon) {
+      // For addons, calculate price based on months
+      const monthlyPrice = await getPricingDetails(planName, "month", region as keyof PriceJson, user.plans as any)
+      if (!monthlyPrice) {
+        return NextResponse.json({ message: "Unable to calculate pricing for this addon" }, { status: 400 })
+      }
+      totalPrice = (monthlyPrice.price || 0) * (months || 1) * (quantity || 1)
+      pricingDetails = {
+        price: totalPrice,
+        endDate: new Date(Date.now() + (months || 1) * 30 * 24 * 60 * 60 * 1000)
+      }
+    } else {
+      // For regular plans, use existing logic
+      const planPeriodEnum = planPeriod === "YEARLY" ? "year" : "month"
+      pricingDetails = await getPricingDetails(planName, planPeriodEnum, region as keyof PriceJson, user.plans as any)
+      if (!pricingDetails) {
+        return NextResponse.json({ message: "Unable to calculate pricing for this plan" }, { status: 400 })
+      }
+      // If it's a plan downgrade, return error
+      if (pricingDetails.price === null) {
+        return NextResponse.json({ message: "Plan downgrade not allowed" }, { status: 400 })
+      }
+      totalPrice = pricingDetails.price
     }
 
     // Find the plan for additional metadata
@@ -70,9 +91,9 @@ export async function POST(request: NextRequest) {
     // Determine currency based on region
     const currency = region === "US" ? "USD" : region === "IND" ? "INR" : region === "ASIA" ? "USD" : "USD"
 
-    console.log("Price:", pricingDetails.price, "Currency:", currency, "Period:", planPeriod)
+    console.log("Price:", totalPrice, "Currency:", currency, "Period:", planPeriod, "IsAddon:", isAddon, "Months:", months)
 
-    const amountInPaise = Math.round((pricingDetails.price || 0) * 100) // Convert to paise
+    const amountInPaise = Math.round((totalPrice || 0) * 100) // Convert to paise
 
     // Create Razorpay order
     const order = await instance.orders.create({
@@ -86,6 +107,9 @@ export async function POST(request: NextRequest) {
         planPeriod: planPeriod,
         userEmail: user.email,
         endDate: pricingDetails.endDate.toString(),
+        isAddon: isAddon ? "true" : "false",
+        months: (months || 1).toString(),
+        quantity: (quantity || 1).toString()
       },
     })
 
@@ -94,7 +118,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: user.id,
         planName: plan.name,
-        period: planPeriod as PlanPeriod,
+        period: isAddon ? "MONTHLY" : (planPeriod as PlanPeriod),
         amount: amountInPaise,
         currency: currency,
         endDate: pricingDetails.endDate,
@@ -148,8 +172,15 @@ export async function GET(request: NextRequest) {
       const planName = order.notes?.planName as string
       const planPeriod = order.notes?.planPeriod as string
       const endDate = new Date(order.notes?.endDate as string)
+      const quantity = parseInt(order.notes?.quantity as string || "1")
+      const months = parseInt(order.notes?.months as string || "1")
+      const isAddon = order.notes?.isAddon === "true"
 
       if (userId && planId && payment.status === "captured") {
+        const isAddon = order.notes?.isAddon === "true"
+        const months = parseInt(order.notes?.months as string || "1")
+        const quantity = parseInt(order.notes?.quantity as string || "1")
+        
         // Get current user plans
         const userPlans = await prisma.user.findUnique({
           where: { id: userId },
@@ -157,53 +188,77 @@ export async function GET(request: NextRequest) {
             plans: true,
           },
         })
-
+  
         const existingPlans = (userPlans?.plans as any[]) || []
         
-        // Remove existing BASIC, PREMIUM, ENTERPRISE plans
-        const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
-        const premiumPlanIndex = existingPlans.findIndex((p: any) => p.planName === "PREMIUM")
-        const enterprisePlanIndex = existingPlans.findIndex((p: any) => p.planName === "ENTERPRISE")
-        
-        if (basicPlanIndex !== -1) {
-          existingPlans.splice(basicPlanIndex, 1)
-        }
-        if (premiumPlanIndex !== -1) {
-          existingPlans.splice(premiumPlanIndex, 1)
-        }
-        if (enterprisePlanIndex !== -1) {
-          existingPlans.splice(enterprisePlanIndex, 1)
-        }
-        
-        // Add the new plan
-        const newPlans = [...existingPlans, {
-          planName: planName,
-          period: planPeriod,
-          isAddOn: false,
-          endDate: endDate,
-        }]
-
-        // Update user's plan
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            plans: newPlans,
-            expiresAt: endDate,
-          },
-        })
-
-        // Update subscription status
-        await prisma.subscription.updateMany({
-          where: {
-            userId: userId,
-            endDate: {
-              gte: new Date(),
-            },
-          },
-          data: {
+        if (isAddon) {
+          // For addons, remove the existing plan with same name and add a new one
+          const filteredPlans = existingPlans.filter((p: any) => p.planName !== planName)
+          const newPlans = [...filteredPlans, {
+            planName: planName || "Unknown",
+            period: null,
+            quantity: quantity,
+            isAddOn: true,
             endDate: endDate,
-          },
-        })
+          }]
+          
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              plans: newPlans,
+            },
+          })
+          
+          console.log(`Payment captured for user ${userId}, addon ${planName || 'Unknown'} for ${quantity.toString()} × ${months.toString()} months`)
+        } else {
+          // For regular plans, remove existing BASIC, PREMIUM, ENTERPRISE plans
+          const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
+          const premiumPlanIndex = existingPlans.findIndex((p: any) => p.planName === "PREMIUM")
+          const enterprisePlanIndex = existingPlans.findIndex((p: any) => p.planName === "ENTERPRISE")
+          
+          if (basicPlanIndex !== -1) {
+            existingPlans.splice(basicPlanIndex, 1)
+          }
+          if (premiumPlanIndex !== -1) {
+            existingPlans.splice(premiumPlanIndex, 1)
+          }
+          if (enterprisePlanIndex !== -1) {
+            existingPlans.splice(enterprisePlanIndex, 1)
+          }
+          
+          // Add the new plan
+          const newPlans = [...existingPlans, {
+            planName: planName,
+            period: planPeriod,
+            quantity: null,
+            isAddOn: false,
+            endDate: endDate,
+          }]
+  
+          // Update user's plan
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              plans: newPlans,
+              expiresAt: endDate,
+            },
+          })
+  
+          // Update subscription status
+          await prisma.subscription.updateMany({
+            where: {
+              userId: userId,
+              endDate: {
+                gte: new Date(),
+              },
+            },
+            data: {
+              endDate: endDate,
+            },
+          })
+  
+          console.log(`Payment captured for user ${userId}, plan ${planId}`)
+        }
       }
 
       return NextResponse.json({ 

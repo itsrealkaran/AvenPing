@@ -15,6 +15,9 @@ interface PaymentGatewayModalProps {
   region: "US" | "IND" | "ASIA"
   price: number
   currency: string
+  isAddon?: boolean
+  months?: number
+  quantity?: number
 }
 
 interface PaymentGateway {
@@ -33,7 +36,10 @@ const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   planPeriod,
   region,
   price,
-  currency
+  currency,
+  isAddon = false,
+  months = 1,
+  quantity = 1
 }) => {
   const [selectedGateway, setSelectedGateway] = useState<"stripe" | "razorpay" | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -87,7 +93,10 @@ const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
           body: JSON.stringify({
             planName,
             planPeriod: planPeriod === "month" ? "MONTHLY" : "YEARLY",
-            region: region
+            region: region,
+            isAddon,
+            months,
+            quantity
           }),
         })
 
@@ -129,7 +138,10 @@ const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
           (error) => {
             console.error("Payment failed:", error)
             toast.error("Payment failed. Please try again.")
-          }
+          },
+          isAddon,
+          months,
+          quantity
         )
       }
     } catch (error) {

@@ -64,6 +64,10 @@ async function handlePaymentCaptured(payment: any) {
     const endDate = new Date(order.notes?.endDate as string)
 
     if (userId && planId && payment.status === "captured") {
+      const isAddon = order.notes?.isAddon === "true"
+      const months = parseInt(order.notes?.months as string || "1")
+      const quantity = parseInt(order.notes?.quantity as string || "1")
+      
       // Get current user plans
       const userPlans = await prisma.user.findUnique({
         where: { id: userId },
@@ -74,52 +78,72 @@ async function handlePaymentCaptured(payment: any) {
 
       const existingPlans = (userPlans?.plans as any[]) || []
       
-      // Remove existing BASIC, PREMIUM, ENTERPRISE plans
-      const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
-      const premiumPlanIndex = existingPlans.findIndex((p: any) => p.planName === "PREMIUM")
-      const enterprisePlanIndex = existingPlans.findIndex((p: any) => p.planName === "ENTERPRISE")
-      
-      if (basicPlanIndex !== -1) {
-        existingPlans.splice(basicPlanIndex, 1)
-      }
-      if (premiumPlanIndex !== -1) {
-        existingPlans.splice(premiumPlanIndex, 1)
-      }
-      if (enterprisePlanIndex !== -1) {
-        existingPlans.splice(enterprisePlanIndex, 1)
-      }
-      
-      // Add the new plan
-      const newPlans = [...existingPlans, {
-        planName: planName,
-        period: planPeriod,
-        isAddOn: false,
-        endDate: endDate,
-      }]
-
-      // Update user's plan
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          plans: newPlans,
-          expiresAt: endDate,
-        },
-      })
-
-      // Update subscription status
-      await prisma.subscription.updateMany({
-        where: {
-          userId: userId,
-          endDate: {
-            gte: new Date(),
-          },
-        },
-        data: {
+      if (isAddon) {
+        // For addons, remove the existing plan with same name and add a new one
+        const filteredPlans = existingPlans.filter((p: any) => p.planName !== planName)
+        const newPlans = [...filteredPlans, {
+          planName: planName || "Unknown",
+          period: null,
+          isAddOn: true,
           endDate: endDate,
-        },
-      })
+        }]
+        
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            plans: newPlans,
+          },
+        })
+        
+        console.log(`Payment captured for user ${userId}, addon ${planName || 'Unknown'} for ${quantity.toString()} × ${months.toString()} months`)
+      } else {
+        // For regular plans, remove existing BASIC, PREMIUM, ENTERPRISE plans
+        const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
+        const premiumPlanIndex = existingPlans.findIndex((p: any) => p.planName === "PREMIUM")
+        const enterprisePlanIndex = existingPlans.findIndex((p: any) => p.planName === "ENTERPRISE")
+        
+        if (basicPlanIndex !== -1) {
+          existingPlans.splice(basicPlanIndex, 1)
+        }
+        if (premiumPlanIndex !== -1) {
+          existingPlans.splice(premiumPlanIndex, 1)
+        }
+        if (enterprisePlanIndex !== -1) {
+          existingPlans.splice(enterprisePlanIndex, 1)
+        }
+        
+        // Add the new plan
+        const newPlans = [...existingPlans, {
+          planName: planName,
+          period: planPeriod,
+          isAddOn: false,
+          endDate: endDate,
+        }]
 
-      console.log(`Payment captured for user ${userId}, plan ${planId}`)
+        // Update user's plan
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            plans: newPlans,
+            expiresAt: endDate,
+          },
+        })
+
+        // Update subscription status
+        await prisma.subscription.updateMany({
+          where: {
+            userId: userId,
+            endDate: {
+              gte: new Date(),
+            },
+          },
+          data: {
+            endDate: endDate,
+          },
+        })
+
+        console.log(`Payment captured for user ${userId}, plan ${planId}`)
+      }
     }
   } catch (error) {
     console.error("Error handling payment captured:", error)

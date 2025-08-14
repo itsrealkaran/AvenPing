@@ -5,6 +5,7 @@ import { ChevronRight, Check, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import PaymentGatewayModal from "./payment-gateway-modal"
 import DowngradeWarningModal from "./downgrade-warning-modal"
+import AddonModal from "./addon-modal"
 import { toast } from "sonner"
 
 interface PriceJson {
@@ -275,6 +276,8 @@ const AddOnsCard: React.FC = () => {
   )
 }
 
+
+
 export default function SubscriptionSettings() {
   const [currentPlanPeriod, setCurrentPlanPeriod] = useState<"month" | "year">("year")
   const [upgradePlanPeriod, setUpgradePlanPeriod] = useState<"month" | "year">("year")
@@ -305,6 +308,12 @@ export default function SubscriptionSettings() {
 
   // State for downgrade warning modal
   const [showDowngradeWarning, setShowDowngradeWarning] = useState(false)
+
+  // State for addon modal
+  const [showAddonModal, setShowAddonModal] = useState(false)
+  const [selectedAddon, setSelectedAddon] = useState<Addon | null>(null)
+  const [addonMonths, setAddonMonths] = useState(1)
+  const [addonQuantity, setAddonQuantity] = useState(1)
 
   // Fetch subscription data from API
   const fetchSubscriptionData = async () => {
@@ -483,7 +492,19 @@ export default function SubscriptionSettings() {
   }
 
   const handleGetAddon = (addonId: string) => {
-    console.log(`Get addon: ${addonId}`)
+    const addon = getAddons().find(a => a.id === addonId)
+    if (addon) {
+      setSelectedAddon(addon)
+      setAddonMonths(1)
+      setShowAddonModal(true)
+    }
+  }
+
+  const handleCloseAddonModal = () => {
+    setShowAddonModal(false)
+    setSelectedAddon(null)
+    setAddonMonths(1)
+    setAddonQuantity(1)
   }
 
   if (loading) {
@@ -798,28 +819,6 @@ export default function SubscriptionSettings() {
                     <h3 className="text-lg font-bold text-gray-900 mb-2">{addon.name}</h3>
                     <div className="flex items-center justify-center gap-3">
                       <span className="text-xl font-bold text-gray-900">{currencySymbol}{price}/{addonPeriods[addon.id] || "month"}</span>
-                      <div className="flex bg-gray-100 rounded-lg p-1">
-                        <button
-                          onClick={() => setAddonPeriods(prev => ({ ...prev, [addon.id]: "year" }))}
-                          className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
-                            addonPeriods[addon.id] === "year" 
-                              ? "bg-cyan-500 text-white" 
-                              : "text-gray-600 hover:text-gray-900"
-                          }`}
-                        >
-                          year
-                        </button>
-                        <button
-                          onClick={() => setAddonPeriods(prev => ({ ...prev, [addon.id]: "month" }))}
-                          className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
-                            addonPeriods[addon.id] === "month" 
-                              ? "bg-cyan-500 text-white" 
-                              : "text-gray-600 hover:text-gray-900"
-                          }`}
-                        >
-                          month
-                        </button>
-                      </div>
                     </div>
                   </div>
 
@@ -869,6 +868,20 @@ export default function SubscriptionSettings() {
           planName={getDowngradePlan()!.name}
           currentPlanName={getCurrentPlan()?.name || "Current Plan"}
           period={downgradePlanPeriod}
+        />
+      )}
+
+      {/* Addon Modal */}
+      {selectedAddon && (
+        <AddonModal
+          isOpen={showAddonModal}
+          onClose={handleCloseAddonModal}
+          addon={selectedAddon}
+          months={addonMonths}
+          onMonthsChange={setAddonMonths}
+          region={region}
+          quantity={addonQuantity}
+          onQuantityChange={setAddonQuantity}
         />
       )}
     </div>

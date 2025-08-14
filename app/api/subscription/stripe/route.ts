@@ -18,7 +18,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
-    const { planName, planPeriod, region }: { planName: string; planPeriod: string; region: string } = await request.json()
+    const { planName, planPeriod, region, isAddon, months, quantity }: { 
+      planName: string; 
+      planPeriod: string; 
+      region: string;
+      isAddon?: boolean;
+      months?: number;
+      quantity?: number;
+    } = await request.json()
     
     // Get the session to get user email
     const session = await getSession()
@@ -40,16 +47,31 @@ export async function POST(request: NextRequest) {
     console.log(planPeriod, "planPeriod")
     console.log(planPeriodEnum, "planPeriodEnum")
 
-    // Get pricing details using the integrated function
-    const pricingDetails = await getPricingDetails(planName, planPeriodEnum, region as keyof PriceJson, user.plans as any)
-
-    if (!pricingDetails) {
-      return NextResponse.json({ message: "Unable to calculate pricing for this plan" }, { status: 400 })
-    }
-
-    // If it's a plan downgrade, return error
-    if (pricingDetails.price === null) {
-      return NextResponse.json({ message: "Plan downgrade not allowed" }, { status: 400 })
+    let pricingDetails;
+    let totalPrice;
+    
+    if (isAddon) {
+      // For addons, calculate price based on months
+      const monthlyPrice = await getPricingDetails(planName, "month", region as keyof PriceJson, user.plans as any)
+      if (!monthlyPrice) {
+        return NextResponse.json({ message: "Unable to calculate pricing for this addon" }, { status: 400 })
+      }
+      totalPrice = (monthlyPrice.price || 0) * (months || 1) * (quantity || 1)
+      pricingDetails = {
+        price: totalPrice,
+        endDate: new Date(Date.now() + (months || 1) * 30 * 24 * 60 * 60 * 1000)
+      }
+    } else {
+      // For regular plans, use existing logic
+      pricingDetails = await getPricingDetails(planName, planPeriodEnum, region as keyof PriceJson, user.plans as any)
+      if (!pricingDetails) {
+        return NextResponse.json({ message: "Unable to calculate pricing for this plan" }, { status: 400 })
+      }
+      // If it's a plan downgrade, return error
+      if (pricingDetails.price === null) {
+        return NextResponse.json({ message: "Plan downgrade not allowed" }, { status: 400 })
+      }
+      totalPrice = pricingDetails.price
     }
 
     // Find the plan for additional metadata
@@ -76,18 +98,18 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: currency,
             product_data: {
-              name: plan.name,
-              description: `Subscription to ${plan.name} plan`,
+              name: isAddon ? `${plan.name} Addon (${quantity || 1} × ${months || 1} months)` : plan.name,
+              description: isAddon ? `${quantity || 1} × ${months || 1} month${(months || 1) > 1 ? 's' : ''} access to ${plan.name} addon` : `Subscription to ${plan.name} plan`,
             },
-            unit_amount: Math.round((pricingDetails.price || 0) * 100), // Convert to cents
-            recurring: {
+            unit_amount: Math.round((totalPrice || 0) * 100), // Convert to cents
+            recurring: isAddon ? undefined : {
               interval: planPeriod === "YEARLY" ? "year" : "month",
             },
           },
           quantity: 1,
         },
       ],
-      mode: "subscription",
+      mode: isAddon ? "payment" : "subscription",
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?canceled=true`,
       customer_email: user.email,
@@ -96,7 +118,10 @@ export async function POST(request: NextRequest) {
         planId: plan.id,
         planName: plan.name,
         planPeriod: planPeriod,
-        endDate: pricingDetails.endDate.toString()
+        endDate: pricingDetails.endDate.toString(),
+        isAddon: isAddon ? "true" : "false",
+        months: (months || 1).toString(),
+        quantity: (quantity || 1).toString()
       },
     })
 
@@ -129,22 +154,74 @@ export async function GET(request: NextRequest) {
       const planId = session.metadata?.planId
       const planName = session.metadata?.planName
       const planPeriod = session.metadata?.planPeriod
+      const endDate = session.metadata?.endDate
+      const quantity = parseInt(session.metadata?.quantity || "1")
+      const months = parseInt(session.metadata?.months || "1")
+      const isAddon = session.metadata?.isAddon
 
       if (userId && planId) {
-        await prisma.user.update({
+        const userPlans = await prisma.user.findUnique({
           where: { id: userId },
-          data: {
-            plans: {
-              push: {
-                planName: planName,
-                period: planPeriod,
-                isAddOn: false,
-                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-              },
-            },
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          select: {
+            plans: true,
           },
         })
+  
+        const existingPlans = (userPlans?.plans as any[]) || []
+        
+        if (isAddon) {
+          // For addons, remove the existing plan with same name and add a new one
+          const filteredPlans = existingPlans.filter((p: any) => p.planName !== planName)
+          const newPlans = [...filteredPlans, {
+            planName: planName,
+            period: null,
+            isAddOn: true,
+            quantity: quantity,
+            endDate: endDate,
+          }]
+          
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              plans: newPlans,
+            },
+          })
+          
+          console.log(`Updated user ${userId} with addon ${planName} for ${quantity} × ${months} months`)
+        } else {
+          // For regular plans, remove existing BASIC, PREMIUM, ENTERPRISE plans
+          const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
+          const premiumPlanIndex = existingPlans.findIndex((p: any) => p.planName === "PREMIUM")
+          const enterprisePlanIndex = existingPlans.findIndex((p: any) => p.planName === "ENTERPRISE")
+          
+          if (basicPlanIndex !== -1) {
+            existingPlans.splice(basicPlanIndex, 1)
+          }
+          if (premiumPlanIndex !== -1) {
+            existingPlans.splice(premiumPlanIndex, 1)
+          }
+          if (enterprisePlanIndex !== -1) {
+            existingPlans.splice(enterprisePlanIndex, 1)
+          }
+          
+          const newPlans = [...existingPlans, {
+            planName: planName,
+            period: planPeriod,
+            isAddOn: false,
+            quantity: null,
+            endDate: endDate,
+          }]
+          
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              plans: newPlans,
+              expiresAt: endDate,
+            },
+          })
+          
+          console.log(`Updated user ${userId} with plan ${planId} for ${planPeriod} period`)
+        }
       }
 
       return NextResponse.json({ 

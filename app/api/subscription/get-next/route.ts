@@ -31,28 +31,31 @@ export async function GET(request: NextRequest) {
     
     const plans = await prisma.plan.findMany();
 
-    const mainPlan = plans.find((plan) => (user.plans as any[]).find((p: any) => p.planName === plan.name));
+    const userPlans = (user.plans as any[]) || [];
+    const mainPlan = plans.find((plan) => userPlans.find((p: any) => p.planName?.toUpperCase() === plan.name?.toUpperCase()));
     const mainPlanJson = {
       ...mainPlan,
-      period: (user.plans as any[]).find((p: any) => p.planName === mainPlan?.name)?.period === "MONTHLY" ? "month" : "year",
+      period: userPlans.find((p: any) => p.planName?.toUpperCase() === mainPlan?.name?.toUpperCase())?.period === "MONTHLY" ? "month" : "year",
     }
 
-    const addons = plans.filter((plan) => {
-      if (plan.isAddOn) {
-        const addon = (user.plans as any[]).find((p: any) => p.planName === plan.name);
+    const addons = plans
+      .filter((plan) => plan.isAddOn)
+      .map((plan) => {
+        const addon = userPlans.find((p: any) => p.planName?.toUpperCase() === plan.name?.toUpperCase());
         if (addon) {
           return {
             ...plan,
             isActive: true,
+            quantity: addon.quantity !== null && addon.quantity !== undefined ? addon.quantity : 1,
           };
         } else {
           return {
             ...plan,
             isActive: false,
+            quantity: null,
           };
         }
-      }
-    });
+      });
 
     if (!mainPlan) {
       return NextResponse.json(
