@@ -6,6 +6,8 @@ export async function storeWhatsAppMessage({
   phoneNumber,
   mediaIds,
   wamid,
+  isOutbound,
+  templateData,
   message,
   timestamp,
   status = "PENDING",
@@ -14,7 +16,9 @@ export async function storeWhatsAppMessage({
   recipientId: string;
   phoneNumber: string;
   mediaIds?: string[];
-  wamid: string;
+  wamid?: string;
+  isOutbound?: boolean;
+  templateData?: any;
   message: string;
   timestamp: number;
   status?: "PENDING" | "SENT" | "DELIVERED" | "READ" | "FAILED";
@@ -27,6 +31,8 @@ export async function storeWhatsAppMessage({
         phoneNumber,
         mediaIds,
         wamid,
+        isOutbound,
+        templateData,
         message,
         sentAt: new Date(timestamp * 1000),
         status,

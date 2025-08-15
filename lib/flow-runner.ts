@@ -1,5 +1,6 @@
 import Redis from 'ioredis';
 import { prisma } from './prisma';
+import { storeWhatsAppMessage } from './store-message';
 
 // Redis client
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
@@ -247,8 +248,7 @@ export class FlowRunner {
       });
 
       if (recipient) {
-        await prisma.whatsAppMessage.create({
-          data: {
+        await storeWhatsAppMessage({
             wamid: result.messages?.[0]?.id,
             status: 'SENT',
             message,
@@ -256,9 +256,21 @@ export class FlowRunner {
             phoneNumber: recipientPhoneNumber,
             whatsAppPhoneNumberId: phoneNumberId,
             recipientId: recipient.id,
-            mediaIds: mediaUrl ? [mediaUrl] : []
-          }
-        });
+            mediaIds: mediaUrl ? [mediaUrl] : [],
+            timestamp: Date.now()
+        })
+        // await prisma.whatsAppMessage.create({
+        //   data: {
+        //     wamid: result.messages?.[0]?.id,
+        //     status: 'SENT',
+        //     message,
+        //     isOutbound: true,
+        //     phoneNumber: recipientPhoneNumber,
+        //     whatsAppPhoneNumberId: phoneNumberId,
+        //     recipientId: recipient.id,
+        //     mediaIds: mediaUrl ? [mediaUrl] : []
+        //   }
+        // });
       }
 
       return true;
