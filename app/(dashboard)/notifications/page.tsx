@@ -17,7 +17,7 @@ type Notification = {
   type: "success" | "warning" | "info" | "error";
   timestamp: Date;
   read: boolean;
-  category: "campaign" | "message" | "system" | "payment";
+  category: "chats" | "campaigns" | "planExpiry" | "systemUpdates";
 };
 
 export default function NotificationsPage() {
@@ -31,6 +31,7 @@ export default function NotificationsPage() {
     deleteNotification,
     clearAllNotifications,
   } = useNotifications();
+  console.log(notifications, "notifications");
 
   const getNotificationIcon = (type: Notification["type"]) => {
     switch (type) {
@@ -49,10 +50,10 @@ export default function NotificationsPage() {
 
   const getNotificationBadge = (category: Notification["category"]) => {
     const categoryMap = {
-      campaign: { label: "Campaign", color: "bg-blue-100 text-blue-800" },
-      message: { label: "Message", color: "bg-green-100 text-green-800" },
-      system: { label: "System", color: "bg-gray-100 text-gray-800" },
-      payment: { label: "Payment", color: "bg-purple-100 text-purple-800" },
+      chats: { label: "Chats", color: "bg-green-100 text-green-800" },
+      campaigns: { label: "Campaigns", color: "bg-blue-100 text-blue-800" },
+      planExpiry: { label: "Plan Expiry", color: "bg-orange-100 text-orange-800" },
+      systemUpdates: { label: "System Updates", color: "bg-gray-100 text-gray-800" },
     };
     const categoryInfo = categoryMap[category];
     return (
@@ -104,10 +105,10 @@ export default function NotificationsPage() {
 
   const categoryOptions = [
     { label: "All Categories", value: "all" },
-    { label: "Campaign", value: "campaign" },
-    { label: "Message", value: "message" },
-    { label: "System", value: "system" },
-    { label: "Payment", value: "payment" },
+    { label: "Chats", value: "chats" },
+    { label: "Campaigns", value: "campaigns" },
+    { label: "Plan Expiry", value: "planExpiry" },
+    { label: "System Updates", value: "systemUpdates" },
   ];
 
   const columns: MRT_ColumnDef<Notification>[] = [
@@ -149,7 +150,7 @@ export default function NotificationsPage() {
       accessorKey: "timestamp",
       header: "Time",
       Cell: ({ row }) => {
-        return formatTimestamp(row.original.timestamp);
+        return formatTimestamp(new Date(row.original.timestamp));
       },
     },
     {
@@ -276,17 +277,19 @@ export default function NotificationsPage() {
 
   return (
     <Body title="Notifications">
-      <div className="space-y-4">
-        <Table
-          data={filteredNotifications}
-          columns={columns}
-          isLoading={false}
-          actionMenuItems={actionMenuItems}
-          searchPlaceholder="Search notifications..."
-          deleteButtonLabel="Delete Notification"
-          onDelete={handleDeleteNotification}
-          renderTopToolbar={renderCustomToolbar}
-        />
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <Table
+            data={filteredNotifications}
+            columns={columns}
+            isLoading={false}
+            actionMenuItems={actionMenuItems}
+            searchPlaceholder="Search notifications..."
+            deleteButtonLabel="Delete Notification"
+            onDelete={handleDeleteNotification}
+            renderTopToolbar={renderCustomToolbar}
+          />
+        </div>
       </div>
     </Body>
   );
