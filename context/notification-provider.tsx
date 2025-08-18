@@ -2,15 +2,18 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
+import { useUser } from "./user-context";
 
 interface Notification {
   id: string;
+  userId: string;
   title: string;
   message: string;
   type: "success" | "warning" | "info" | "error";
   timestamp: Date;
   read: boolean;
-  category: "campaign" | "message" | "system" | "payment";
+  category: "chats" | "campaigns" | "planExpiry" | "systemUpdates";
+  metadata?: Record<string, any>;
 }
 
 interface NotificationSettings {
@@ -51,165 +54,185 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load notifications from localStorage on mount
-  useEffect(() => {
-    const savedNotifications = localStorage.getItem("notifications");
-    const savedSettings = localStorage.getItem("notificationSettings");
-    
-    // Always load dummy notifications for testing (comment out this line to use localStorage)
-    const dummyNotifications: Notification[] = [
-      {
-        id: "1",
-        title: "Campaign Completed",
-        message: "Your 'Summer Sale' campaign has been successfully delivered to 1,234 contacts.",
-        type: "success",
-        timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-        read: false,
-        category: "campaign",
-      },
-      {
-        id: "2",
-        title: "New Message Received",
-        message: "You have received a new message from +1234567890",
-        type: "info",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-        read: true,
-        category: "message",
-      },
-      {
-        id: "3",
-        title: "Payment Due",
-        message: "Your subscription payment is due in 3 days. Please update your payment method.",
-        type: "warning",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-        read: false,
-        category: "payment",
-      },
-      {
-        id: "4",
-        title: "System Maintenance",
-        message: "Scheduled maintenance will occur on Sunday at 2:00 AM UTC.",
-        type: "info",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
-        read: true,
-        category: "system",
-      },
-      {
-        id: "5",
-        title: "Campaign Failed",
-        message: "Your 'Product Launch' campaign failed to send. Please check your settings.",
-        type: "error",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3), // 3 days ago
-        read: false,
-        category: "campaign",
-      },
-      {
-        id: "6",
-        title: "WhatsApp Connected",
-        message: "Your WhatsApp Business account has been successfully connected.",
-        type: "success",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4), // 4 days ago
-        read: true,
-        category: "system",
-      },
-      {
-        id: "7",
-        title: "Template Approved",
-        message: "Your 'Welcome Message' template has been approved by WhatsApp.",
-        type: "success",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5), // 5 days ago
-        read: false,
-        category: "campaign",
-      },
-      {
-        id: "8",
-        title: "Contact Imported",
-        message: "Successfully imported 500 contacts from your CSV file.",
-        type: "info",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6), // 6 days ago
-        read: true,
-        category: "message",
-      },
-    ];
-    
-    console.log("Setting dummy notifications:", dummyNotifications);
-    setNotifications(dummyNotifications);
-    
-    // Uncomment the following code to use localStorage instead of always showing dummy data
-    /*
-    if (savedNotifications) {
-      try {
-        const parsed = JSON.parse(savedNotifications);
-        setNotifications(parsed.map((n: any) => ({
-          ...n,
-          timestamp: new Date(n.timestamp),
-        })));
-      } catch (error) {
-        console.error("Error loading notifications:", error);
-      }
-    } else {
-      setNotifications(dummyNotifications);
-    }
-    */
-    
-    if (savedSettings) {
-      try {
-        setSettings(JSON.parse(savedSettings));
-      } catch (error) {
-        console.error("Error loading notification settings:", error);
+  // Get auth token from cookies
+  const getAuthToken = () => {
+    if (typeof window !== 'undefined') {
+      const cookies = document.cookie.split(';');
+      const authCookie = cookies.find(cookie => cookie.trim().startsWith('Authorization='));
+      if (authCookie) {
+        return authCookie.split('=')[1];
       }
     }
-  }, []);
+    return '';
+  };
 
-  // Save notifications to localStorage whenever they change
+  // Load notifications from API on mount
   useEffect(() => {
-    localStorage.setItem("notifications", JSON.stringify(notifications));
-  }, [notifications]);
+    const loadNotifications = async () => {
+      try {
+        setIsLoading(true);
+        
+        const response = await fetch('/api/notifications');
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Notifications loaded:', data);
+          setNotifications(data.notifications || []);
+        } else {
+          console.error('Failed to load notifications:', response.statusText);
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error details:', errorData);
+        }
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadNotifications();
+  }, []);
 
   // Save settings to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("notificationSettings", JSON.stringify(settings));
   }, [settings]);
 
-  const addNotification = (notification: Omit<Notification, "id" | "timestamp" | "read">) => {
-    const newNotification: Notification = {
-      ...notification,
-      id: Date.now().toString(),
-      timestamp: new Date(),
-      read: false,
-    };
-
-    setNotifications(prev => [newNotification, ...prev]);
-
-    // Show toast notification
-    if (settings.push) {
-      toast(notification.title, {
-        description: notification.message,
-        duration: 5000,
+  const addNotification = async (notification: Omit<Notification, "id" | "timestamp" | "read" | "userId">) => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(notification),
       });
+
+      if (response.ok) {
+        const result = await response.json();
+        const newNotification = result.notification;
+        
+        setNotifications(prev => [newNotification, ...prev]);
+
+        // Show toast notification
+        if (settings.push) {
+          toast(notification.title, {
+            description: notification.message,
+            duration: 5000,
+          });
+        }
+      } else {
+        console.error('Failed to create notification:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error creating notification:', error);
     }
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev =>
-      prev.map(notification =>
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
+  const markAsRead = async (id: string) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        console.warn('No auth token found for marking notification as read');
+        return;
+      }
+
+      const response = await fetch(`/api/notifications/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'markAsRead' }),
+      });
+
+      if (response.ok) {
+        setNotifications(prev =>
+          prev.map(notification =>
+            notification.id === id ? { ...notification, read: true } : notification
+          )
+        );
+      } else {
+        console.error('Failed to mark notification as read:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, read: true }))
-    );
+  const markAllAsRead = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        console.warn('No auth token found for marking all notifications as read');
+        return;
+      }
+
+      const response = await fetch('/api/notifications/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'markAllAsRead' }),
+      });
+
+      if (response.ok) {
+        setNotifications(prev =>
+          prev.map(notification => ({ ...notification, read: true }))
+        );
+      } else {
+        console.error('Failed to mark all notifications as read:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
   };
 
-  const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id));
+  const deleteNotification = async (id: string) => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        console.warn('No auth token found for deleting notification');
+        return;
+      }
+
+      const response = await fetch(`/api/notifications/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setNotifications(prev => prev.filter(notification => notification.id !== id));
+      } else {
+        console.error('Failed to delete notification:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
   };
 
-  const clearAllNotifications = () => {
-    setNotifications([]);
+  const clearAllNotifications = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        console.warn('No auth token found for clearing all notifications');
+        return;
+      }
+
+      const response = await fetch('/api/notifications/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'clearAll' }),
+      });
+
+      if (response.ok) {
+        setNotifications([]);
+      } else {
+        console.error('Failed to clear all notifications:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error clearing all notifications:', error);
+    }
   };
 
   const updateSettings = (key: keyof NotificationSettings, value: boolean) => {

@@ -37,6 +37,9 @@ export async function GET(request: Request) {
     });
     
     const userData = {
+      id: user?.id,
+      name: user?.name,
+      email: user?.email,
       whatsappAccount: {
         id: user?.whatsAppAccount?.id,
         name: user?.name,
