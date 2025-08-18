@@ -5,7 +5,7 @@ import { getSession } from '@/lib/jwt';
 // PATCH /api/notifications/[id] - Mark notification as read
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify JWT token to get user ID
@@ -14,7 +14,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { action } = body;
 
@@ -49,7 +49,7 @@ export async function PATCH(
 // DELETE /api/notifications/[id] - Delete a notification
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify JWT token to get user ID
@@ -58,7 +58,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const success = await notificationService.deleteNotification(session.userId as string, id);
 
     if (success) {
