@@ -32,7 +32,8 @@ const protectedRoutes = [
   '/aibot',
   '/analytics',
   '/settings',
-  '/profile'
+  '/profile',
+  '/aibot-lock'
 ];
 
 // Routes that require WhatsApp account
@@ -49,6 +50,7 @@ const whatsappRequiredRoutes = [
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isAIBotRoute = pathname === '/aibot' || pathname.startsWith('/aibot/');
   
   
   try {
@@ -91,6 +93,14 @@ export async function middleware(request: NextRequest) {
       // If user doesn't have WhatsApp account, redirect to dashboard
       if (!hasWhatsAppAccount) {
         const redirectResponse = NextResponse.redirect(new URL('/dashboard?whatsapp=false', request.url));
+        redirectResponse.headers.set('x-middleware-cache', 'no-cache');
+        return redirectResponse;
+      }
+
+      console.log(session.plan);
+      if (session.plan !== 'ENTERPRISE' && isAIBotRoute) {
+        const url = new URL('/aibot-lock', request.url);
+        const redirectResponse = NextResponse.redirect(url);
         redirectResponse.headers.set('x-middleware-cache', 'no-cache');
         return redirectResponse;
       }
