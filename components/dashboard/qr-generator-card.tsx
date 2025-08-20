@@ -16,6 +16,8 @@ import {
   Strikethrough,
   Code,
   Type,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeCanvas } from "qrcode.react";
@@ -54,6 +56,7 @@ export default function QrGeneratorCardContent() {
   const [selectedPhone, setSelectedPhone] = useState<string>("");
   const [selectedText, setSelectedText] = useState("");
   const [cursorPosition, setCursorPosition] = useState({ start: 0, end: 0 });
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   useEffect(() => {
     if (phoneNumbers.length > 0 && !selectedPhone) {
@@ -144,6 +147,68 @@ export default function QrGeneratorCardContent() {
     }
   };
 
+  const shareQRWithImage = async () => {
+    if (!qrUrl) return;
+
+    try {
+      // Get the QR code canvas element
+      const qrCanvas = document.querySelector("canvas");
+      if (!qrCanvas) {
+        toast.error("QR code not found");
+        return;
+      }
+
+      // Convert canvas to blob
+      const blob = await new Promise<Blob>((resolve) => {
+        qrCanvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+        }, "image/png");
+      });
+
+      // Create files array for sharing
+      const files = [
+        new File([blob], "whatsapp-qr.png", { type: "image/png" }),
+      ];
+
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files })
+      ) {
+        // Use Web Share API with files
+        await navigator.share({
+          title: "WhatsApp QR Code",
+          text: `Scan this QR code to open WhatsApp with the message: "${message}"`,
+          url: qrUrl,
+          files: files,
+        });
+        toast.success("QR code shared successfully!");
+      } else if (navigator.share) {
+        // Fallback to Web Share API without files
+        await navigator.share({
+          title: "WhatsApp QR Code",
+          text: `Scan this QR code to open WhatsApp with the message: "${message}"`,
+          url: qrUrl,
+        });
+        toast.success("Link shared successfully!");
+      } else {
+        // Fallback for browsers without Web Share API
+        // Download QR image and open link
+        const link = document.createElement("a");
+        link.href = qrCanvas.toDataURL("image/png");
+        link.download = "whatsapp-qr.png";
+        link.click();
+
+        // Open WhatsApp link in new tab
+        window.open(qrUrl, "_blank");
+        toast.success("QR image downloaded and link opened!");
+      }
+    } catch (error) {
+      console.error("Share error:", error);
+      toast.error("Failed to share QR code");
+    }
+  };
+
   const clearFormatting = () => {
     if (message.trim()) {
       const unformatted = unformatWhatsAppMessage(message);
@@ -152,8 +217,12 @@ export default function QrGeneratorCardContent() {
     }
   };
 
+  const togglePreviewMode = () => {
+    setIsPreviewMode(!isPreviewMode);
+  };
+
   return (
-    <div className="relative w-full overflow-hidden">
+    <div className="relative w-full overflow-hidden -mt-2">
       <div className="bg-white px-4 pt-2">
         {showQRPanel && (
           <div className="absolute inset-0 z-10 flex items-center justify-center transition-opacity duration-300 backdrop-blur-sm bg-white/30">
@@ -163,7 +232,7 @@ export default function QrGeneratorCardContent() {
 
         {/* Phone Numbers Row */}
         <label className="text-sm font-medium text-gray-600">
-          Select Phone Number
+          Phone Numbers
         </label>
         <div className="flex items-center gap-2 mb-2">
           <button
@@ -175,7 +244,7 @@ export default function QrGeneratorCardContent() {
               if (el) el.scrollBy({ left: -120, behavior: "smooth" });
             }}
           >
-            <ChevronLeft className="w-6 h-6 text-gray-400" />
+            <ChevronLeft className="size-4 text-gray-400" />
           </button>
           <div
             id="phone-scroll-row"
@@ -191,7 +260,7 @@ export default function QrGeneratorCardContent() {
               <button
                 key={p.id}
                 onClick={() => setSelectedPhone(p.phoneNumber)}
-                className={`flex size-14 ${
+                className={`flex size-10 ${
                   colors[idx % colors.length].bg
                 } items-center justify-center rounded-full border-2 transition-all duration-150 focus:outline-none ${
                   selectedPhone === p.phoneNumber
@@ -215,7 +284,7 @@ export default function QrGeneratorCardContent() {
               if (el) el.scrollBy({ left: 120, behavior: "smooth" });
             }}
           >
-            <ChevronRight className="w-6 h-6 text-gray-400" />
+            <ChevronRight className="size-4 text-gray-400" />
           </button>
         </div>
 
@@ -235,13 +304,13 @@ export default function QrGeneratorCardContent() {
           </div>
 
           {/* Formatting Toolbar */}
-          <div className="flex items-center gap-1 mb-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-2 mb-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
             <Button
               type="button"
               size="sm"
               variant="ghost"
               onClick={() => applyFormatting({ bold: true })}
-              className="h-8 w-8 p-0 hover:bg-gray-200"
+              className="size-6 p-0 hover:bg-gray-200"
               title="Bold"
             >
               <Bold className="h-4 w-4" />
@@ -251,7 +320,7 @@ export default function QrGeneratorCardContent() {
               size="sm"
               variant="ghost"
               onClick={() => applyFormatting({ italic: true })}
-              className="h-8 w-8 p-0 hover:bg-gray-200"
+              className="size-6 p-0 hover:bg-gray-200"
               title="Italic"
             >
               <Italic className="h-4 w-4" />
@@ -261,7 +330,7 @@ export default function QrGeneratorCardContent() {
               size="sm"
               variant="ghost"
               onClick={() => applyFormatting({ strikethrough: true })}
-              className="h-8 w-8 p-0 hover:bg-gray-200"
+              className="size-6 p-0 hover:bg-gray-200"
               title="Strikethrough"
             >
               <Strikethrough className="h-4 w-4" />
@@ -271,7 +340,7 @@ export default function QrGeneratorCardContent() {
               size="sm"
               variant="ghost"
               onClick={() => applyFormatting({ monospace: true })}
-              className="h-8 w-8 p-0 hover:bg-gray-200"
+              className="size-6 p-0 hover:bg-gray-200"
               title="Monospace"
             >
               <Code className="h-4 w-4" />
@@ -281,7 +350,7 @@ export default function QrGeneratorCardContent() {
               size="sm"
               variant="ghost"
               onClick={() => applyFormatting({ codeBlock: true })}
-              className="h-8 w-8 p-0 hover:bg-gray-200"
+              className="size-6 p-0 hover:bg-gray-200"
               title="Code Block"
             >
               <Type className="h-4 w-4" />
@@ -299,36 +368,62 @@ export default function QrGeneratorCardContent() {
             </Button>
           </div>
 
-          {/* Rich Text Preview */}
-          {message && (
-            <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="text-xs text-gray-500 mb-1">Preview:</div>
-              <div className="text-sm text-gray-800 whitespace-pre-wrap">
-                {parseWhatsAppFormatting(message).map((part, index) => (
-                  <span
-                    key={index}
-                    className={getWhatsAppFormattingClasses(part.type)}
-                  >
-                    {part.text}
-                  </span>
-                ))}
+          <div className="relative">
+            {isPreviewMode ? (
+              /* Preview Mode */
+              <div className="w-full min-h-[120px] border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div className="text-sm text-gray-800 whitespace-pre-wrap">
+                  {parseWhatsAppFormatting(message).map((part, index) => (
+                    <span
+                      key={index}
+                      className={getWhatsAppFormattingClasses(part.type)}
+                    >
+                      {part.text}
+                    </span>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={togglePreviewMode}
+                  className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-gray-200"
+                  title="Switch to Preview Mode"
+                  disabled={!message.trim()}
+                >
+                  <EyeOff className="h-4 w-4" />
+                </Button>
               </div>
-            </div>
-          )}
-
-          <Textarea
-            placeholder="Type Message... Use formatting buttons above for *bold*, _italic_, ~strikethrough~, `monospace`, and ```code blocks```"
-            value={message}
-            onChange={(e) => {
-              // Limit to 200 characters (including formatting)
-              if (getWhatsAppMessageLength(e.target.value) <= 200) {
-                setMessage(e.target.value);
-              }
-            }}
-            onSelect={handleTextSelection}
-            className="w-full min-h-[120px] resize-none border-2 border-gray-200 rounded-lg p-4 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-            rows={3}
-          />
+            ) : (
+              /* Input Mode */
+              <div className="relative">
+                <Textarea
+                  placeholder="Type Message... Use formatting buttons above for *bold*, _italic_, ~strikethrough~, `monospace`, and ```code blocks```"
+                  value={message}
+                  onChange={(e) => {
+                    // Limit to 200 characters (including formatting)
+                    if (getWhatsAppMessageLength(e.target.value) <= 200) {
+                      setMessage(e.target.value);
+                    }
+                  }}
+                  onSelect={handleTextSelection}
+                  className="w-full min-h-[120px] resize-none border-2 border-gray-200 rounded-lg p-4 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all pr-12"
+                  rows={3}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={togglePreviewMode}
+                  className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-gray-200"
+                  title="Switch to Preview Mode"
+                  disabled={!message.trim()}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Generate Button */}
@@ -379,7 +474,7 @@ export default function QrGeneratorCardContent() {
                 {qrUrl ? (
                   <QRCodeCanvas
                     value={qrUrl}
-                    size={140}
+                    size={160}
                     level="H"
                     className="w-full h-full"
                   />
@@ -426,18 +521,7 @@ export default function QrGeneratorCardContent() {
                     variant="ghost"
                     // className="rounded-full"
                     disabled={!qrUrl}
-                    onClick={() => {
-                      if (navigator.share && qrUrl) {
-                        navigator
-                          .share({
-                            title: "WhatsApp Link",
-                            url: qrUrl,
-                          })
-                          .catch(() => {});
-                      } else if (qrUrl) {
-                        window.open(qrUrl, "_blank");
-                      }
-                    }}
+                    onClick={shareQRWithImage}
                   >
                     <Share2 className="size-4" />
                   </Button>
