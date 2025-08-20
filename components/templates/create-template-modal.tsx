@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DropdownButton } from "@/components/ui/dropdown-button";
 import {
   Tooltip,
   TooltipContent,
@@ -478,7 +479,11 @@ export function CreateTemplateModal({
                         { id: "kk", label: "Kazakh", value: "kk" },
                         { id: "rw_RW", label: "Kinyarwanda", value: "rw_RW" },
                         { id: "ko", label: "Korean", value: "ko" },
-                        { id: "ky_KG", label: "Kyrgyz (Kyrgyzstan)", value: "ky_KG" },
+                        {
+                          id: "ky_KG",
+                          label: "Kyrgyz (Kyrgyzstan)",
+                          value: "ky_KG",
+                        },
                         { id: "lo", label: "Lao", value: "lo" },
                         { id: "lv", label: "Latvian", value: "lv" },
                         { id: "lt", label: "Lithuanian", value: "lt" },
@@ -490,8 +495,16 @@ export function CreateTemplateModal({
                         { id: "ps_AF", label: "Pashto", value: "ps_AF" },
                         { id: "fa", label: "Persian", value: "fa" },
                         { id: "pl", label: "Polish", value: "pl" },
-                        { id: "pt_BR", label: "Portuguese (BR)", value: "pt_BR" },
-                        { id: "pt_PT", label: "Portuguese (POR)", value: "pt_PT" },
+                        {
+                          id: "pt_BR",
+                          label: "Portuguese (BR)",
+                          value: "pt_BR",
+                        },
+                        {
+                          id: "pt_PT",
+                          label: "Portuguese (POR)",
+                          value: "pt_PT",
+                        },
                         { id: "pa", label: "Punjabi", value: "pa" },
                         { id: "ro", label: "Romanian", value: "ro" },
                         { id: "ru", label: "Russian", value: "ru" },
@@ -531,20 +544,56 @@ export function CreateTemplateModal({
                           { id: "af", label: "Afrikaans", value: "af" },
                           { id: "sq", label: "Albanian", value: "sq" },
                           { id: "ar", label: "Arabic", value: "ar" },
-                          { id: "ar_EG", label: "Arabic (EGY)", value: "ar_EG" },
-                          { id: "ar_AE", label: "Arabic (UAE)", value: "ar_AE" },
-                          { id: "ar_LB", label: "Arabic (LBN)", value: "ar_LB" },
-                          { id: "ar_MA", label: "Arabic (MAR)", value: "ar_MA" },
-                          { id: "ar_QA", label: "Arabic (QAT)", value: "ar_QA" },
+                          {
+                            id: "ar_EG",
+                            label: "Arabic (EGY)",
+                            value: "ar_EG",
+                          },
+                          {
+                            id: "ar_AE",
+                            label: "Arabic (UAE)",
+                            value: "ar_AE",
+                          },
+                          {
+                            id: "ar_LB",
+                            label: "Arabic (LBN)",
+                            value: "ar_LB",
+                          },
+                          {
+                            id: "ar_MA",
+                            label: "Arabic (MAR)",
+                            value: "ar_MA",
+                          },
+                          {
+                            id: "ar_QA",
+                            label: "Arabic (QAT)",
+                            value: "ar_QA",
+                          },
                           { id: "az", label: "Azerbaijani", value: "az" },
                           { id: "be_BY", label: "Belarusian", value: "be_BY" },
                           { id: "bn", label: "Bengali", value: "bn" },
-                          { id: "bn_IN", label: "Bengali (IND)", value: "bn_IN" },
+                          {
+                            id: "bn_IN",
+                            label: "Bengali (IND)",
+                            value: "bn_IN",
+                          },
                           { id: "bg", label: "Bulgarian", value: "bg" },
                           { id: "ca", label: "Catalan", value: "ca" },
-                          { id: "zh_CN", label: "Chinese (CHN)", value: "zh_CN" },
-                          { id: "zh_HK", label: "Chinese (HKG)", value: "zh_HK" },
-                          { id: "zh_TW", label: "Chinese (TAI)", value: "zh_TW" },
+                          {
+                            id: "zh_CN",
+                            label: "Chinese (CHN)",
+                            value: "zh_CN",
+                          },
+                          {
+                            id: "zh_HK",
+                            label: "Chinese (HKG)",
+                            value: "zh_HK",
+                          },
+                          {
+                            id: "zh_TW",
+                            label: "Chinese (TAI)",
+                            value: "zh_TW",
+                          },
                           { id: "hr", label: "Croatian", value: "hr" },
                           { id: "cs", label: "Czech", value: "cs" },
                           { id: "da", label: "Danish", value: "da" },
@@ -552,34 +601,122 @@ export function CreateTemplateModal({
                           { id: "nl", label: "Dutch", value: "nl" },
                           { id: "nl_BE", label: "Dutch (BEL)", value: "nl_BE" },
                           { id: "en", label: "English", value: "en" },
-                          { id: "en_GB", label: "English (UK)", value: "en_GB" },
-                          { id: "en_US", label: "English (US)", value: "en_US" },
-                          { id: "en_AE", label: "English (UAE)", value: "en_AE" },
-                          { id: "en_AU", label: "English (AUS)", value: "en_AU" },
-                          { id: "en_CA", label: "English (CAN)", value: "en_CA" },
-                          { id: "en_GH", label: "English (GHA)", value: "en_GH" },
-                          { id: "en_IE", label: "English (IRL)", value: "en_IE" },
-                          { id: "en_IN", label: "English (IND)", value: "en_IN" },
-                          { id: "en_JM", label: "English (JAM)", value: "en_JM" },
-                          { id: "en_MY", label: "English (MYS)", value: "en_MY" },
-                          { id: "en_NZ", label: "English (NZL)", value: "en_NZ" },
-                          { id: "en_QA", label: "English (QAT)", value: "en_QA" },
-                          { id: "en_SG", label: "English (SGP)", value: "en_SG" },
-                          { id: "en_UG", label: "English (UGA)", value: "en_UG" },
-                          { id: "en_ZA", label: "English (ZAF)", value: "en_ZA" },
+                          {
+                            id: "en_GB",
+                            label: "English (UK)",
+                            value: "en_GB",
+                          },
+                          {
+                            id: "en_US",
+                            label: "English (US)",
+                            value: "en_US",
+                          },
+                          {
+                            id: "en_AE",
+                            label: "English (UAE)",
+                            value: "en_AE",
+                          },
+                          {
+                            id: "en_AU",
+                            label: "English (AUS)",
+                            value: "en_AU",
+                          },
+                          {
+                            id: "en_CA",
+                            label: "English (CAN)",
+                            value: "en_CA",
+                          },
+                          {
+                            id: "en_GH",
+                            label: "English (GHA)",
+                            value: "en_GH",
+                          },
+                          {
+                            id: "en_IE",
+                            label: "English (IRL)",
+                            value: "en_IE",
+                          },
+                          {
+                            id: "en_IN",
+                            label: "English (IND)",
+                            value: "en_IN",
+                          },
+                          {
+                            id: "en_JM",
+                            label: "English (JAM)",
+                            value: "en_JM",
+                          },
+                          {
+                            id: "en_MY",
+                            label: "English (MYS)",
+                            value: "en_MY",
+                          },
+                          {
+                            id: "en_NZ",
+                            label: "English (NZL)",
+                            value: "en_NZ",
+                          },
+                          {
+                            id: "en_QA",
+                            label: "English (QAT)",
+                            value: "en_QA",
+                          },
+                          {
+                            id: "en_SG",
+                            label: "English (SGP)",
+                            value: "en_SG",
+                          },
+                          {
+                            id: "en_UG",
+                            label: "English (UGA)",
+                            value: "en_UG",
+                          },
+                          {
+                            id: "en_ZA",
+                            label: "English (ZAF)",
+                            value: "en_ZA",
+                          },
                           { id: "et", label: "Estonian", value: "et" },
                           { id: "fil", label: "Filipino", value: "fil" },
                           { id: "fi", label: "Finnish", value: "fi" },
                           { id: "fr", label: "French", value: "fr" },
-                          { id: "fr_BE", label: "French (BEL)", value: "fr_BE" },
-                          { id: "fr_CA", label: "French (CAN)", value: "fr_CA" },
-                          { id: "fr_CH", label: "French (CHE)", value: "fr_CH" },
-                          { id: "fr_CI", label: "French (CIV)", value: "fr_CI" },
-                          { id: "fr_MA", label: "French (MAR)", value: "fr_MA" },
+                          {
+                            id: "fr_BE",
+                            label: "French (BEL)",
+                            value: "fr_BE",
+                          },
+                          {
+                            id: "fr_CA",
+                            label: "French (CAN)",
+                            value: "fr_CA",
+                          },
+                          {
+                            id: "fr_CH",
+                            label: "French (CHE)",
+                            value: "fr_CH",
+                          },
+                          {
+                            id: "fr_CI",
+                            label: "French (CIV)",
+                            value: "fr_CI",
+                          },
+                          {
+                            id: "fr_MA",
+                            label: "French (MAR)",
+                            value: "fr_MA",
+                          },
                           { id: "ka", label: "Georgian", value: "ka" },
                           { id: "de", label: "German", value: "de" },
-                          { id: "de_AT", label: "German (AUT)", value: "de_AT" },
-                          { id: "de_CH", label: "German (CHE)", value: "de_CH" },
+                          {
+                            id: "de_AT",
+                            label: "German (AUT)",
+                            value: "de_AT",
+                          },
+                          {
+                            id: "de_CH",
+                            label: "German (CHE)",
+                            value: "de_CH",
+                          },
                           { id: "el", label: "Greek", value: "el" },
                           { id: "gu", label: "Gujarati", value: "gu" },
                           { id: "ha", label: "Hausa", value: "ha" },
@@ -594,7 +731,11 @@ export function CreateTemplateModal({
                           { id: "kk", label: "Kazakh", value: "kk" },
                           { id: "rw_RW", label: "Kinyarwanda", value: "rw_RW" },
                           { id: "ko", label: "Korean", value: "ko" },
-                          { id: "ky_KG", label: "Kyrgyz (Kyrgyzstan)", value: "ky_KG" },
+                          {
+                            id: "ky_KG",
+                            label: "Kyrgyz (Kyrgyzstan)",
+                            value: "ky_KG",
+                          },
                           { id: "lo", label: "Lao", value: "lo" },
                           { id: "lv", label: "Latvian", value: "lv" },
                           { id: "lt", label: "Lithuanian", value: "lt" },
@@ -606,8 +747,16 @@ export function CreateTemplateModal({
                           { id: "ps_AF", label: "Pashto", value: "ps_AF" },
                           { id: "fa", label: "Persian", value: "fa" },
                           { id: "pl", label: "Polish", value: "pl" },
-                          { id: "pt_BR", label: "Portuguese (BR)", value: "pt_BR" },
-                          { id: "pt_PT", label: "Portuguese (POR)", value: "pt_PT" },
+                          {
+                            id: "pt_BR",
+                            label: "Portuguese (BR)",
+                            value: "pt_BR",
+                          },
+                          {
+                            id: "pt_PT",
+                            label: "Portuguese (POR)",
+                            value: "pt_PT",
+                          },
                           { id: "pa", label: "Punjabi", value: "pa" },
                           { id: "ro", label: "Romanian", value: "ro" },
                           { id: "ru", label: "Russian", value: "ru" },
@@ -616,18 +765,66 @@ export function CreateTemplateModal({
                           { id: "sk", label: "Slovak", value: "sk" },
                           { id: "sl", label: "Slovenian", value: "sl" },
                           { id: "es", label: "Spanish", value: "es" },
-                          { id: "es_AR", label: "Spanish (ARG)", value: "es_AR" },
-                          { id: "es_CL", label: "Spanish (CHL)", value: "es_CL" },
-                          { id: "es_CO", label: "Spanish (COL)", value: "es_CO" },
-                          { id: "es_CR", label: "Spanish (CRI)", value: "es_CR" },
-                          { id: "es_DO", label: "Spanish (DOM)", value: "es_DO" },
-                          { id: "es_EC", label: "Spanish (ECU)", value: "es_EC" },
-                          { id: "es_HN", label: "Spanish (HND)", value: "es_HN" },
-                          { id: "es_MX", label: "Spanish (MEX)", value: "es_MX" },
-                          { id: "es_PA", label: "Spanish (PAN)", value: "es_PA" },
-                          { id: "es_PE", label: "Spanish (PER)", value: "es_PE" },
-                          { id: "es_ES", label: "Spanish (SPA)", value: "es_ES" },
-                          { id: "es_UY", label: "Spanish (URY)", value: "es_UY" },
+                          {
+                            id: "es_AR",
+                            label: "Spanish (ARG)",
+                            value: "es_AR",
+                          },
+                          {
+                            id: "es_CL",
+                            label: "Spanish (CHL)",
+                            value: "es_CL",
+                          },
+                          {
+                            id: "es_CO",
+                            label: "Spanish (COL)",
+                            value: "es_CO",
+                          },
+                          {
+                            id: "es_CR",
+                            label: "Spanish (CRI)",
+                            value: "es_CR",
+                          },
+                          {
+                            id: "es_DO",
+                            label: "Spanish (DOM)",
+                            value: "es_DO",
+                          },
+                          {
+                            id: "es_EC",
+                            label: "Spanish (ECU)",
+                            value: "es_EC",
+                          },
+                          {
+                            id: "es_HN",
+                            label: "Spanish (HND)",
+                            value: "es_HN",
+                          },
+                          {
+                            id: "es_MX",
+                            label: "Spanish (MEX)",
+                            value: "es_MX",
+                          },
+                          {
+                            id: "es_PA",
+                            label: "Spanish (PAN)",
+                            value: "es_PA",
+                          },
+                          {
+                            id: "es_PE",
+                            label: "Spanish (PER)",
+                            value: "es_PE",
+                          },
+                          {
+                            id: "es_ES",
+                            label: "Spanish (SPA)",
+                            value: "es_ES",
+                          },
+                          {
+                            id: "es_UY",
+                            label: "Spanish (URY)",
+                            value: "es_UY",
+                          },
                           { id: "sw", label: "Swahili", value: "sw" },
                           { id: "sv", label: "Swedish", value: "sv" },
                           { id: "ta", label: "Tamil", value: "ta" },
@@ -654,16 +851,26 @@ export function CreateTemplateModal({
                   >
                     Category
                   </Label>
-                  <select
-                    id="category"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-[#30CFED] focus:border-[#30CFED]"
+                  <br />
+                  <DropdownButton
+                    options={[
+                      { value: "MARKETING", label: "Marketing" },
+                      { value: "UTILITY", label: "Utility" },
+                      { value: "AUTHENTICATION", label: "Authentication" },
+                    ]}
+                    variant="outline"
+                    selected={category}
+                    onChange={(value) => setCategory(value)}
+                    className="w-full justify-between"
                   >
-                    <option value="MARKETING">Marketing</option>
-                    <option value="UTILITY">Utility</option>
-                    <option value="AUTHENTICATION">Authentication</option>
-                  </select>
+                    {category === "MARKETING"
+                      ? "Marketing"
+                      : category === "UTILITY"
+                      ? "Utility"
+                      : category === "AUTHENTICATION"
+                      ? "Authentication"
+                      : "Select Category"}
+                  </DropdownButton>
                 </div>
 
                 <div className="flex justify-start">
@@ -712,18 +919,31 @@ export function CreateTemplateModal({
                     {/* Header Format Selector */}
                     <div className="flex items-center gap-2">
                       <Label className="text-sm text-gray-600">Format:</Label>
-                      <select
-                        value={headerFormat}
-                        onChange={(e) =>
-                          setHeaderFormat(e.target.value as HeaderFormat)
+                      <DropdownButton
+                        variant="outline"
+                        size="sm"
+                        options={[
+                          { value: "TEXT", label: "Text" },
+                          { value: "IMAGE", label: "Image" },
+                          { value: "VIDEO", label: "Video" },
+                          { value: "DOCUMENT", label: "Document" },
+                        ]}
+                        selected={headerFormat}
+                        onChange={(value) =>
+                          setHeaderFormat(value as HeaderFormat)
                         }
                         className="text-sm border border-gray-300 rounded px-2 py-1"
                       >
-                        <option value="TEXT">Text</option>
-                        <option value="IMAGE">Image</option>
-                        <option value="VIDEO">Video</option>
-                        <option value="DOCUMENT">Document</option>
-                      </select>
+                        {headerFormat === "TEXT"
+                          ? "Text"
+                          : headerFormat === "IMAGE"
+                          ? "Image"
+                          : headerFormat === "VIDEO"
+                          ? "Video"
+                          : headerFormat === "DOCUMENT"
+                          ? "Document"
+                          : "Select Format"}
+                      </DropdownButton>
                     </div>
                   </div>
 
