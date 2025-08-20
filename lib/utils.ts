@@ -227,3 +227,85 @@ export function hasWhatsAppFormatting(text: string): boolean {
 export function getWhatsAppMessageLength(formattedText: string): number {
   return unformatWhatsAppMessage(formattedText).length;
 }
+
+/**
+ * Parses WhatsApp formatted text into parts for rendering
+ * @param formattedText - Text with WhatsApp formatting
+ * @returns Array of text parts with formatting information
+ */
+export function parseWhatsAppFormatting(formattedText: string): Array<{ text: string; type: 'bold' | 'italic' | 'strikethrough' | 'monospace' | 'codeBlock' | 'plain' }> {
+  if (!formattedText) return [];
+  
+  // Split text by formatting patterns while preserving the delimiters
+  const parts = formattedText.split(/(\*[^*]+\*|_[^_]+_|~[^~]+~|`[^`]+`|```[^`]+```)/);
+  
+  return parts.map((part) => {
+    // Bold formatting: *text*
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return {
+        text: part.slice(1, -1),
+        type: 'bold' as const
+      };
+    }
+    
+    // Italic formatting: _text_
+    if (part.startsWith('_') && part.endsWith('_')) {
+      return {
+        text: part.slice(1, -1),
+        type: 'italic' as const
+      };
+    }
+    
+    // Strikethrough formatting: ~text~
+    if (part.startsWith('~') && part.endsWith('~')) {
+      return {
+        text: part.slice(1, -1),
+        type: 'strikethrough' as const
+      };
+    }
+    
+    // Monospace formatting: `text` (but not code blocks)
+    if (part.startsWith('`') && part.endsWith('`') && !part.startsWith('```')) {
+      return {
+        text: part.slice(1, -1),
+        type: 'monospace' as const
+      };
+    }
+    
+    // Code block formatting: ```text```
+    if (part.startsWith('```') && part.endsWith('```')) {
+      return {
+        text: part.slice(3, -3),
+        type: 'codeBlock' as const
+      };
+    }
+    
+    // Return plain text as-is
+    return {
+      text: part,
+      type: 'plain' as const
+    };
+  });
+}
+
+/**
+ * Gets CSS classes for WhatsApp formatting types
+ * @param type - The formatting type
+ * @returns CSS classes string
+ */
+export function getWhatsAppFormattingClasses(type: 'bold' | 'italic' | 'strikethrough' | 'monospace' | 'codeBlock' | 'plain'): string {
+  switch (type) {
+    case 'bold':
+      return 'font-bold';
+    case 'italic':
+      return 'italic';
+    case 'strikethrough':
+      return 'line-through';
+    case 'monospace':
+      return 'font-mono bg-gray-200 px-1 rounded';
+    case 'codeBlock':
+      return 'font-mono bg-gray-200 px-2 py-1 rounded block';
+    default:
+      return '';
+  }
+}
