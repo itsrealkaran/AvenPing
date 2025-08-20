@@ -17,21 +17,21 @@ import { QRCodeCanvas } from "qrcode.react";
 import { useUser } from "@/context/user-context";
 
 const colors = [
-  { name: "green", bg: "bg-green-300", border: "border-green-400" },
-  { name: "blue", bg: "bg-blue-300", border: "border-blue-400" },
-  { name: "yellow", bg: "bg-yellow-300", border: "border-yellow-400" },
-  { name: "purple", bg: "bg-purple-300", border: "border-purple-400" },
-  { name: "orange", bg: "bg-orange-300", border: "border-orange-400" },
-  { name: "red", bg: "bg-red-300", border: "border-red-400" },
-  { name: "gray", bg: "bg-gray-300", border: "border-gray-400" },
-  { name: "teal", bg: "bg-teal-300", border: "border-teal-400" },
-  { name: "indigo", bg: "bg-indigo-300", border: "border-indigo-400" },
-  { name: "pink", bg: "bg-pink-300", border: "border-pink-400" },
+  { fg: "text-green-400", bg: "bg-green-300", border: "border-green-400" },
+  { fg: "text-blue-400", bg: "bg-blue-300", border: "border-blue-400" },
+  { fg: "text-yellow-400", bg: "bg-yellow-300", border: "border-yellow-400" },
+  { fg: "text-purple-400", bg: "bg-purple-300", border: "border-purple-400" },
+  { fg: "text-orange-400", bg: "bg-orange-300", border: "border-orange-400" },
+  { fg: "text-red-400", bg: "bg-red-300", border: "border-red-400" },
+  { fg: "text-gray-400", bg: "bg-gray-300", border: "border-gray-400" },
+  { fg: "text-teal-400", bg: "bg-teal-300", border: "border-teal-400" },
+  { fg: "text-indigo-400", bg: "bg-indigo-300", border: "border-indigo-400" },
+  { fg: "text-pink-400", bg: "bg-pink-300", border: "border-pink-400" },
 ];
 
 export default function QrGeneratorCardContent() {
   const { userInfo, isLoading } = useUser();
-  const phoneNumbers: Array<{ id: string; phoneNumber: string }> =
+  const phoneNumbers: Array<{ id: string; name: string; phoneNumber: string }> =
     userInfo?.whatsappAccount?.phoneNumbers || [];
 
   const [selectedColor, setSelectedColor] = useState(colors[0]);
@@ -49,6 +49,11 @@ export default function QrGeneratorCardContent() {
   const handleSendMessage = () => {
     if (!message.trim()) {
       toast.error("Message cannot be empty.");
+      return;
+    }
+
+    if (message.length > 200) {
+      toast.error("Message cannot exceed 200 characters.");
       return;
     }
 
@@ -96,7 +101,7 @@ export default function QrGeneratorCardContent() {
         <label className="text-sm font-medium text-gray-600">
           Select Phone Number
         </label>
-        <div className="flex items-center gap-2 mb-6">
+        <div className="flex items-center gap-2 mb-2">
           <button
             type="button"
             aria-label="Scroll left"
@@ -122,7 +127,7 @@ export default function QrGeneratorCardContent() {
               <button
                 key={p.id}
                 onClick={() => setSelectedPhone(p.phoneNumber)}
-                className={`flex w-10 h-10 ${
+                className={`flex size-14 ${
                   colors[idx % colors.length].bg
                 } items-center justify-center rounded-full border-2 transition-all duration-150 focus:outline-none ${
                   selectedPhone === p.phoneNumber
@@ -130,7 +135,11 @@ export default function QrGeneratorCardContent() {
                     : "border-transparent"
                 }`}
                 title={p.phoneNumber}
-              />
+              >
+                <span className="text-md font-semibold text-white">
+                  {p.name[0]}
+                </span>
+              </button>
             ))}
           </div>
           <button
@@ -148,12 +157,28 @@ export default function QrGeneratorCardContent() {
 
         {/* Message Input */}
         <div className="">
+          <div className="flex justify-between items-center mb-2">
+            <label className="text-sm font-medium text-gray-600">Message</label>
+            <span
+              className={`text-xs ${
+                message.length > 200 ? "text-red-500" : "text-gray-500"
+              }`}
+            >
+              {message.length}/200 characters
+            </span>
+          </div>
           <Textarea
             placeholder="Type Message..."
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="w-full min-h-[160px] resize-none border-2 border-gray-200 rounded-lg p-4 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+            onChange={(e) => {
+              // Limit to 200 characters
+              if (e.target.value.length <= 200) {
+                setMessage(e.target.value);
+              }
+            }}
+            className="w-full min-h-[120px] resize-none border-2 border-gray-200 rounded-lg p-4 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
             rows={3}
+            maxLength={200}
           />
         </div>
 
@@ -205,7 +230,7 @@ export default function QrGeneratorCardContent() {
                 {qrUrl ? (
                   <QRCodeCanvas
                     value={qrUrl}
-                    size={150}
+                    size={140}
                     level="H"
                     className="w-full h-full"
                   />
