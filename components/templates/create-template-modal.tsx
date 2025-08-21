@@ -10,6 +10,13 @@ import {
   Image,
   Video,
   FileText,
+  Bold,
+  Italic,
+  Strikethrough,
+  Code,
+  Type,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,6 +34,13 @@ import {
 import { useTemplates } from "@/context/template-provider";
 import { useUser } from "@/context/user-context";
 import SearchableDropdown from "../ui/searchable-dropdown";
+import {
+  formatWhatsAppMessage,
+  unformatWhatsAppMessage,
+  parseWhatsAppFormatting,
+  getWhatsAppFormattingClasses,
+  WhatsAppFormatting,
+} from "@/lib/utils";
 
 interface CreateTemplateModalProps {
   open: boolean;
@@ -75,6 +89,12 @@ export function CreateTemplateModal({
       ?.body_text?.[0] || []
   );
   const [showRules, setShowRules] = useState(false);
+
+  // Preview mode states
+  const [isHeaderPreviewMode, setIsHeaderPreviewMode] = useState(false);
+  const [isBodyPreviewMode, setIsBodyPreviewMode] = useState(false);
+  const [selectedText, setSelectedText] = useState("");
+  const [cursorPosition, setCursorPosition] = useState({ start: 0, end: 0 });
 
   const { userInfo } = useUser();
   const { createTemplate, selectedWhatsAppAccountId } = useTemplates();
@@ -310,6 +330,73 @@ export function CreateTemplateModal({
 
   const removeBodyExample = (index: number) => {
     setBodyExamples(bodyExamples.filter((_, i) => i !== index));
+  };
+
+  // WhatsApp formatting functions
+  const handleTextSelection = (
+    e: React.SyntheticEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement;
+    setSelectedText(
+      target.value.substring(target.selectionStart || 0, target.selectionEnd || 0)
+    );
+    setCursorPosition({
+      start: target.selectionStart || 0,
+      end: target.selectionEnd || 0,
+    });
+  };
+
+  const applyFormatting = (
+    formatting: WhatsAppFormatting,
+    target: "header" | "body"
+  ) => {
+    let textToFormat = selectedText;
+    let currentText = target === "header" ? headerText : bodyText;
+
+    if (!textToFormat && !currentText.trim()) {
+      toast.error("Please enter some text first.");
+      return;
+    }
+
+    if (!textToFormat) {
+      textToFormat = currentText;
+    }
+
+    const formattedText = formatWhatsAppMessage(textToFormat, formatting);
+    let newText = currentText;
+
+    if (selectedText) {
+      // Format selected text
+      newText =
+        currentText.substring(0, cursorPosition.start) +
+        formattedText +
+        currentText.substring(cursorPosition.end);
+
+      // Clear selection
+      setSelectedText("");
+    } else {
+      // Format entire text
+      newText = formattedText;
+    }
+
+    if (target === "header") {
+      setHeaderText(newText);
+    } else {
+      setBodyText(newText);
+    }
+  };
+
+  const clearFormatting = (target: "header" | "body") => {
+    const currentText = target === "header" ? headerText : bodyText;
+    if (currentText.trim()) {
+      const unformatted = unformatWhatsAppMessage(currentText);
+      if (target === "header") {
+        setHeaderText(unformatted);
+      } else {
+        setBodyText(unformatted);
+      }
+      toast.success("Formatting cleared");
+    }
   };
 
   // Update examples when text changes
@@ -843,15 +930,13 @@ export function CreateTemplateModal({
                     />
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="category"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Category
-                  </Label>
-                  <br />
+                <Label
+                  htmlFor="category"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Category
+                </Label>
+                <div className="flex gap-2 items-center">
                   <DropdownButton
                     options={[
                       { value: "MARKETING", label: "Marketing" },
@@ -871,17 +956,13 @@ export function CreateTemplateModal({
                       ? "Authentication"
                       : "Select Category"}
                   </DropdownButton>
-                </div>
-
-                <div className="flex justify-start">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setShowRules(true)}
-                    className="text-[#30CFED] border-[#30CFED] hover:bg-[#D3F8FF]"
                   >
-                    <Info className="h-4 w-4 mr-2" />
-                    View Verification Rules
+                    <Info className="h-4 w-4" />
+                    Verification Rules
                   </Button>
                 </div>
               </div>
@@ -950,13 +1031,124 @@ export function CreateTemplateModal({
                   {/* Text Header */}
                   {headerFormat === "TEXT" && (
                     <>
-                      <Input
-                        id="header"
-                        value={headerText}
-                        onChange={(e) => setHeaderText(e.target.value)}
-                        placeholder="e.g., Our {{1}} is on!"
-                        className="font-mono"
-                      />
+                      {/* Formatting Toolbar */}
+                      <div className="flex items-center gap-1 mb-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            applyFormatting({ bold: true }, "header")
+                          }
+                          className="h-6 w-6 p-0 hover:bg-gray-200"
+                          title="Bold"
+                        >
+                          <Bold className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            applyFormatting({ italic: true }, "header")
+                          }
+                          className="h-6 w-6 p-0 hover:bg-gray-200"
+                          title="Italic"
+                        >
+                          <Italic className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            applyFormatting({ strikethrough: true }, "header")
+                          }
+                          className="h-6 w-6 p-0 hover:bg-gray-200"
+                          title="Strikethrough"
+                        >
+                          <Strikethrough className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            applyFormatting({ monospace: true }, "header")
+                          }
+                          className="h-6 w-6 p-0 hover:bg-gray-200"
+                          title="Monospace"
+                        >
+                          <Code className="h-3 w-3" />
+                        </Button>
+                        <div className="w-px h-4 bg-gray-300 mx-1" />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => clearFormatting("header")}
+                          className="h-6 px-2 text-xs hover:bg-gray-200"
+                          title="Clear Formatting"
+                        >
+                          Clear
+                        </Button>
+                      </div>
+
+                      {/* Header Input with Preview Toggle */}
+                      <div className="relative">
+                        {isHeaderPreviewMode ? (
+                          /* Preview Mode */
+                          <div className="w-full min-h-[40px] border-2 border-gray-200 rounded-lg p-3 bg-gray-50">
+                            <div className="text-sm text-gray-800 whitespace-pre-wrap">
+                              {parseWhatsAppFormatting(headerText).map(
+                                (part, index) => (
+                                  <span
+                                    key={index}
+                                    className={getWhatsAppFormattingClasses(
+                                      part.type
+                                    )}
+                                  >
+                                    {part.text}
+                                  </span>
+                                )
+                              )}
+                            </div>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setIsHeaderPreviewMode(false)}
+                              className="absolute top-1 right-1 h-6 w-6 p-0 hover:bg-gray-200"
+                              title="Switch to Edit Mode"
+                            >
+                              <EyeOff className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          /* Input Mode */
+                          <div className="relative">
+                            <Input
+                              id="header"
+                              value={headerText}
+                              onChange={(e) => setHeaderText(e.target.value)}
+                              onSelect={handleTextSelection}
+                              placeholder="e.g., Our {{1}} is on!"
+                              className="font-mono pr-10"
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setIsHeaderPreviewMode(true)}
+                              className="absolute top-1 right-1 h-6 w-6 p-0 hover:bg-gray-200"
+                              title="Switch to Preview Mode"
+                              disabled={!headerText.trim()}
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <Label className="text-sm font-medium text-gray-600">
@@ -1083,13 +1275,121 @@ export function CreateTemplateModal({
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <Textarea
-                    id="body"
-                    value={bodyText}
-                    onChange={(e) => setBodyText(e.target.value)}
-                    placeholder="e.g., Shop now through {{1}} and use code {{2}} to get {{3}} off of all merchandise."
-                    className="min-h-[100px] font-mono"
-                  />
+
+                  {/* Formatting Toolbar */}
+                  <div className="flex items-center gap-1 p-2 bg-white rounded-lg border border-gray-200">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => applyFormatting({ bold: true }, "body")}
+                      className="h-6 w-6 p-0 hover:bg-gray-200"
+                      title="Bold"
+                    >
+                      <Bold className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => applyFormatting({ italic: true }, "body")}
+                      className="h-6 w-6 p-0 hover:bg-gray-200"
+                      title="Italic"
+                    >
+                      <Italic className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        applyFormatting({ strikethrough: true }, "body")
+                      }
+                      className="h-6 w-6 p-0 hover:bg-gray-200"
+                      title="Strikethrough"
+                    >
+                      <Strikethrough className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        applyFormatting({ monospace: true }, "body")
+                      }
+                      className="h-6 w-6 p-0 hover:bg-gray-200"
+                      title="Monospace"
+                    >
+                      <Code className="h-3 w-3" />
+                    </Button>
+                    <div className="w-px h-4 bg-gray-300 mx-1" />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => clearFormatting("body")}
+                      className="h-6 px-2 text-xs hover:bg-gray-200"
+                      title="Clear Formatting"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+
+                  {/* Body Input with Preview Toggle */}
+                  <div className="relative">
+                    {isBodyPreviewMode ? (
+                      /* Preview Mode */
+                      <div className="w-full min-h-[100px] border-2 border-gray-200 rounded-lg p-3 bg-white">
+                        <div className="text-sm text-gray-800 whitespace-pre-wrap">
+                          {parseWhatsAppFormatting(bodyText).map(
+                            (part, index) => (
+                              <span
+                                key={index}
+                                className={getWhatsAppFormattingClasses(
+                                  part.type
+                                )}
+                              >
+                                {part.text}
+                              </span>
+                            )
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setIsBodyPreviewMode(false)}
+                          className="absolute top-2 right-2 h-6 w-6 p-0 hover:bg-gray-200"
+                          title="Switch to Edit Mode"
+                        >
+                          <EyeOff className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      /* Input Mode */
+                      <div className="relative">
+                        <Textarea
+                          id="body"
+                          value={bodyText}
+                          onChange={(e) => setBodyText(e.target.value)}
+                          onSelect={handleTextSelection}
+                          placeholder="e.g., Shop now through {{1}} and use code {{2}} to get {{3}} off of all merchandise."
+                          className="min-h-[100px] font-mono pr-10"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setIsBodyPreviewMode(true)}
+                          className="absolute top-2 right-2 h-6 w-6 p-0 hover:bg-gray-200"
+                          title="Switch to Preview Mode"
+                          disabled={!bodyText.trim()}
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium text-gray-600">
@@ -1153,12 +1453,12 @@ export function CreateTemplateModal({
       {showRules && (
         <>
           <div
-            className="fixed inset-0 bg-black/50 z-[60]"
+            className="fixed inset-0 bg-black/50 z-130"
             onClick={() => setShowRules(false)}
           />
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-140 flex items-center justify-center p-4">
             <div className="bg-white rounded-lg shadow-lg max-w-[500px] w-full">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between p-4 pb-2 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900">
                   WhatsApp Template Verification Rules
                 </h3>
@@ -1231,9 +1531,6 @@ export function CreateTemplateModal({
                     </p>
                   </div>
                 </div>
-              </div>
-              <div className="flex justify-end p-6 border-t border-gray-200">
-                <Button onClick={() => setShowRules(false)}>Got it!</Button>
               </div>
             </div>
           </div>
