@@ -1,17 +1,21 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { ChevronRight, Plus, Trash2, Edit, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import axios from "axios"
+
+import { useMessages } from "@/context/messages-context"
 
 interface Label {
   id: string
   name: string
-  description?: string
-  color: string
+  description?: string | null
+  color?: string | null
+  accountId: string
+  createdAt: Date
+  updatedAt: Date
   recipients?: any[]
 }
 
@@ -24,8 +28,15 @@ const colorOptions = [
 ]
 
 export default function LabelSettings() {
-  const [labels, setLabels] = useState<Label[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { 
+    labels: labelsData, 
+    isLabelsLoading, 
+    labelsError,
+    createLabel,
+    updateLabel,
+    deleteLabel
+  } = useMessages()
+
   const [loadingStates, setLoadingStates] = useState<{
     creating: boolean
     updating: { [key: string]: boolean }
@@ -43,11 +54,6 @@ export default function LabelSettings() {
   
   const [editingLabel, setEditingLabel] = useState<Label | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
-
-  // Fetch labels on component mount
-  useEffect(() => {
-    fetchLabels()
-  }, [])
 
   const setLoadingState = (operation: 'creating' | 'updating' | 'deleting', id?: string, loading: boolean = false) => {
     setLoadingStates(prev => {
@@ -74,18 +80,7 @@ export default function LabelSettings() {
     })
   }
 
-  const fetchLabels = async () => {
-    try {
-      setIsLoading(true)
-      const response = await axios.get('/api/whatsapp/label')
-      setLabels(response.data)
-    } catch (error) {
-      console.error('Error fetching labels:', error)
-      toast.error('Failed to fetch labels')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+
 
   const handleCreateLabel = async () => {
     if (!newLabel.name.trim()) {
@@ -95,14 +90,13 @@ export default function LabelSettings() {
 
     try {
       setLoadingState('creating', undefined, true)
-      await axios.post('/api/whatsapp/label', {
+      const result = await createLabel({
         name: newLabel.name,
         description: newLabel.name,
         color: newLabel.color
       })
       
       setNewLabel({ name: "", color: "#ef4444" })
-      await fetchLabels()
       toast.success('Label created successfully')
     } catch (error: any) {
       console.error('Error creating label:', error)
@@ -116,7 +110,7 @@ export default function LabelSettings() {
     setEditingLabel(label)
     setNewLabel({
       name: label.name,
-      color: label.color
+      color: label.color || "#ef4444" // Provide default color if null/undefined
     })
     setShowEditModal(true)
   }
@@ -129,8 +123,7 @@ export default function LabelSettings() {
 
     try {
       setLoadingState('updating', editingLabel.id, true)
-      await axios.put('/api/whatsapp/label', {
-        id: editingLabel.id,
+      const result = await updateLabel(editingLabel.id, {
         name: newLabel.name,
         description: newLabel.name,
         color: newLabel.color
@@ -139,7 +132,6 @@ export default function LabelSettings() {
       setEditingLabel(null)
       setNewLabel({ name: "", color: "#ef4444" })
       setShowEditModal(false)
-      await fetchLabels()
       toast.success('Label updated successfully')
     } catch (error: any) {
       console.error('Error updating label:', error)
@@ -152,8 +144,7 @@ export default function LabelSettings() {
   const handleDeleteLabel = async (id: string) => {
     try {
       setLoadingState('deleting', id, true)
-      await axios.delete(`/api/whatsapp/label?id=${id}`)
-      await fetchLabels()
+      await deleteLabel(id)
       toast.success('Label deleted successfully')
     } catch (error: any) {
       console.error('Error deleting label:', error)
@@ -169,11 +160,14 @@ export default function LabelSettings() {
     setShowEditModal(false)
   }
 
-  const getColorStyle = (color: string) => {
-    if (color.includes('gradient')) {
-      return { background: color }
+  const getColorStyle = (color: string | null | undefined) => {
+    // Provide default color if color is undefined/null
+    const safeColor = color || "#ef4444" // Default to red
+    
+    if (safeColor.includes('gradient')) {
+      return { background: safeColor }
     }
-    return { backgroundColor: color }
+    return { backgroundColor: safeColor }
   }
 
   const isAnyUpdating = Object.values(loadingStates.updating || {}).some(Boolean)
@@ -270,17 +264,21 @@ export default function LabelSettings() {
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Existing Labels</h3>
         
-        {isLoading ? (
+        {isLabelsLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
           </div>
-        ) : labels.length === 0 ? (
+        ) : labelsError ? (
+          <div className="text-center py-8 text-red-500">
+            <p>Error loading labels: {labelsError.message}</p>
+          </div>
+        ) : (labelsData || []).length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <p>No labels found. Create your first label to get started.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {labels.map((label) => {
+            {(labelsData || []).map((label) => {
               const isUpdatingThis = loadingStates.updating[label.id] || false
               const isDeletingThis = loadingStates.deleting[label.id] || false
               
@@ -295,11 +293,6 @@ export default function LabelSettings() {
                       style={getColorStyle(label.color)}
                     />
                     <span className="font-medium text-gray-900">{label.name}</span>
-                    {label.recipients && label.recipients.length > 0 && (
-                      <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
-                        {label.recipients.length}
-                      </span>
-                    )}
                   </div>
                   <div className="flex gap-2">
                     <button

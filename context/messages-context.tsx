@@ -43,6 +43,9 @@ interface MessagesContextType {
   setLabel: (label: string | null) => void;
   addRealTimeMessage: (message: Message, conversationId: string) => void;
   updateConversationUnreadCount: (conversationId: string, unreadCount: number) => void;
+  createLabel: (labelData: { name: string; description?: string; color: string }) => Promise<Label>;
+  updateLabel: (id: string, labelData: { name: string; description?: string; color: string }) => Promise<Label>;
+  deleteLabel: (id: string) => Promise<void>;
 }
 
 const MessagesContext = createContext<MessagesContextType | undefined>(undefined);
@@ -262,6 +265,68 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           }
           return conv;
         });
+      });
+    },
+    createLabel: async (labelData: { name: string; description?: string; color: string }) => {
+      const response = await axios.post('/api/whatsapp/label', labelData);
+      const responseData = response.data;
+      
+      // Check if the API returned a success message instead of label data
+      if (responseData.message && !responseData.id) {
+        // If API only returns success message, invalidate the cache to refetch fresh data
+        queryClient.invalidateQueries({ queryKey: ['labels', phoneNumberId] });
+        return responseData; // Return the response as-is
+      }
+      
+      // If API returned actual label data, update the cache
+      const newLabel = responseData;
+      queryClient.setQueryData(['labels', phoneNumberId], (oldData: Label[] | undefined) => {
+        if (!oldData) return [newLabel];
+        return [...oldData, newLabel];
+      });
+      
+      return newLabel;
+    },
+    updateLabel: async (id: string, labelData: { name: string; description?: string; color: string }) => {
+      const response = await axios.put('/api/whatsapp/label', {
+        id,
+        ...labelData
+      });
+      const responseData = response.data;
+      
+      // Check if the API returned a success message instead of label data
+      if (responseData.message && !responseData.id) {
+        // If API only returns success message, invalidate the cache to refetch fresh data
+        queryClient.invalidateQueries({ queryKey: ['labels', phoneNumberId] });
+        return responseData; // Return the response as-is
+      }
+      
+      // If API returned actual label data, update the cache
+      const updatedLabel = responseData;
+      queryClient.setQueryData(['labels', phoneNumberId], (oldData: Label[] | undefined) => {
+        if (!oldData) return [updatedLabel];
+        return oldData.map(label => 
+          label.id === id ? updatedLabel : label
+        );
+      });
+      
+      return updatedLabel;
+    },
+    deleteLabel: async (id: string) => {
+      const response = await axios.delete(`/api/whatsapp/label?id=${id}`);
+      const responseData = response.data;
+      
+      // Check if the API returned a success message
+      if (responseData.message) {
+        // Invalidate the cache to refetch fresh data
+        queryClient.invalidateQueries({ queryKey: ['labels', phoneNumberId] });
+        return;
+      }
+      
+      // If API didn't return a message, manually update the cache
+      queryClient.setQueryData(['labels', phoneNumberId], (oldData: Label[] | undefined) => {
+        if (!oldData) return [];
+        return oldData.filter(label => label.id !== id);
       });
     },
   };
