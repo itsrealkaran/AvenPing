@@ -78,14 +78,6 @@ export async function GET(request: Request) {
         lastCheckedTime: true,
         messages: {
           take: 20,
-          select: {
-            id: true,
-            message: true,
-            createdAt: true,
-            status: true,
-            isOutbound: true,
-            mediaIds: true,
-          },
           orderBy: {
             createdAt: "asc",
           },

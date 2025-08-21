@@ -36,13 +36,6 @@ export async function GET(request: Request) {
                             gt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4) // 4 days ago
                         }
                     },
-                    select: {
-                        id: true,
-                        message: true,
-                        createdAt: true,
-                        status: true,
-                        isOutbound: true,
-                    },
                     orderBy: {
                         createdAt: 'desc'
                     },
