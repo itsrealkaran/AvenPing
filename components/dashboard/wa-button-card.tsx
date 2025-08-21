@@ -1,10 +1,20 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import { ChevronDown, ChevronUp, Copy, RefreshCcw } from "lucide-react";
+import { toast } from "sonner";
+import { useUser } from "@/context/user-context";
 
-const PALETTE = ["#ffffff", "#7FFB8A", "#7EEAFF", "#000000", "#BDBDBD"];
+// WhatsApp and app main theme palette
+const PALETTE = [
+  "#25D366", // WhatsApp green
+  "#075E54", // WhatsApp dark green
+  "#128C7E", // WhatsApp teal
+  "#34B7F1", // WhatsApp light blue
+  "#00BCD4", // App gray
+];
 
 function getContrastingTextColor(bg: string) {
   let color = bg.replace("#", "");
@@ -22,182 +32,291 @@ function getContrastingTextColor(bg: string) {
 }
 
 export default function WAButtonCardContent() {
+  const { userInfo } = useUser();
+  const phoneNumbers: Array<{ id: string; phoneNumber: string }> =
+    userInfo?.whatsappAccount?.phoneNumbers || [];
+
   const [buttonText, setButtonText] = useState("");
   const [buttonColor, setButtonColor] = useState("#7FFB8A");
   const [buttonRoundness, setButtonRoundness] = useState("10");
+  const [showCodePanel, setShowCodePanel] = useState(false);
+  const [code, setCode] = useState("");
+  const [selectedPhone, setSelectedPhone] = useState<string>("");
+
   const colorInputRef = useRef<HTMLInputElement>(null);
   const isCustom = !PALETTE.includes(buttonColor);
   const textColor = getContrastingTextColor(buttonColor);
   const previewBorder = `${buttonColor}40`;
   const previewBg = "#F5F5F5";
 
-  const handleGetCode = () => {
-    // Generate the WhatsApp button code
-    const code = `<a href="https://wa.me/YOUR_PHONE_NUMBER?text=${encodeURIComponent(
-      buttonText || "Chat with us on WhatsApp"
-    )}" 
+  useEffect(() => {
+    if (phoneNumbers.length > 0 && !selectedPhone) {
+      setSelectedPhone(phoneNumbers[0].phoneNumber);
+    }
+  }, [phoneNumbers, selectedPhone]);
+
+  function buildCode(phone: string) {
+    const normalizedPhone = phone
+      ? phone.replace(/[^0-9]/g, "")
+      : "YOUR_PHONE_NUMBER";
+
+    return `<a href="https://wa.me/${normalizedPhone}" 
   style="display: inline-flex; align-items: center; padding: 0.5rem 1.5rem; font-weight: 500; border-radius: ${buttonRoundness}px; background-color: ${buttonColor}; color: ${textColor}; text-decoration: none; border: 2px solid ${previewBorder}; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.01);">
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 0.5rem;">
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
   </svg>
-  ${buttonText || "Chat with us on WhatsApp"}
+  ${buttonText || "Chat on WhatsApp"}
 </a>`;
+  }
 
-    // Copy to clipboard
+  const handleGetCode = () => {
+    const built = buildCode(selectedPhone);
+    setCode(built);
+    setShowCodePanel(true);
+  };
+
+  const copyCode = () => {
     navigator.clipboard
       .writeText(code)
       .then(() => {
-        alert("WhatsApp button code copied to clipboard!");
+        toast.success("WhatsApp button code copied to clipboard!");
       })
       .catch(() => {
-        // Fallback for older browsers
-        const textArea = document.createElement("textarea");
-        textArea.value = code;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-        alert("WhatsApp button code copied to clipboard!");
+        try {
+          const textArea = document.createElement("textarea");
+          textArea.value = code;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textArea);
+          toast.success("WhatsApp button code copied to clipboard!");
+        } catch (e) {
+          toast.error("Failed to copy code");
+        }
       });
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Text Input */}
-      <div>
-        <label
-          htmlFor="wa-btn-text"
-          className="block text-sm font-medium text-gray-600 mb-1"
-        >
-          Text
-        </label>
-        <Input
-          id="wa-btn-text"
-          aria-label="WA Button Text"
-          type="text"
-          value={buttonText}
-          onChange={(e) => setButtonText(e.target.value)}
-          className="text-sm px-4 py-2 border border-gray-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition w-full bg-white"
-          placeholder="Chat with us on WhatsApp"
-        />
-      </div>
-      {/* Color Palette and Roundness Controls */}
-      <div className="flex flex-row gap-8">
-        {/* Color Palette */}
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-gray-600">
-            Color Palette
-          </span>
-          <div className="flex gap-1.5">
-            {PALETTE.map((color, idx) => (
+    <div className="relative overflow-hidden">
+      <div className="flex flex-col gap-4 px-4 pt-2">
+        {showCodePanel && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-sm transition-opacity duration-300 backdrop-blur-sm bg-white/30">
+            {/* Overlay for QR panel */}
+          </div>
+        )}
+        {/* Text Input */}
+        <div>
+          <label
+            htmlFor="wa-btn-text"
+            className="block text-sm font-medium text-gray-600 mb-1"
+          >
+            Text
+          </label>
+          <Input
+            id="wa-btn-text"
+            aria-label="WA Button Text"
+            type="text"
+            value={buttonText}
+            onChange={(e) => setButtonText(e.target.value)}
+            className="text-sm px-4 py-2 border border-gray-300 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition w-full bg-white"
+            placeholder="Chat with us on WhatsApp"
+          />
+        </div>
+
+        {/* Color Palette and Roundness Controls */}
+        <div className="flex flex-row gap-8 px-2">
+          {/* Color Palette */}
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-gray-600">
+              Color Palette
+            </span>
+            <div className="flex gap-1.5">
+              {PALETTE.map((color, idx) => (
+                <button
+                  key={color}
+                  type="button"
+                  aria-label={`Select color ${color}`}
+                  className={`w-8 h-8 rounded-md border transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                    buttonColor === color && !isCustom
+                      ? "ring-2 ring-primary border-primary"
+                      : "border-gray-300"
+                  }`}
+                  style={{ background: color }}
+                  onClick={() => setButtonColor(color)}
+                />
+              ))}
+              {/* Custom color picker trigger */}
               <button
-                key={color}
                 type="button"
-                aria-label={`Select color ${color}`}
-                className={`w-8 h-8 rounded-md border transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-                  buttonColor === color && !isCustom
+                aria-label="Pick a custom color"
+                className={`w-8 h-8 rounded-md border flex items-center justify-center transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                  isCustom
                     ? "ring-2 ring-primary border-primary"
                     : "border-gray-300"
                 }`}
-                style={{ background: color }}
-                onClick={() => setButtonColor(color)}
+                style={{ background: isCustom ? buttonColor : "#F3F4F6" }}
+                onClick={() => colorInputRef.current?.click()}
+              >
+                {!isCustom && (
+                  <span className="text-xl text-gray-400 font-bold">+</span>
+                )}
+                <input
+                  ref={colorInputRef}
+                  type="color"
+                  aria-label="Custom color picker"
+                  className="absolute opacity-0 w-0 h-0"
+                  value={isCustom ? buttonColor : "#7FFB8A"}
+                  onChange={(e) => setButtonColor(e.target.value)}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Roundness Slider */}
+          <div className="flex flex-col gap-2 flex-1">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-600">
+                Roundness
+              </span>
+              <span className="text-sm text-gray-700 font-mono">
+                {buttonRoundness} px
+              </span>
+            </div>
+            <div className="flex flex-1 items-center">
+              <Slider
+                min={0}
+                max={30}
+                step={1}
+                value={[parseInt(buttonRoundness)]}
+                onValueChange={([v]) => setButtonRoundness(String(v))}
+                aria-label="Button Roundness"
               />
-            ))}
-            {/* Custom color picker trigger */}
-            <button
-              type="button"
-              aria-label="Pick a custom color"
-              className={`w-8 h-8 rounded-md border flex items-center justify-center transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-                isCustom
-                  ? "ring-2 ring-primary border-primary"
-                  : "border-gray-300"
-              }`}
-              style={{ background: isCustom ? buttonColor : "#F3F4F6" }}
-              onClick={() => colorInputRef.current?.click()}
-            >
-              {!isCustom && (
-                <span className="text-xl text-gray-400 font-bold">+</span>
-              )}
-              <input
-                ref={colorInputRef}
-                type="color"
-                aria-label="Custom color picker"
-                className="absolute opacity-0 w-0 h-0"
-                value={isCustom ? buttonColor : "#7FFB8A"}
-                onChange={(e) => setButtonColor(e.target.value)}
-              />
-            </button>
+            </div>
           </div>
         </div>
 
-        {/* Roundness Slider */}
-        <div className="flex flex-col gap-2 flex-1">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-600">Roundness</span>
-            <span className="text-sm text-gray-700 font-mono">
-              {buttonRoundness} px
-            </span>
-          </div>
-          <div className="flex flex-1 items-center">
-            <Slider
-              min={0}
-              max={30}
-              step={1}
-              value={[parseInt(buttonRoundness)]}
-              onValueChange={([v]) => setButtonRoundness(String(v))}
-              aria-label="Button Roundness"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Preview */}
-      <div>
-        <span className="block text-[15px] font-medium text-gray-600 mb-1">
-          Preview
-        </span>
-        <div
-          className="flex items-center justify-center rounded-xl"
-          style={{ background: previewBg, padding: "0.75rem" }}
-        >
+        {/* Preview */}
+        <div>
+          <span className="block text-[15px] font-medium text-gray-600 mb-1">
+            Preview
+          </span>
           <div
-            className="items-center px-4 py-1.5 font-medium border shadow-sm"
+            className="flex p-8 items-center justify-center rounded-xl"
             style={{
-              background: buttonColor,
-              borderRadius: `${buttonRoundness}px`,
-              color: textColor,
-              border: `2px solid ${previewBorder}`,
-              minWidth: 0,
-              fontFamily: "inherit",
-              fontWeight: 500,
-              fontSize: "0.875rem",
-              boxShadow: "0 1px 2px 0 rgba(0,0,0,0.01)",
+              background: `url('/message-bg.png'), ${previewBg}`,
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center",
+              backgroundSize: "cover",
             }}
           >
-            <WhatsAppIcon
-              sx={{
+            <div
+              className="items-center px-4 py-1.5 font-medium border shadow-sm"
+              style={{
+                background: buttonColor,
+                borderRadius: `${buttonRoundness}px`,
                 color: textColor,
-                fontSize: "1.25rem",
-                marginRight: "0.375rem",
+                border: `2px solid ${previewBorder}`,
+                minWidth: 0,
+                fontFamily: "inherit",
+                fontWeight: 500,
+                fontSize: "0.875rem",
+                boxShadow: "0 1px 2px 0 rgba(0,0,0,0.01)",
               }}
-            />
-            <span
-              className="text-sm font-medium truncate"
-              style={{ maxWidth: 200 }}
             >
-              {buttonText || "Chat with us on WhatsApp"}
-            </span>
+              <WhatsAppIcon
+                sx={{
+                  color: textColor,
+                  fontSize: "1.25rem",
+                  marginRight: "0.375rem",
+                }}
+              />
+              <span
+                className="text-sm font-medium truncate"
+                style={{ maxWidth: 200 }}
+              >
+                {buttonText || "Chat on WhatsApp"}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col justify-center items-center gap-2">
+          <Button
+            onClick={handleGetCode}
+            size="sm"
+            className="w-fit self-center"
+            aria-label="Get WA Button Code"
+          >
+            Generate
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-full hover:bg-white border-2 border-b-0 rounded-b-none bg-white"
+          >
+            <ChevronUp className="w-5 h-5" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Slide-up Code Panel */}
+      <div
+        className={`absolute inset-x-10 z-20 bottom-0 bg-white border-2 border-gray-300 rounded-lg shadow-lg transition-transform duration-300 ease-in-out ${
+          showCodePanel ? "translate-y-0" : "translate-y-full"
+        }`}
+      >
+        <div className="p-6 pt-4">
+          <div
+            className={`flex justify-center mb-4 ${
+              showCodePanel ? "" : "hidden"
+            }`}
+          >
+            <Button
+              onClick={() => setShowCodePanel(false)}
+              size="sm"
+              variant="outline"
+              className="rounded-full -mt-10 hover:bg-white border-2 border-b-0 rounded-b-none bg-white"
+            >
+              <ChevronDown className="w-5 h-5" />
+            </Button>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Embed Code
+              </label>
+              <div className="relative">
+                <textarea
+                  value={code}
+                  readOnly
+                  className="w-full h-48 text-xs p-3 pr-20 border border-gray-300 rounded-lg bg-gray-50 font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+                  style={{
+                    fontFamily: "Menlo, Monaco, 'Courier New', monospace",
+                  }}
+                />
+                <div className="absolute top-2 right-2 flex gap-1">
+                  <button
+                    type="button"
+                    aria-label="Refresh code"
+                    onClick={() => setCode(buildCode(selectedPhone))}
+                    className="inline-flex items-center justify-center size-6 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 shadow transition focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    <RefreshCcw className="size-3 text-gray-500" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Copy code"
+                    onClick={copyCode}
+                    className="inline-flex items-center justify-center size-6 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 shadow transition focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    <Copy className="size-3 text-gray-500" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <Button
-        onClick={handleGetCode}
-        size="sm"
-        className="w-fit"
-        aria-label="Get WA Button Code"
-      >
-        Get Code
-      </Button>
     </div>
   );
 }

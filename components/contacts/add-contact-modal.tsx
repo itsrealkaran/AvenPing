@@ -5,6 +5,7 @@ import { Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { DropdownButton } from "@/components/ui/dropdown-button";
 import { useContacts } from "@/context/contact-provider";
 import { normalizePhoneNumber } from "@/lib/utils";
 
@@ -287,29 +288,37 @@ const AddContactModal = ({
                             <Label className="text-xs text-gray-600 mb-1 block">
                               Attribute
                             </Label>
-                            <select
-                              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#30CFED] focus:border-[#30CFED]"
-                              value={av.attributeId}
-                              onChange={(e) =>
-                                handleAttributeChange(idx, e.target.value)
-                              }
-                              disabled={isLoading}
-                            >
-                              <option value="">Select attribute</option>
-                              {availableAttributes.map((attr) => (
-                                <option key={attr.id} value={attr.id}>
-                                  {attr.name}
-                                </option>
-                              ))}
-                              {selectedAttribute &&
+                            <DropdownButton
+                              options={[
+                                ...availableAttributes.map((attr) => ({
+                                  value: attr.id,
+                                  label: attr.name,
+                                })),
+                                // Include currently selected attribute if it's not in available attributes
+                                ...(selectedAttribute &&
                                 !availableAttributes.some(
                                   (attr) => attr.id === selectedAttribute.id
-                                ) && (
-                                  <option value={selectedAttribute.id}>
-                                    {selectedAttribute.name}
-                                  </option>
-                                )}
-                            </select>
+                                )
+                                  ? [
+                                      {
+                                        value: selectedAttribute.id,
+                                        label: selectedAttribute.name,
+                                      },
+                                    ]
+                                  : []),
+                              ]}
+                              variant="outline"
+                              selected={av.attributeId}
+                              onChange={(value) =>
+                                handleAttributeChange(idx, value)
+                              }
+                              disabled={isLoading}
+                              className="w-full justify-between"
+                            >
+                              {selectedAttribute
+                                ? selectedAttribute.name
+                                : "Select attribute"}
+                            </DropdownButton>
                           </div>
 
                           {selectedAttribute && (

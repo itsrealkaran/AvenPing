@@ -10,6 +10,13 @@ import {
   Image,
   Video,
   FileText,
+  Bold,
+  Italic,
+  Strikethrough,
+  Code,
+  Type,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DropdownButton } from "@/components/ui/dropdown-button";
 import {
   Tooltip,
   TooltipContent,
@@ -26,6 +34,13 @@ import {
 import { useTemplates } from "@/context/template-provider";
 import { useUser } from "@/context/user-context";
 import SearchableDropdown from "../ui/searchable-dropdown";
+import {
+  formatWhatsAppMessage,
+  unformatWhatsAppMessage,
+  parseWhatsAppFormatting,
+  getWhatsAppFormattingClasses,
+  WhatsAppFormatting,
+} from "@/lib/utils";
 
 interface CreateTemplateModalProps {
   open: boolean;
@@ -74,6 +89,12 @@ export function CreateTemplateModal({
       ?.body_text?.[0] || []
   );
   const [showRules, setShowRules] = useState(false);
+
+  // Preview mode states
+  const [isHeaderPreviewMode, setIsHeaderPreviewMode] = useState(false);
+  const [isBodyPreviewMode, setIsBodyPreviewMode] = useState(false);
+  const [selectedText, setSelectedText] = useState("");
+  const [cursorPosition, setCursorPosition] = useState({ start: 0, end: 0 });
 
   const { userInfo } = useUser();
   const { createTemplate, selectedWhatsAppAccountId } = useTemplates();
@@ -311,6 +332,73 @@ export function CreateTemplateModal({
     setBodyExamples(bodyExamples.filter((_, i) => i !== index));
   };
 
+  // WhatsApp formatting functions
+  const handleTextSelection = (
+    e: React.SyntheticEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement;
+    setSelectedText(
+      target.value.substring(target.selectionStart || 0, target.selectionEnd || 0)
+    );
+    setCursorPosition({
+      start: target.selectionStart || 0,
+      end: target.selectionEnd || 0,
+    });
+  };
+
+  const applyFormatting = (
+    formatting: WhatsAppFormatting,
+    target: "header" | "body"
+  ) => {
+    let textToFormat = selectedText;
+    let currentText = target === "header" ? headerText : bodyText;
+
+    if (!textToFormat && !currentText.trim()) {
+      toast.error("Please enter some text first.");
+      return;
+    }
+
+    if (!textToFormat) {
+      textToFormat = currentText;
+    }
+
+    const formattedText = formatWhatsAppMessage(textToFormat, formatting);
+    let newText = currentText;
+
+    if (selectedText) {
+      // Format selected text
+      newText =
+        currentText.substring(0, cursorPosition.start) +
+        formattedText +
+        currentText.substring(cursorPosition.end);
+
+      // Clear selection
+      setSelectedText("");
+    } else {
+      // Format entire text
+      newText = formattedText;
+    }
+
+    if (target === "header") {
+      setHeaderText(newText);
+    } else {
+      setBodyText(newText);
+    }
+  };
+
+  const clearFormatting = (target: "header" | "body") => {
+    const currentText = target === "header" ? headerText : bodyText;
+    if (currentText.trim()) {
+      const unformatted = unformatWhatsAppMessage(currentText);
+      if (target === "header") {
+        setHeaderText(unformatted);
+      } else {
+        setBodyText(unformatted);
+      }
+      toast.success("Formatting cleared");
+    }
+  };
+
   // Update examples when text changes
   useEffect(() => {
     const headerVariables = (headerText.match(/{{(\d+)}}/g) || []).length;
@@ -478,7 +566,11 @@ export function CreateTemplateModal({
                         { id: "kk", label: "Kazakh", value: "kk" },
                         { id: "rw_RW", label: "Kinyarwanda", value: "rw_RW" },
                         { id: "ko", label: "Korean", value: "ko" },
-                        { id: "ky_KG", label: "Kyrgyz (Kyrgyzstan)", value: "ky_KG" },
+                        {
+                          id: "ky_KG",
+                          label: "Kyrgyz (Kyrgyzstan)",
+                          value: "ky_KG",
+                        },
                         { id: "lo", label: "Lao", value: "lo" },
                         { id: "lv", label: "Latvian", value: "lv" },
                         { id: "lt", label: "Lithuanian", value: "lt" },
@@ -490,8 +582,16 @@ export function CreateTemplateModal({
                         { id: "ps_AF", label: "Pashto", value: "ps_AF" },
                         { id: "fa", label: "Persian", value: "fa" },
                         { id: "pl", label: "Polish", value: "pl" },
-                        { id: "pt_BR", label: "Portuguese (BR)", value: "pt_BR" },
-                        { id: "pt_PT", label: "Portuguese (POR)", value: "pt_PT" },
+                        {
+                          id: "pt_BR",
+                          label: "Portuguese (BR)",
+                          value: "pt_BR",
+                        },
+                        {
+                          id: "pt_PT",
+                          label: "Portuguese (POR)",
+                          value: "pt_PT",
+                        },
                         { id: "pa", label: "Punjabi", value: "pa" },
                         { id: "ro", label: "Romanian", value: "ro" },
                         { id: "ru", label: "Russian", value: "ru" },
@@ -531,20 +631,56 @@ export function CreateTemplateModal({
                           { id: "af", label: "Afrikaans", value: "af" },
                           { id: "sq", label: "Albanian", value: "sq" },
                           { id: "ar", label: "Arabic", value: "ar" },
-                          { id: "ar_EG", label: "Arabic (EGY)", value: "ar_EG" },
-                          { id: "ar_AE", label: "Arabic (UAE)", value: "ar_AE" },
-                          { id: "ar_LB", label: "Arabic (LBN)", value: "ar_LB" },
-                          { id: "ar_MA", label: "Arabic (MAR)", value: "ar_MA" },
-                          { id: "ar_QA", label: "Arabic (QAT)", value: "ar_QA" },
+                          {
+                            id: "ar_EG",
+                            label: "Arabic (EGY)",
+                            value: "ar_EG",
+                          },
+                          {
+                            id: "ar_AE",
+                            label: "Arabic (UAE)",
+                            value: "ar_AE",
+                          },
+                          {
+                            id: "ar_LB",
+                            label: "Arabic (LBN)",
+                            value: "ar_LB",
+                          },
+                          {
+                            id: "ar_MA",
+                            label: "Arabic (MAR)",
+                            value: "ar_MA",
+                          },
+                          {
+                            id: "ar_QA",
+                            label: "Arabic (QAT)",
+                            value: "ar_QA",
+                          },
                           { id: "az", label: "Azerbaijani", value: "az" },
                           { id: "be_BY", label: "Belarusian", value: "be_BY" },
                           { id: "bn", label: "Bengali", value: "bn" },
-                          { id: "bn_IN", label: "Bengali (IND)", value: "bn_IN" },
+                          {
+                            id: "bn_IN",
+                            label: "Bengali (IND)",
+                            value: "bn_IN",
+                          },
                           { id: "bg", label: "Bulgarian", value: "bg" },
                           { id: "ca", label: "Catalan", value: "ca" },
-                          { id: "zh_CN", label: "Chinese (CHN)", value: "zh_CN" },
-                          { id: "zh_HK", label: "Chinese (HKG)", value: "zh_HK" },
-                          { id: "zh_TW", label: "Chinese (TAI)", value: "zh_TW" },
+                          {
+                            id: "zh_CN",
+                            label: "Chinese (CHN)",
+                            value: "zh_CN",
+                          },
+                          {
+                            id: "zh_HK",
+                            label: "Chinese (HKG)",
+                            value: "zh_HK",
+                          },
+                          {
+                            id: "zh_TW",
+                            label: "Chinese (TAI)",
+                            value: "zh_TW",
+                          },
                           { id: "hr", label: "Croatian", value: "hr" },
                           { id: "cs", label: "Czech", value: "cs" },
                           { id: "da", label: "Danish", value: "da" },
@@ -552,34 +688,122 @@ export function CreateTemplateModal({
                           { id: "nl", label: "Dutch", value: "nl" },
                           { id: "nl_BE", label: "Dutch (BEL)", value: "nl_BE" },
                           { id: "en", label: "English", value: "en" },
-                          { id: "en_GB", label: "English (UK)", value: "en_GB" },
-                          { id: "en_US", label: "English (US)", value: "en_US" },
-                          { id: "en_AE", label: "English (UAE)", value: "en_AE" },
-                          { id: "en_AU", label: "English (AUS)", value: "en_AU" },
-                          { id: "en_CA", label: "English (CAN)", value: "en_CA" },
-                          { id: "en_GH", label: "English (GHA)", value: "en_GH" },
-                          { id: "en_IE", label: "English (IRL)", value: "en_IE" },
-                          { id: "en_IN", label: "English (IND)", value: "en_IN" },
-                          { id: "en_JM", label: "English (JAM)", value: "en_JM" },
-                          { id: "en_MY", label: "English (MYS)", value: "en_MY" },
-                          { id: "en_NZ", label: "English (NZL)", value: "en_NZ" },
-                          { id: "en_QA", label: "English (QAT)", value: "en_QA" },
-                          { id: "en_SG", label: "English (SGP)", value: "en_SG" },
-                          { id: "en_UG", label: "English (UGA)", value: "en_UG" },
-                          { id: "en_ZA", label: "English (ZAF)", value: "en_ZA" },
+                          {
+                            id: "en_GB",
+                            label: "English (UK)",
+                            value: "en_GB",
+                          },
+                          {
+                            id: "en_US",
+                            label: "English (US)",
+                            value: "en_US",
+                          },
+                          {
+                            id: "en_AE",
+                            label: "English (UAE)",
+                            value: "en_AE",
+                          },
+                          {
+                            id: "en_AU",
+                            label: "English (AUS)",
+                            value: "en_AU",
+                          },
+                          {
+                            id: "en_CA",
+                            label: "English (CAN)",
+                            value: "en_CA",
+                          },
+                          {
+                            id: "en_GH",
+                            label: "English (GHA)",
+                            value: "en_GH",
+                          },
+                          {
+                            id: "en_IE",
+                            label: "English (IRL)",
+                            value: "en_IE",
+                          },
+                          {
+                            id: "en_IN",
+                            label: "English (IND)",
+                            value: "en_IN",
+                          },
+                          {
+                            id: "en_JM",
+                            label: "English (JAM)",
+                            value: "en_JM",
+                          },
+                          {
+                            id: "en_MY",
+                            label: "English (MYS)",
+                            value: "en_MY",
+                          },
+                          {
+                            id: "en_NZ",
+                            label: "English (NZL)",
+                            value: "en_NZ",
+                          },
+                          {
+                            id: "en_QA",
+                            label: "English (QAT)",
+                            value: "en_QA",
+                          },
+                          {
+                            id: "en_SG",
+                            label: "English (SGP)",
+                            value: "en_SG",
+                          },
+                          {
+                            id: "en_UG",
+                            label: "English (UGA)",
+                            value: "en_UG",
+                          },
+                          {
+                            id: "en_ZA",
+                            label: "English (ZAF)",
+                            value: "en_ZA",
+                          },
                           { id: "et", label: "Estonian", value: "et" },
                           { id: "fil", label: "Filipino", value: "fil" },
                           { id: "fi", label: "Finnish", value: "fi" },
                           { id: "fr", label: "French", value: "fr" },
-                          { id: "fr_BE", label: "French (BEL)", value: "fr_BE" },
-                          { id: "fr_CA", label: "French (CAN)", value: "fr_CA" },
-                          { id: "fr_CH", label: "French (CHE)", value: "fr_CH" },
-                          { id: "fr_CI", label: "French (CIV)", value: "fr_CI" },
-                          { id: "fr_MA", label: "French (MAR)", value: "fr_MA" },
+                          {
+                            id: "fr_BE",
+                            label: "French (BEL)",
+                            value: "fr_BE",
+                          },
+                          {
+                            id: "fr_CA",
+                            label: "French (CAN)",
+                            value: "fr_CA",
+                          },
+                          {
+                            id: "fr_CH",
+                            label: "French (CHE)",
+                            value: "fr_CH",
+                          },
+                          {
+                            id: "fr_CI",
+                            label: "French (CIV)",
+                            value: "fr_CI",
+                          },
+                          {
+                            id: "fr_MA",
+                            label: "French (MAR)",
+                            value: "fr_MA",
+                          },
                           { id: "ka", label: "Georgian", value: "ka" },
                           { id: "de", label: "German", value: "de" },
-                          { id: "de_AT", label: "German (AUT)", value: "de_AT" },
-                          { id: "de_CH", label: "German (CHE)", value: "de_CH" },
+                          {
+                            id: "de_AT",
+                            label: "German (AUT)",
+                            value: "de_AT",
+                          },
+                          {
+                            id: "de_CH",
+                            label: "German (CHE)",
+                            value: "de_CH",
+                          },
                           { id: "el", label: "Greek", value: "el" },
                           { id: "gu", label: "Gujarati", value: "gu" },
                           { id: "ha", label: "Hausa", value: "ha" },
@@ -594,7 +818,11 @@ export function CreateTemplateModal({
                           { id: "kk", label: "Kazakh", value: "kk" },
                           { id: "rw_RW", label: "Kinyarwanda", value: "rw_RW" },
                           { id: "ko", label: "Korean", value: "ko" },
-                          { id: "ky_KG", label: "Kyrgyz (Kyrgyzstan)", value: "ky_KG" },
+                          {
+                            id: "ky_KG",
+                            label: "Kyrgyz (Kyrgyzstan)",
+                            value: "ky_KG",
+                          },
                           { id: "lo", label: "Lao", value: "lo" },
                           { id: "lv", label: "Latvian", value: "lv" },
                           { id: "lt", label: "Lithuanian", value: "lt" },
@@ -606,8 +834,16 @@ export function CreateTemplateModal({
                           { id: "ps_AF", label: "Pashto", value: "ps_AF" },
                           { id: "fa", label: "Persian", value: "fa" },
                           { id: "pl", label: "Polish", value: "pl" },
-                          { id: "pt_BR", label: "Portuguese (BR)", value: "pt_BR" },
-                          { id: "pt_PT", label: "Portuguese (POR)", value: "pt_PT" },
+                          {
+                            id: "pt_BR",
+                            label: "Portuguese (BR)",
+                            value: "pt_BR",
+                          },
+                          {
+                            id: "pt_PT",
+                            label: "Portuguese (POR)",
+                            value: "pt_PT",
+                          },
                           { id: "pa", label: "Punjabi", value: "pa" },
                           { id: "ro", label: "Romanian", value: "ro" },
                           { id: "ru", label: "Russian", value: "ru" },
@@ -616,18 +852,66 @@ export function CreateTemplateModal({
                           { id: "sk", label: "Slovak", value: "sk" },
                           { id: "sl", label: "Slovenian", value: "sl" },
                           { id: "es", label: "Spanish", value: "es" },
-                          { id: "es_AR", label: "Spanish (ARG)", value: "es_AR" },
-                          { id: "es_CL", label: "Spanish (CHL)", value: "es_CL" },
-                          { id: "es_CO", label: "Spanish (COL)", value: "es_CO" },
-                          { id: "es_CR", label: "Spanish (CRI)", value: "es_CR" },
-                          { id: "es_DO", label: "Spanish (DOM)", value: "es_DO" },
-                          { id: "es_EC", label: "Spanish (ECU)", value: "es_EC" },
-                          { id: "es_HN", label: "Spanish (HND)", value: "es_HN" },
-                          { id: "es_MX", label: "Spanish (MEX)", value: "es_MX" },
-                          { id: "es_PA", label: "Spanish (PAN)", value: "es_PA" },
-                          { id: "es_PE", label: "Spanish (PER)", value: "es_PE" },
-                          { id: "es_ES", label: "Spanish (SPA)", value: "es_ES" },
-                          { id: "es_UY", label: "Spanish (URY)", value: "es_UY" },
+                          {
+                            id: "es_AR",
+                            label: "Spanish (ARG)",
+                            value: "es_AR",
+                          },
+                          {
+                            id: "es_CL",
+                            label: "Spanish (CHL)",
+                            value: "es_CL",
+                          },
+                          {
+                            id: "es_CO",
+                            label: "Spanish (COL)",
+                            value: "es_CO",
+                          },
+                          {
+                            id: "es_CR",
+                            label: "Spanish (CRI)",
+                            value: "es_CR",
+                          },
+                          {
+                            id: "es_DO",
+                            label: "Spanish (DOM)",
+                            value: "es_DO",
+                          },
+                          {
+                            id: "es_EC",
+                            label: "Spanish (ECU)",
+                            value: "es_EC",
+                          },
+                          {
+                            id: "es_HN",
+                            label: "Spanish (HND)",
+                            value: "es_HN",
+                          },
+                          {
+                            id: "es_MX",
+                            label: "Spanish (MEX)",
+                            value: "es_MX",
+                          },
+                          {
+                            id: "es_PA",
+                            label: "Spanish (PAN)",
+                            value: "es_PA",
+                          },
+                          {
+                            id: "es_PE",
+                            label: "Spanish (PER)",
+                            value: "es_PE",
+                          },
+                          {
+                            id: "es_ES",
+                            label: "Spanish (SPA)",
+                            value: "es_ES",
+                          },
+                          {
+                            id: "es_UY",
+                            label: "Spanish (URY)",
+                            value: "es_UY",
+                          },
                           { id: "sw", label: "Swahili", value: "sw" },
                           { id: "sv", label: "Swedish", value: "sv" },
                           { id: "ta", label: "Tamil", value: "ta" },
@@ -646,35 +930,39 @@ export function CreateTemplateModal({
                     />
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="category"
-                    className="text-sm font-medium text-gray-700"
+                <Label
+                  htmlFor="category"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Category
+                </Label>
+                <div className="flex gap-2 items-center">
+                  <DropdownButton
+                    options={[
+                      { value: "MARKETING", label: "Marketing" },
+                      { value: "UTILITY", label: "Utility" },
+                      { value: "AUTHENTICATION", label: "Authentication" },
+                    ]}
+                    variant="outline"
+                    selected={category}
+                    onChange={(value) => setCategory(value)}
+                    className="w-full justify-between"
                   >
-                    Category
-                  </Label>
-                  <select
-                    id="category"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-[#30CFED] focus:border-[#30CFED]"
-                  >
-                    <option value="MARKETING">Marketing</option>
-                    <option value="UTILITY">Utility</option>
-                    <option value="AUTHENTICATION">Authentication</option>
-                  </select>
-                </div>
-
-                <div className="flex justify-start">
+                    {category === "MARKETING"
+                      ? "Marketing"
+                      : category === "UTILITY"
+                      ? "Utility"
+                      : category === "AUTHENTICATION"
+                      ? "Authentication"
+                      : "Select Category"}
+                  </DropdownButton>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setShowRules(true)}
-                    className="text-[#30CFED] border-[#30CFED] hover:bg-[#D3F8FF]"
                   >
-                    <Info className="h-4 w-4 mr-2" />
-                    View Verification Rules
+                    <Info className="h-4 w-4" />
+                    Verification Rules
                   </Button>
                 </div>
               </div>
@@ -712,31 +1000,155 @@ export function CreateTemplateModal({
                     {/* Header Format Selector */}
                     <div className="flex items-center gap-2">
                       <Label className="text-sm text-gray-600">Format:</Label>
-                      <select
-                        value={headerFormat}
-                        onChange={(e) =>
-                          setHeaderFormat(e.target.value as HeaderFormat)
+                      <DropdownButton
+                        variant="outline"
+                        size="sm"
+                        options={[
+                          { value: "TEXT", label: "Text" },
+                          { value: "IMAGE", label: "Image" },
+                          { value: "VIDEO", label: "Video" },
+                          { value: "DOCUMENT", label: "Document" },
+                        ]}
+                        selected={headerFormat}
+                        onChange={(value) =>
+                          setHeaderFormat(value as HeaderFormat)
                         }
                         className="text-sm border border-gray-300 rounded px-2 py-1"
                       >
-                        <option value="TEXT">Text</option>
-                        <option value="IMAGE">Image</option>
-                        <option value="VIDEO">Video</option>
-                        <option value="DOCUMENT">Document</option>
-                      </select>
+                        {headerFormat === "TEXT"
+                          ? "Text"
+                          : headerFormat === "IMAGE"
+                          ? "Image"
+                          : headerFormat === "VIDEO"
+                          ? "Video"
+                          : headerFormat === "DOCUMENT"
+                          ? "Document"
+                          : "Select Format"}
+                      </DropdownButton>
                     </div>
                   </div>
 
                   {/* Text Header */}
                   {headerFormat === "TEXT" && (
                     <>
-                      <Input
-                        id="header"
-                        value={headerText}
-                        onChange={(e) => setHeaderText(e.target.value)}
-                        placeholder="e.g., Our {{1}} is on!"
-                        className="font-mono"
-                      />
+                      {/* Formatting Toolbar */}
+                      <div className="flex items-center gap-1 mb-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            applyFormatting({ bold: true }, "header")
+                          }
+                          className="h-6 w-6 p-0 hover:bg-gray-200"
+                          title="Bold"
+                        >
+                          <Bold className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            applyFormatting({ italic: true }, "header")
+                          }
+                          className="h-6 w-6 p-0 hover:bg-gray-200"
+                          title="Italic"
+                        >
+                          <Italic className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            applyFormatting({ strikethrough: true }, "header")
+                          }
+                          className="h-6 w-6 p-0 hover:bg-gray-200"
+                          title="Strikethrough"
+                        >
+                          <Strikethrough className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            applyFormatting({ monospace: true }, "header")
+                          }
+                          className="h-6 w-6 p-0 hover:bg-gray-200"
+                          title="Monospace"
+                        >
+                          <Code className="h-3 w-3" />
+                        </Button>
+                        <div className="w-px h-4 bg-gray-300 mx-1" />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => clearFormatting("header")}
+                          className="h-6 px-2 text-xs hover:bg-gray-200"
+                          title="Clear Formatting"
+                        >
+                          Clear
+                        </Button>
+                      </div>
+
+                      {/* Header Input with Preview Toggle */}
+                      <div className="relative">
+                        {isHeaderPreviewMode ? (
+                          /* Preview Mode */
+                          <div className="w-full min-h-[40px] border-2 border-gray-200 rounded-lg p-3 bg-gray-50">
+                            <div className="text-sm text-gray-800 whitespace-pre-wrap">
+                              {parseWhatsAppFormatting(headerText).map(
+                                (part, index) => (
+                                  <span
+                                    key={index}
+                                    className={getWhatsAppFormattingClasses(
+                                      part.type
+                                    )}
+                                  >
+                                    {part.text}
+                                  </span>
+                                )
+                              )}
+                            </div>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setIsHeaderPreviewMode(false)}
+                              className="absolute top-1 right-1 h-6 w-6 p-0 hover:bg-gray-200"
+                              title="Switch to Edit Mode"
+                            >
+                              <EyeOff className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          /* Input Mode */
+                          <div className="relative">
+                            <Input
+                              id="header"
+                              value={headerText}
+                              onChange={(e) => setHeaderText(e.target.value)}
+                              onSelect={handleTextSelection}
+                              placeholder="e.g., Our {{1}} is on!"
+                              className="font-mono pr-10"
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setIsHeaderPreviewMode(true)}
+                              className="absolute top-1 right-1 h-6 w-6 p-0 hover:bg-gray-200"
+                              title="Switch to Preview Mode"
+                              disabled={!headerText.trim()}
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <Label className="text-sm font-medium text-gray-600">
@@ -863,13 +1275,121 @@ export function CreateTemplateModal({
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <Textarea
-                    id="body"
-                    value={bodyText}
-                    onChange={(e) => setBodyText(e.target.value)}
-                    placeholder="e.g., Shop now through {{1}} and use code {{2}} to get {{3}} off of all merchandise."
-                    className="min-h-[100px] font-mono"
-                  />
+
+                  {/* Formatting Toolbar */}
+                  <div className="flex items-center gap-1 p-2 bg-white rounded-lg border border-gray-200">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => applyFormatting({ bold: true }, "body")}
+                      className="h-6 w-6 p-0 hover:bg-gray-200"
+                      title="Bold"
+                    >
+                      <Bold className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => applyFormatting({ italic: true }, "body")}
+                      className="h-6 w-6 p-0 hover:bg-gray-200"
+                      title="Italic"
+                    >
+                      <Italic className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        applyFormatting({ strikethrough: true }, "body")
+                      }
+                      className="h-6 w-6 p-0 hover:bg-gray-200"
+                      title="Strikethrough"
+                    >
+                      <Strikethrough className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        applyFormatting({ monospace: true }, "body")
+                      }
+                      className="h-6 w-6 p-0 hover:bg-gray-200"
+                      title="Monospace"
+                    >
+                      <Code className="h-3 w-3" />
+                    </Button>
+                    <div className="w-px h-4 bg-gray-300 mx-1" />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => clearFormatting("body")}
+                      className="h-6 px-2 text-xs hover:bg-gray-200"
+                      title="Clear Formatting"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+
+                  {/* Body Input with Preview Toggle */}
+                  <div className="relative">
+                    {isBodyPreviewMode ? (
+                      /* Preview Mode */
+                      <div className="w-full min-h-[100px] border-2 border-gray-200 rounded-lg p-3 bg-white">
+                        <div className="text-sm text-gray-800 whitespace-pre-wrap">
+                          {parseWhatsAppFormatting(bodyText).map(
+                            (part, index) => (
+                              <span
+                                key={index}
+                                className={getWhatsAppFormattingClasses(
+                                  part.type
+                                )}
+                              >
+                                {part.text}
+                              </span>
+                            )
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setIsBodyPreviewMode(false)}
+                          className="absolute top-2 right-2 h-6 w-6 p-0 hover:bg-gray-200"
+                          title="Switch to Edit Mode"
+                        >
+                          <EyeOff className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      /* Input Mode */
+                      <div className="relative">
+                        <Textarea
+                          id="body"
+                          value={bodyText}
+                          onChange={(e) => setBodyText(e.target.value)}
+                          onSelect={handleTextSelection}
+                          placeholder="e.g., Shop now through {{1}} and use code {{2}} to get {{3}} off of all merchandise."
+                          className="min-h-[100px] font-mono pr-10"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setIsBodyPreviewMode(true)}
+                          className="absolute top-2 right-2 h-6 w-6 p-0 hover:bg-gray-200"
+                          title="Switch to Preview Mode"
+                          disabled={!bodyText.trim()}
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium text-gray-600">
@@ -933,12 +1453,12 @@ export function CreateTemplateModal({
       {showRules && (
         <>
           <div
-            className="fixed inset-0 bg-black/50 z-[60]"
+            className="fixed inset-0 bg-black/50 z-130"
             onClick={() => setShowRules(false)}
           />
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-140 flex items-center justify-center p-4">
             <div className="bg-white rounded-lg shadow-lg max-w-[500px] w-full">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between p-4 pb-2 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900">
                   WhatsApp Template Verification Rules
                 </h3>
@@ -1011,9 +1531,6 @@ export function CreateTemplateModal({
                     </p>
                   </div>
                 </div>
-              </div>
-              <div className="flex justify-end p-6 border-t border-gray-200">
-                <Button onClick={() => setShowRules(false)}>Got it!</Button>
               </div>
             </div>
           </div>
