@@ -157,6 +157,7 @@ const MessagesInterface = () => {
         return {
           ...conv,
           messages: [...conv.messages, newMessage],
+          updatedAt: new Date().toISOString(),
         };
       }
       return conv;

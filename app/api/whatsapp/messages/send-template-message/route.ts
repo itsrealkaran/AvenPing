@@ -141,17 +141,6 @@ export async function POST(request: NextRequest) {
             status: "UNDELIVERED",
           });
         } else {
-          // Create message record in database
-          await prisma.whatsAppMessage.create({
-            data: {
-              wamid: result.messages?.[0]?.id,
-              status: "SENT",
-              message: result.messages?.[0]?.text?.body,
-              isOutbound: true,
-              recipientId: contact.id,
-              whatsAppPhoneNumberId: account.phoneNumbers[0].id,
-            },
-          });
           await prisma.whatsAppRecipient.update({
             where: { id: contact.id },
             data: {

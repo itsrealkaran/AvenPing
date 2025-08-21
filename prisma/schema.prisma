@@ -143,6 +143,7 @@ model WhatsAppRecipient {
   activeCampaignId String?
 
   lastCheckedTime DateTime @default(now())
+  lastMessageTime DateTime?
   source RecipientSource @default(MANUAL)
 
   isOptedOut Boolean @default(false)
@@ -189,6 +190,8 @@ model WhatsAppMessage {
   message               String?
   mediaIds              String[]
   templateData          Json? // { header: string, body: string, footer: string }
+
+  interactiveJson       Json? // { [type: string, label: string] }
 
   isOutbound            Boolean              @default(false)
   errorMessage          String?

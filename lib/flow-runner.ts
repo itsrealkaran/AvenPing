@@ -268,7 +268,11 @@ export class FlowRunner {
             phoneNumber: recipientPhoneNumber,
             whatsAppPhoneNumberId: phoneNumberId,
             recipientId: recipient.id,
-            mediaIds: mediaUrl ? [mediaUrl] : []
+            mediaIds: mediaUrl ? [mediaUrl] : [],
+            interactiveJson: buttons ? buttons.map(button => ({
+              type: 'button',
+              label: button.label
+            })) : undefined
           }
         });
       }

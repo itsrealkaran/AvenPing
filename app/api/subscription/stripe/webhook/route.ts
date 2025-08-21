@@ -82,6 +82,18 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       const existingPlans = (userPlans?.plans as any[]) || []
       
       if (isAddon) {
+        const addonPlan = existingPlans.find((p: any) => p.planName === planName)
+        if (addonPlan) {
+          addonPlan.quantity = addonPlan.quantity + quantity
+          addonPlan.endDate = endDate
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              plans: existingPlans,
+            },
+          })
+          return
+        }
         // For addons, remove the existing plan with same name and add a new one
         const filteredPlans = existingPlans.filter((p: any) => p.planName !== planName)
         const newPlans = [...filteredPlans, {

@@ -199,6 +199,24 @@ export async function POST(req: NextRequest) {
                     whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
                   });
 
+                  // newMessage = await prisma.whatsAppRecipient.update({
+                  //   where: {
+                  //     id: recipient.id,
+                  //   },
+                  //   data: {
+                  //     lastMessageTime: new Date(),
+                  //     messages: {
+                  //       create: {
+                  //         message: messageText,
+                  //         phoneNumber: message.from,
+                  //         wamid: message.id,
+                  //         sentAt: new Date(message.timestamp * 1000),
+                  //         whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
+                  //       },
+                  //     },
+                  //   },
+                  // });
+
                   if (!recipient.hasConversation) {
                     await prisma.whatsAppRecipient.update({
                       where: {
@@ -228,6 +246,24 @@ export async function POST(req: NextRequest) {
                       timestamp: message.timestamp,
                       whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
                     });
+
+                  // newMessage = await prisma.whatsAppRecipient.update({
+                  //   where: {
+                  //     id: recipient.id,
+                  //   },
+                  //   data: {
+                  //     lastMessageTime: new Date(),
+                  //     messages: {
+                  //       create: {
+                  //         message: messageText,
+                  //         phoneNumber: message.from,
+                  //         wamid: message.id,
+                  //         sentAt: new Date(message.timestamp * 1000),
+                  //         whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
+                  //       },
+                  //     },
+                  //   },
+                  // });
 
                     if (!newRecipient.hasConversation) {
                       await prisma.whatsAppRecipient.update({

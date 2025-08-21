@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     
     if (isAddon) {
       // For addons, calculate price based on months
-      const monthlyPrice = await getPricingDetails(planName, "month", region as keyof PriceJson, user.plans as any)
+      const monthlyPrice = await getPricingDetails(planName, "month", region as keyof PriceJson, user.plans as any, true, months)
       if (!monthlyPrice) {
         return NextResponse.json({ message: "Unable to calculate pricing for this addon" }, { status: 400 })
       }
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     } else {
       // For regular plans, use existing logic
       const planPeriodEnum = planPeriod === "YEARLY" ? "year" : "month"
-      pricingDetails = await getPricingDetails(planName, planPeriodEnum, region as keyof PriceJson, user.plans as any)
+      pricingDetails = await getPricingDetails(planName, planPeriodEnum, region as keyof PriceJson, user.plans as any, false)
       if (!pricingDetails) {
         return NextResponse.json({ message: "Unable to calculate pricing for this plan" }, { status: 400 })
       }

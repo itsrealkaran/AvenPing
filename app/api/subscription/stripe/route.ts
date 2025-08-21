@@ -44,26 +44,24 @@ export async function POST(request: NextRequest) {
     }
 
     const planPeriodEnum = planPeriod === "YEARLY" ? "year" : "month"
-    console.log(planPeriod, "planPeriod")
-    console.log(planPeriodEnum, "planPeriodEnum")
 
     let pricingDetails;
     let totalPrice;
     
     if (isAddon) {
       // For addons, calculate price based on months
-      const monthlyPrice = await getPricingDetails(planName, "month", region as keyof PriceJson, user.plans as any)
+      const monthlyPrice = await getPricingDetails(planName, "month", region as keyof PriceJson, user.plans as any, true, months)
       if (!monthlyPrice) {
         return NextResponse.json({ message: "Unable to calculate pricing for this addon" }, { status: 400 })
       }
-      totalPrice = (monthlyPrice.price || 0) * (months || 1) * (quantity || 1)
+      totalPrice = monthlyPrice.price || 0
       pricingDetails = {
-        price: totalPrice,
-        endDate: new Date(Date.now() + (months || 1) * 30 * 24 * 60 * 60 * 1000)
+        price: monthlyPrice.price,
+        endDate: monthlyPrice.endDate
       }
     } else {
       // For regular plans, use existing logic
-      pricingDetails = await getPricingDetails(planName, planPeriodEnum, region as keyof PriceJson, user.plans as any)
+      pricingDetails = await getPricingDetails(planName, planPeriodEnum, region as keyof PriceJson, user.plans as any, false)
       if (!pricingDetails) {
         return NextResponse.json({ message: "Unable to calculate pricing for this plan" }, { status: 400 })
       }
