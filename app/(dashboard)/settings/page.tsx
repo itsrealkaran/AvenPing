@@ -102,12 +102,7 @@ export default function SettingsPage() {
       case "contacts":
         return <ContactSettings />;
       case "notifications":
-        return (
-          <NotificationSettings
-            notifications={notifications}
-            setNotifications={setNotifications}
-          />
-        );
+        return <NotificationSettings />;
       case "labels":
         return <LabelSettings />;
       case "catalogs":

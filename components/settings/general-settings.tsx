@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Phone, Link, Trash2, ChevronRight, Loader2 } from "lucide-react"
 import { useUser } from "@/context/user-context"
 import axios from "axios"
 import { toast } from "sonner"
+import { useSettings } from "@/context/settings-provider"
 
 interface GeneralSettingsProps {
   optOutStatus: boolean
@@ -17,8 +18,41 @@ export default function GeneralSettings({
   setOptOutStatus
 }: GeneralSettingsProps) {
   const { userInfo, hasWhatsAppAccount, isLoading } = useUser()
+  const { userSettings, updateOptOutKeywords, toggleOptOut } = useSettings()
   const [isConnecting, setIsConnecting] = useState(false)
   const [isDisconnecting, setIsDisconnecting] = useState(false)
+  const [isSavingKeywords, setIsSavingKeywords] = useState(false)
+  const [primaryKeyword, setPrimaryKeyword] = useState("")
+  const [secondaryKeyword, setSecondaryKeyword] = useState("")
+
+  // Sync keywords with context data
+  useEffect(() => {
+    if (userSettings?.optOutKeywords && userSettings.optOutKeywords.length >= 2) {
+      setPrimaryKeyword(userSettings.optOutKeywords[0] || "")
+      setSecondaryKeyword(userSettings.optOutKeywords[1] || "")
+    }
+  }, [userSettings])
+
+  const handleSaveKeywords = async () => {
+    if (!primaryKeyword.trim() || !secondaryKeyword.trim()) {
+      toast.error("Both primary and secondary keywords are required")
+      return
+    }
+
+    setIsSavingKeywords(true)
+    try {
+      await updateOptOutKeywords([
+        primaryKeyword.trim(),
+        secondaryKeyword.trim(),
+      ])
+      toast.success("Opt-out keywords saved successfully!")
+    } catch (error) {
+      console.error("Error saving opt-out keywords:", error)
+      toast.error("Failed to save opt-out keywords")
+    } finally {
+      setIsSavingKeywords(false)
+    }
+  }
 
   const handleConnectWhatsApp = async () => {
     setIsConnecting(true)
@@ -140,8 +174,11 @@ export default function GeneralSettings({
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                checked={optOutStatus}
-                onChange={(e) => setOptOutStatus(e.target.checked)}
+                checked={userSettings?.isOptOutSelected}
+                onChange={(e) => {
+                  toggleOptOut()
+                  setOptOutStatus(e.target.checked)
+                }}
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
@@ -151,6 +188,61 @@ export default function GeneralSettings({
             </label>
           </div>
         </div>
+        
+        {/* Opt-out Keywords Inputs - Only show when opt-out is enabled */}
+        {userSettings?.isOptOutSelected && (
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <h4 className="text-md font-medium text-gray-900 mb-3">Opt-out Keywords</h4>
+            <p className="text-gray-600 text-sm mb-4">
+              Users can reply with any of these keywords to stop receiving messages. Separate multiple keywords with commas.
+            </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="primaryKeyword" className="block text-sm font-medium text-gray-700 mb-2">
+                    Primary Keyword
+                  </label>
+                  <input
+                    type="text"
+                    id="primaryKeyword"
+                    value={primaryKeyword}
+                    onChange={(e) => setPrimaryKeyword(e.target.value)}
+                    placeholder="e.g., STOP, UNSUBSCRIBE"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="secondaryKeyword" className="block text-sm font-medium text-gray-700 mb-2">
+                    Secondary Keyword
+                  </label>
+                  <input
+                    type="text"
+                    id="secondaryKeyword"
+                    value={secondaryKeyword}
+                    onChange={(e) => setSecondaryKeyword(e.target.value)}
+                    placeholder="e.g., QUIT, CANCEL"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={handleSaveKeywords}
+                  disabled={isSavingKeywords || !primaryKeyword.trim() || !secondaryKeyword.trim()}
+                  className="px-4 py-2 bg-cyan-500 text-white text-sm font-medium rounded-md hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSavingKeywords ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Keywords"
+                  )}
+                </button>
+              </div>
+          </div>
+        )}
       </div>
 
       {/* WhatsApp Connection */}

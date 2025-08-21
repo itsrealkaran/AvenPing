@@ -10,6 +10,7 @@ import { FlowProvider } from "./flow-provider";
 import { TemplateProvider } from "./template-provider";
 import { CampaignProvider } from "./campaign-provider";
 import { NotificationProvider } from "./notification-provider";
+import { SettingsProvider } from "./settings-provider";
 
 export function AppProvider({ children }: { children: ReactNode }) {
   return (
@@ -22,7 +23,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 <TemplateProvider>
                   <CampaignProvider>
                     <NotificationProvider>
-                      {children}
+                      <SettingsProvider>
+                        {children}
+                      </SettingsProvider>
                     </NotificationProvider>
                   </CampaignProvider>
                 </TemplateProvider>

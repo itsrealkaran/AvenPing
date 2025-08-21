@@ -293,6 +293,7 @@ model UserSetting {
   user User @relation(fields: [userId], references: [id])
 
   isOptOutSelected Boolean @default(false)
+  optOutKeywords String[]
 
   notificationSettings Json[] // { [notificationType: string, isEnabled: boolean] }
 
