@@ -18,6 +18,7 @@ export async function GET(request: Request) {
         id: true,
         name: true,
         email: true,
+        plans: true,
         whatsAppAccount: {
           select: {
             id: true,
@@ -40,6 +41,7 @@ export async function GET(request: Request) {
       id: user?.id,
       name: user?.name,
       email: user?.email,
+      plans: user?.plans,
       whatsappAccount: {
         id: user?.whatsAppAccount?.id,
         name: user?.name,
