@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       userId: user.id,
       email: user.email,
       name: user.name,
-      accessToken: user.whatsAppAccount?.accessToken,
+      whatsAppAccountId: user.whatsAppAccount?.id,
       hasWhatsAppAccount: hasWhatsAppAccount,
       plan: plan,
       expiresAt: user.expiresAt,

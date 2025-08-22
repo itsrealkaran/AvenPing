@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
 
-    if (!session || !session.email) {
+    if (!session || !session.email || !session.whatsAppAccountId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -113,11 +113,8 @@ export async function POST(request: NextRequest) {
               data: {
                 name: contactData.name.trim(),
                 phoneNumber: cleanPhoneNumber,
-                whatsAppPhoneNumber: {
-                  connect: {
-                    id: contactData.phoneNumberId,
-                  },
-                },
+                whatsAppPhoneNumberId: contactData.phoneNumberId,
+                whatsAppAccountId: session.whatsAppAccountId as string,
                 hasConversation: false,
                 lastCheckedTime: new Date(),
                 attributeValues: contactData.attributes || [],

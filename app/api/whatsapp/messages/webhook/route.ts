@@ -236,6 +236,7 @@ export async function POST(req: NextRequest) {
                         whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
                         isOptedOut,
                         source: "AI_SYNC",
+                        whatsAppAccountId: whatsAppPhoneNumber.account.id as string,
                       },
                     });
                     newMessage = await storeWhatsAppMessage({
