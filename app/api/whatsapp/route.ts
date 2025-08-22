@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/jwt';
+import { normalizePhoneNumber } from '@/lib/utils';
 import axios from 'axios';
 
 export async function GET() {
@@ -141,7 +142,7 @@ const getUserInfo = async (accessToken: string) => {
     const phoneNumberData = phoneNumbers.data.data.map((phoneNumber: any) => ({
       phoneNumberId: phoneNumber.id,
       name: phoneNumber.verified_name,
-      phoneNumber: phoneNumber.display_phone_number,
+      phoneNumber: normalizePhoneNumber(phoneNumber.display_phone_number),
       codeVerificationStatus: phoneNumber.code_verification_status,
     }));
 

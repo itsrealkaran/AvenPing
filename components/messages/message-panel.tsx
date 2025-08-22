@@ -391,7 +391,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-white flex-shrink-0">
+      <div className="py-3 px-6 border-b border-gray-200 flex justify-between items-center bg-white flex-shrink-0">
         <div className="flex items-center">
           <div className="relative">
             <div
@@ -409,7 +409,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-6 mr-4">
+        <div className="flex items-center gap-6">
           <button className="text-gray-500 hover:text-gray-700">
             <UserPlus2 size={18} />
           </button>

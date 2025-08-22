@@ -37,7 +37,7 @@ export default function WAButtonCardContent() {
     userInfo?.whatsappAccount?.phoneNumbers || [];
 
   const [buttonText, setButtonText] = useState("");
-  const [buttonColor, setButtonColor] = useState("#7FFB8A");
+  const [buttonColor, setButtonColor] = useState("#25D366");
   const [buttonRoundness, setButtonRoundness] = useState("10");
   const [showCodePanel, setShowCodePanel] = useState(false);
   const [code, setCode] = useState("");
