@@ -18,7 +18,7 @@ type Campaign = BaseCampaign & {
 
 export default function CampaignsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const { campaigns, isLoading, error, setSelectedWhatsAppAccountId, createCampaign } = useCampaigns();
+  const { campaigns, isLoading, isSaving, error, setSelectedWhatsAppAccountId, createCampaign } = useCampaigns();
   const { userInfo } = useUser();
 
   const [selectedRecipientStats, setSelectedRecipientStats] = useState(null);
@@ -189,6 +189,7 @@ export default function CampaignsPage() {
           data={campaigns}
           columns={columns}
           isLoading={isLoading}
+          isSaving={isSaving}
           actionMenuItems={actionMenuItems}
           onAddItem={handleAddCampaign}
           addButtonLabel="Create Campaign"

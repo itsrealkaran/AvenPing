@@ -48,9 +48,13 @@ export const DropdownButton = React.forwardRef<
       <Button
         ref={buttonRef}
         {...props}
+        type="button"
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={(e) => {
+          e.preventDefault();
+          setOpen((v) => !v);
+        }}
       >
         {displayText}
         <ChevronDown className="ml-1 size-4" />
@@ -63,9 +67,11 @@ export const DropdownButton = React.forwardRef<
           {options.map((option) => (
             <Button
               key={option.value}
+              type="button"
               className="w-full justify-start"
               variant="ghost"
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
                 onChange(option.value);
                 setOpen(false);
               }}

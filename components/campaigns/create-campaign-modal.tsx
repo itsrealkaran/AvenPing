@@ -187,6 +187,44 @@ export function CreateCampaignModal({
 
   const handleNext = () => {
     console.log("campaignData", campaignData);
+
+    // Validation checks based on current step
+    if (currentStep === 1) {
+      if (campaignData.selectedContacts.length === 0) {
+        toast.error("Please select at least one contact to continue");
+        return;
+      }
+    }
+
+    if (currentStep === 2) {
+      if (!campaignData.templateName) {
+        toast.error("Please select a template to continue");
+        return;
+      }
+    }
+
+    if (currentStep === 3) {
+      // Check if all variables have values or are configured with attributes
+      const hasInvalidVariables = campaignData.variables.some((variable) => {
+        if (variable.useAttribute) {
+          return (
+            !variable.attributeName ||
+            (variable.attributeName !== "name" &&
+              variable.attributeName !== "phoneNumber" &&
+              !variable.fallbackValue)
+          );
+        }
+        return !variable.value && !variable.fallbackValue;
+      });
+
+      if (hasInvalidVariables) {
+        toast.error(
+          "Please configure all template variables or provide fallback values"
+        );
+        return;
+      }
+    }
+
     if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
     }
@@ -287,7 +325,7 @@ export function CreateCampaignModal({
 
           if (variable.useAttribute && variable.attributeName) {
             if (variable.attributeName === "name") {
-              value = "[Contact Name]";
+              value = "[Name]";
             } else if (variable.attributeName === "phoneNumber") {
               value = "[Phone Number]";
             } else {
@@ -630,6 +668,24 @@ export function CreateCampaignModal({
                         </div>
                       )}
                     </div>
+
+                    {/* Helper Text */}
+                    <div className="p-3 bg-blue-50 border-t border-blue-100">
+                      <div className="flex items-center gap-2 text-sm text-blue-700">
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        <span>
+                          {campaignData.selectedContacts.length === 0
+                            ? "Select at least one contact to continue to the next step"
+                            : `Selected ${
+                                campaignData.selectedContacts.length
+                              } contact${
+                                campaignData.selectedContacts.length > 1
+                                  ? "s"
+                                  : ""
+                              }. You can now proceed to the next step.`}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -671,6 +727,18 @@ export function CreateCampaignModal({
                         </div>
                       </div>
                     ))}
+                  </div>
+
+                  {/* Helper Text */}
+                  <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm text-blue-700">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      <span>
+                        {!campaignData.templateName
+                          ? "Select a template to continue to the next step"
+                          : `Template "${campaignData.templateName}" selected. You can now proceed to configure variables.`}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -730,7 +798,7 @@ export function CreateCampaignModal({
                                     // Built-in attributes
                                     {
                                       id: "name",
-                                      label: "Contact Name",
+                                      label: "Name",
                                       value: "name",
                                       category: "built-in",
                                     },
@@ -766,7 +834,7 @@ export function CreateCampaignModal({
                                   selectedLabel={
                                     variable.attributeName
                                       ? variable.attributeName === "name"
-                                        ? "Contact Name"
+                                        ? "Name"
                                         : variable.attributeName ===
                                           "phoneNumber"
                                         ? "Phone Number"
@@ -851,6 +919,28 @@ export function CreateCampaignModal({
                               }}
                             ></p>
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Helper Text */}
+                      <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                        <div className="flex items-center gap-2 text-sm text-blue-700">
+                          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                          <span>
+                            {campaignData.variables.some((variable) => {
+                              if (variable.useAttribute) {
+                                return (
+                                  !variable.attributeName ||
+                                  (variable.attributeName !== "name" &&
+                                    variable.attributeName !== "phoneNumber" &&
+                                    !variable.fallbackValue)
+                                );
+                              }
+                              return !variable.value && !variable.fallbackValue;
+                            })
+                              ? "Configure all template variables or provide fallback values to continue"
+                              : "All variables configured. You can now proceed to schedule your campaign."}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1010,7 +1100,26 @@ export function CreateCampaignModal({
 
             <div className="flex items-center gap-2">
               {currentStep < 4 ? (
-                <Button onClick={handleNext}>
+                <Button
+                  onClick={handleNext}
+                  disabled={
+                    (currentStep === 1 &&
+                      campaignData.selectedContacts.length === 0) ||
+                    (currentStep === 2 && !campaignData.templateName) ||
+                    (currentStep === 3 &&
+                      campaignData.variables.some((variable) => {
+                        if (variable.useAttribute) {
+                          return (
+                            !variable.attributeName ||
+                            (variable.attributeName !== "name" &&
+                              variable.attributeName !== "phoneNumber" &&
+                              !variable.fallbackValue)
+                          );
+                        }
+                        return !variable.value && !variable.fallbackValue;
+                      }))
+                  }
+                >
                   Next
                   <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { contacts, templateName, templateData, variables, campaignId, phoneNumberId } = await request.json();
+    const { contacts, templateName, templateData, variables, campaignId, campaignName, phoneNumberId } = await request.json();
 
     const session = await getSession();
     console.log("session from send template message", session)
@@ -46,6 +46,8 @@ export async function POST(request: NextRequest) {
         // Build personalized template parameters for this contact
         const headerParams: any[] = [];
         const bodyParams: any[] = [];
+        const replacedTemplateData: any[] = [];
+        
         variables.forEach((variable: any) => {
           let paramValue = variable.value || variable.fallbackValue || "";
           
@@ -72,6 +74,24 @@ export async function POST(request: NextRequest) {
             headerParams.push(param);
           } else if (variable.componentType === "BODY") {
             bodyParams.push(param);
+          }
+          
+          // Store the replaced template data for this contact
+          const originalComponent = templateData.components.find((comp: any) => comp.type === variable.componentType);
+          if (originalComponent) {
+            let replacedText = originalComponent.text || "";
+            const placeholder = `{{${variable.variableIndex}}}`;
+            replacedText = replacedText.replace(placeholder, paramValue);
+            
+            replacedTemplateData.push({
+              ...originalComponent,
+              text: replacedText,
+              originalText: originalComponent.text,
+              replacedValue: paramValue,
+              variableIndex: variable.variableIndex,
+              attributeName: variable.attributeName,
+              useAttribute: variable.useAttribute
+            });
           }
         });
 
@@ -116,9 +136,26 @@ export async function POST(request: NextRequest) {
         
         console.log("response from send template message", JSON.stringify(result, null, 2))
 
+        // Create message with campaign data and replaced values
         const message = await prisma.whatsAppMessage.create({
           data: {
-            templateData: templateData.components,
+            templateData: {
+              // Store the replaced template data
+              components: replacedTemplateData,
+              // Store campaign metadata
+              campaignId: campaignId,
+              campaignName: campaignName || "Template Campaign",
+              templateName: templateName,
+              variables: variables, // Store the original variables configuration
+              replacedValues: replacedTemplateData.map(item => ({
+                variableIndex: item.variableIndex,
+                attributeName: item.attributeName,
+                useAttribute: item.useAttribute,
+                replacedValue: item.replacedValue,
+                originalText: item.originalText,
+                finalText: item.text
+              }))
+            },
             recipientId: contact.id,
             whatsAppPhoneNumberId: account.phoneNumbers[0].id,
             isOutbound: true,  // Template messages are sent by business
@@ -126,19 +163,20 @@ export async function POST(request: NextRequest) {
             phoneNumber: contact.phoneNumber,
             createdAt: new Date(),
             updatedAt: new Date(),
+            status: "PENDING", // Initial status
           },
         });
 
         console.log("result from send template message", message)
 
         if (result.error) {
-          await prisma.whatsAppMessage.create({
+          // Update message with error status
+          await prisma.whatsAppMessage.update({
+            where: { id: message.id },
             data: {
-              wamid: result.error.message_id,
               status: "FAILED",
-              message: result.error.message,
-              recipientId: contact.id,
-              whatsAppPhoneNumberId: account.phoneNumbers[0].id,
+              errorMessage: result.error.message,
+              wamid: result.error.message_id,
             },
           });
 
@@ -157,12 +195,21 @@ export async function POST(request: NextRequest) {
             status: "UNDELIVERED",
           });
         } else {
+          // Update message with success status and WhatsApp message ID
+          await prisma.whatsAppMessage.update({
+            where: { id: message.id },
+            data: {
+              status: "SENT", // Success status
+              wamid: result.messages?.[0]?.id,
+              sentAt: new Date(),
+            },
+          });
+
           await prisma.whatsAppRecipient.update({
             where: { id: contact.id },
             data: {
               status: "UNREAD",
               activeCampaignId: campaignId,
-              hasConversation: true,
             },
           });
 
@@ -170,7 +217,7 @@ export async function POST(request: NextRequest) {
             id: contact.id,
             name: contact.name,
             phoneNumber: contact.phoneNumber,
-            status: "UNREAD",
+            status: "SENT",
           });
         }
       } catch (error) {

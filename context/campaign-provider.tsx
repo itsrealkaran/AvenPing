@@ -41,6 +41,7 @@ interface CampaignContextType {
   createCampaign: (data: CampaignData) => Promise<Campaign>;
   selectedWhatsAppAccountId: string | null;
   setSelectedWhatsAppAccountId: (id: string | null) => void;
+  isSaving: boolean;
 }
 
 const CampaignContext = createContext<CampaignContextType | undefined>(undefined);
@@ -98,11 +99,9 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     onSuccess: (newCampaign) => {
       // Invalidate and refetch campaigns
       queryClient.invalidateQueries({ queryKey: ['campaigns', selectedWhatsAppAccountId] });
-      toast.success('Campaign created successfully!');
     },
     onError: (error: Error) => {
       console.error('Error creating campaign:', error);
-      toast.error(error.message || 'Failed to create campaign');
     },
   });
 
@@ -117,6 +116,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     createCampaign,
     selectedWhatsAppAccountId,
     setSelectedWhatsAppAccountId,
+    isSaving: createCampaignMutation.isPending,
   };
 
   return (
