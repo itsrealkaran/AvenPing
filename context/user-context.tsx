@@ -1,5 +1,12 @@
 import axios from "axios";
-import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useCallback,
+  useEffect,
+} from "react";
 
 interface UserInfo {
   userInfo: {
@@ -37,6 +44,7 @@ interface UserInfo {
   };
   setUserInfo: (userInfo: UserInfo) => void;
   setActivePhoneNumber: (phoneNumber: string) => void;
+  refreshUser: () => Promise<void>;
   hasWhatsAppAccount: boolean;
   isLoading: boolean;
 }
@@ -51,6 +59,7 @@ export const UserContext = createContext<UserInfo>({
   },
   setUserInfo: () => {},
   setActivePhoneNumber: () => {},
+  refreshUser: async () => {},
   hasWhatsAppAccount: false,
   isLoading: true,
 });
@@ -63,10 +72,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
       const response = await axios.get("/api/get-info");
-      
+
       if (response.data.userData.whatsappAccount) {
-        const phoneNumbers = response.data.userData.whatsappAccount.phoneNumbers || [];
-        const activePhoneNumber = phoneNumbers.length > 0 ? phoneNumbers[0] : null;
+        const phoneNumbers =
+          response.data.userData.whatsappAccount.phoneNumbers || [];
+        const activePhoneNumber =
+          phoneNumbers.length > 0 ? phoneNumbers[0] : null;
 
         setUserInfo({
           id: response.data.userData.id,
@@ -97,40 +108,68 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const setActivePhoneNumber = useCallback((phoneNumber: string) => {
-    if (!userInfo?.whatsappAccount?.phoneNumbers) return;
-    
-    const phoneNumbers = userInfo.whatsappAccount.phoneNumbers.find((phone: any) => phone.phoneNumber === phoneNumber);
-    if (phoneNumbers) {
-      setUserInfo({
-        id: userInfo.id,
-        name: userInfo.name,
-        email: userInfo.email,
+  const refreshUser = useCallback(async () => {
+    await fetchUser();
+  }, [fetchUser]);
+
+  const setActivePhoneNumber = useCallback(
+    (phoneNumber: string) => {
+      if (!userInfo?.whatsappAccount?.phoneNumbers) return;
+
+      const phoneNumbers = userInfo.whatsappAccount.phoneNumbers.find(
+        (phone: any) => phone.phoneNumber === phoneNumber
+      );
+      if (phoneNumbers) {
+        console.log("UserContext: Setting active phone number:", phoneNumbers);
+        setUserInfo({
+          id: userInfo.id,
+          name: userInfo.name,
+          email: userInfo.email,
+          plans: userInfo.plans,
           whatsappAccount: {
-          ...userInfo.whatsappAccount,
-          activePhoneNumber: phoneNumbers,
-        },
-      });
-    }
-  }, [userInfo]);
+            ...userInfo.whatsappAccount,
+            activePhoneNumber: phoneNumbers,
+          },
+        });
+      }
+    },
+    [userInfo]
+  );
 
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
 
-  const hasWhatsAppAccount = userInfo?.whatsappAccount?.id && 
-                            userInfo.whatsappAccount.phoneNumbers && 
-                            userInfo.whatsappAccount.phoneNumbers.length > 0;
+  // Debug logging for user info updates
+  useEffect(() => {
+    console.log("UserContext: User info updated:", userInfo);
+  }, [userInfo]);
+
+  const hasWhatsAppAccount =
+    userInfo?.whatsappAccount?.id &&
+    userInfo.whatsappAccount.phoneNumbers &&
+    userInfo.whatsappAccount.phoneNumbers.length > 0;
 
   return (
-    <UserContext.Provider value={{ userInfo, setUserInfo, setActivePhoneNumber, hasWhatsAppAccount, isLoading }}>{children}</UserContext.Provider>
+    <UserContext.Provider
+      value={{
+        userInfo,
+        setUserInfo,
+        setActivePhoneNumber,
+        refreshUser,
+        hasWhatsAppAccount,
+        isLoading,
+      }}
+    >
+      {children}
+    </UserContext.Provider>
   );
 };
 
 export const useUser = () => {
   const context = useContext(UserContext);
   if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
+    throw new Error("useUser must be used within a UserProvider");
   }
   return context;
 };

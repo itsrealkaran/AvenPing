@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Body from "@/components/layout/body";
-import Card from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import RegisterNumberModal from "@/components/dashboard/register-number-modal";
 import QrGeneratorCardContent from "@/components/dashboard/qr-generator-card";
 import RegisterNumberCardContent from "@/components/dashboard/register-number-card";
@@ -22,7 +22,12 @@ export default function DashboardPage() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
 
-  const { userInfo, hasWhatsAppAccount } = useUser();
+  // Refs for auto-scrolling to priority cards
+  const whatsappNumbersCardRef = useRef<HTMLDivElement>(null);
+  const registerNumberCardRef = useRef<HTMLDivElement>(null);
+  const businessVerificationCardRef = useRef<HTMLDivElement>(null);
+
+  const { userInfo, hasWhatsAppAccount, refreshUser } = useUser();
   const { data: analyticsData, isLoading: analyticsLoading } = useAnalytics();
 
   useEffect(() => {
@@ -55,6 +60,20 @@ export default function DashboardPage() {
     }
   }, [userInfo]);
 
+  // Refresh user data when WhatsApp connection status changes
+  useEffect(() => {
+    const refreshInterval = setInterval(async () => {
+      if (hasWhatsAppAccount && !isConnected) {
+        console.log(
+          "Dashboard: Refreshing user data due to WhatsApp connection change"
+        );
+        await refreshUser();
+      }
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(refreshInterval);
+  }, [hasWhatsAppAccount, isConnected, refreshUser]);
+
   // Business Verification state
   const [isVerified, setIsVerified] = useState(true);
 
@@ -82,20 +101,74 @@ export default function DashboardPage() {
     return "z-10";
   };
 
-  const handleRegister = (pin: string, phoneNumberId: string) => {
-    axios
-      .post("/api/whatsapp/phone-numbers/register", {
+  // Function to scroll to priority card
+  const scrollToPriorityCard = () => {
+    if (!isConnected && whatsappNumbersCardRef.current) {
+      // WhatsApp Numbers card is priority
+      whatsappNumbersCardRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "nearest",
+      });
+      console.log("Dashboard: Scrolled to WhatsApp Numbers card");
+    } else if (isConnected && !isRegistered && registerNumberCardRef.current) {
+      // Register Number card is priority
+      registerNumberCardRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "nearest",
+      });
+      console.log("Dashboard: Scrolled to Register Number card");
+    } else if (
+      isConnected &&
+      isRegistered &&
+      !isVerified &&
+      businessVerificationCardRef.current
+    ) {
+      // Business Verification card is priority
+      businessVerificationCardRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "nearest",
+      });
+      console.log("Dashboard: Scrolled to Business Verification card");
+    }
+  };
+
+  // Auto-scroll to priority card when status changes
+  useEffect(() => {
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      scrollToPriorityCard();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [isConnected, isRegistered, isVerified]);
+
+  // Manual scroll function for testing
+  const handleManualScroll = () => {
+    scrollToPriorityCard();
+  };
+
+  const handleRegister = async (pin: string, phoneNumberId: string) => {
+    try {
+      const res = await axios.post("/api/whatsapp/phone-numbers/register", {
         pin,
         phoneNumberId,
-      })
-      .then((res) => {
-        if (res.data.success) {
-          setIsRegistered(true);
-          setShowRegisterModal(false);
-        } else {
-          console.log(res.data.error);
-        }
       });
+
+      if (res.data.success) {
+        setIsRegistered(true);
+        setShowRegisterModal(false);
+        // Refresh user data to get updated registration status
+        console.log("Dashboard: Phone number registered, refreshing user data");
+        await refreshUser();
+      } else {
+        console.log(res.data.error);
+      }
+    } catch (error) {
+      console.error("Error registering phone number:", error);
+    }
   };
 
   const handleConnectAccount = async () => {
@@ -119,8 +192,18 @@ export default function DashboardPage() {
             .post("/api/whatsapp", {
               code: response.authResponse.code,
             })
-            .then((res) => {
+            .then(async (res) => {
               console.log(res.data);
+              // Refresh user data to get updated WhatsApp account info
+              if (res.data.success) {
+                console.log(
+                  "Dashboard: WhatsApp connected, refreshing user data"
+                );
+                await refreshUser();
+              }
+            })
+            .catch((error) => {
+              console.error("Error connecting WhatsApp:", error);
             });
         } else {
           console.log("User cancelled login or did not fully authorize.");
@@ -145,6 +228,7 @@ export default function DashboardPage() {
           title="QR Generator"
           className="md:col-span-1 md:row-span-2 !p-0"
           headerInfo="This is a QR code generator for WhatsApp. It allows you to generate a QR code that can be scanned by a WhatsApp user to start a conversation with your business."
+          size="md"
         >
           <QrGeneratorCardContent />
         </Card>
@@ -153,7 +237,11 @@ export default function DashboardPage() {
         <Card
           title="WhatsApp Account"
           headerInfo="Manage your connected WhatsApp numbers. Add new numbers or remove existing ones from your account."
-          className={cn("md:col-span-1", getCardZIndex("whatsapp-numbers"))}
+          className={cn("md:col-span-1 !p-0", getCardZIndex("whatsapp-numbers"))}
+          size="md"
+          ref={whatsappNumbersCardRef}
+          hoverable={!isConnected}
+          onClick={!isConnected ? () => scrollToPriorityCard() : undefined}
         >
           <WhatsAppNumbersCardContent
             isConnected={isConnected}
@@ -166,6 +254,7 @@ export default function DashboardPage() {
           title="WAButton"
           headerInfo="This is a WAButton for WhatsApp. It allows you to generate a WAButton that can be used as contact button on your website."
           className="md:col-span-1 md:row-span-2 !p-0"
+          size="md"
         >
           <WAButtonCardContent />
         </Card>
@@ -173,8 +262,16 @@ export default function DashboardPage() {
         {/* Register Number Card */}
         <Card
           title="Register Number"
+          ref={registerNumberCardRef}
           headerInfo="This is a register number for WhatsApp. It allows you to register a number that can be used to send and receive messages from WhatsApp."
           className={cn("md:col-span-1 !p-0", getCardZIndex("register-number"))}
+          hoverable={isConnected && !isRegistered}
+          onClick={
+            isConnected && !isRegistered
+              ? () => scrollToPriorityCard()
+              : undefined
+          }
+          size="md"
         >
           <RegisterNumberCardContent
             isRegistered={isRegistered}
@@ -191,6 +288,13 @@ export default function DashboardPage() {
             "md:col-span-2 !p-0",
             getCardZIndex("business-verification")
           )}
+          ref={businessVerificationCardRef}
+          hoverable={isConnected && isRegistered && !isVerified}
+          onClick={
+            isConnected && isRegistered && !isVerified
+              ? () => scrollToPriorityCard()
+              : undefined
+          }
         >
           <BusinessVerificationCardContent isVerified={isVerified} />
         </Card>
@@ -240,7 +344,6 @@ export default function DashboardPage() {
         </>
       ) : (
         <>
-          {" "}
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-3">
             {analyticsData?.metrics?.map((metric, index) => (
@@ -293,9 +396,11 @@ export default function DashboardPage() {
       )}
     >
       {/* WhatsApp Connection Overlay - Only covers dashboard body */}
-      {!hasWhatsAppAccount || !isConnected || !isRegistered && (
-        <div className="absolute inset-0 backdrop-blur-xs z-10 pointer-events-none" />
-      )}
+      { !hasWhatsAppAccount ||
+        !isConnected ||
+        (!isRegistered && (
+          <div className="absolute inset-0 backdrop-blur-xs z-10 pointer-events-none" />
+        ))}
 
       <MetricCards />
       <DashboardContent />
