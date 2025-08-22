@@ -1,12 +1,14 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { ChevronRight, Check, ArrowRight } from "lucide-react"
+import { ChevronRight, Check, ArrowRight, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import PaymentGatewayModal from "./payment-gateway-modal"
 import DowngradeWarningModal from "./downgrade-warning-modal"
 import AddonModal from "./addon-modal"
 import { toast } from "sonner"
+import { getPricingDetails } from "@/lib/get-pricing-details"
+import { useUser } from "@/context/user-context"
 
 interface PriceJson {
   US: number
@@ -278,6 +280,12 @@ const AddOnsCard: React.FC = () => {
 
 
 
+interface PriceJson {
+  US: number
+  IND: number
+  ASIA: number
+}
+
 export default function SubscriptionSettings() {
   const [currentPlanPeriod, setCurrentPlanPeriod] = useState<"month" | "year">("year")
   const [upgradePlanPeriod, setUpgradePlanPeriod] = useState<"month" | "year">("year")
@@ -297,11 +305,13 @@ export default function SubscriptionSettings() {
 
   // State for payment modal
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [showPriceCalculationModal, setShowPriceCalculationModal] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<{
     name: string
     period: "month" | "year"
     price: number
   } | null>(null)
+  const [priceCalculationDetails, setPriceCalculationDetails] = useState<any>(null)
 
   // State for showing/hiding all plans
   const [showAllPlans, setShowAllPlans] = useState(false)
@@ -314,6 +324,8 @@ export default function SubscriptionSettings() {
   const [selectedAddon, setSelectedAddon] = useState<Addon | null>(null)
   const [addonMonths, setAddonMonths] = useState(1)
   const [addonQuantity, setAddonQuantity] = useState(1)
+
+  const { userInfo } = useUser()
 
   // Fetch subscription data from API
   const fetchSubscriptionData = async () => {
@@ -328,6 +340,7 @@ export default function SubscriptionSettings() {
       const data = await response.json()
       setSubscriptionData(data)
       setCurrentPlanPeriod(data.activePlan?.period === "month" ? "year" : "month")
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
       console.error('Error fetching subscription data:', err)
@@ -428,21 +441,149 @@ export default function SubscriptionSettings() {
     })
   }
 
-  const handleUpgrade = (planName: string, period: "month" | "year") => {
+  // Price calculation function using the same logic as get-pricing-details.ts
+  const calculatePlanPrice = (planName: string, planPeriod: "month" | "year", region: keyof PriceJson, userPlans: any[], isAddon: boolean, months?: number) => {
+    try {
+      const primaryPlan = userPlans.find((plan: any) => plan.isAddOn === false)
+      
+      // Find the plan from allPlans instead of database
+      const allPlans = getAllPlans()
+      const plan = allPlans.find(p => p.name === planName)
+      
+      if (!plan) {
+        throw new Error(`Plan ${planName} not found`)
+      }
+
+      if (isAddon) {
+        const addonPlan = userPlans.find((plan: any) => plan.planName === planName)
+        
+        if (addonPlan && new Date(addonPlan.endDate) < new Date()) {
+          const addonPricePerDay = plan?.monthlyPriceJson?.[region]! / 30
+          const addonPrice = addonPricePerDay * (new Date(addonPlan.endDate).getDate() - new Date().getDate())
+
+          return {
+            planName: planName,
+            period: planPeriod,
+            isAddOn: true,
+            endDate: new Date(addonPlan.endDate),
+            price: addonPrice
+          }
+        }
+        
+        return {
+          planName: planName,
+          period: planPeriod,
+          isAddOn: true,
+          endDate: new Date(Date.now() + (months || 1) * 30 * 24 * 60 * 60 * 1000),
+          price: plan?.monthlyPriceJson?.[region]! * (months || 1)
+        }
+      }
+
+      if (!primaryPlan) {
+        return {
+          planName: planName,
+          period: planPeriod,
+          isAddOn: false,
+          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          price: planPeriod === 'month' ? plan?.monthlyPriceJson?.[region] : plan?.yearlyPriceJson?.[region]! * 12
+        }
+      }
+
+      if (primaryPlan.period === 'month') {
+        return {
+          planName: planName,
+          period: planPeriod,
+          isAddOn: plan?.isAddOn,
+          endDate: planPeriod === 'month' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+          price: planPeriod === 'month' ? plan?.monthlyPriceJson?.[region] : plan?.yearlyPriceJson?.[region]! * 12
+        }
+      } else if (planPeriod === 'year') {
+        // Define plan hierarchy (higher index = higher tier)
+        const planHierarchy = ['BASIC', 'PREMIUM', 'ENTERPRISE'];
+        
+        const currentIndex = planHierarchy.indexOf(primaryPlan.name);
+        const targetIndex = planHierarchy.indexOf(planName);
+        
+        // If target plan is lower in hierarchy, it's a downgrade
+        const isPlanDownGrade = targetIndex < currentIndex;
+
+        if (isPlanDownGrade) {
+          console.log("isPlanDownGrade", isPlanDownGrade)
+          return {
+            planName: planName,
+            period: planPeriod,
+            isAddOn: plan?.isAddOn,
+            endDate: primaryPlan.endDate,
+            price: null
+          }
+        }
+
+        const calculatedPrice = plan?.monthlyPriceJson?.[region]
+        console.log("calculatedPrice", calculatedPrice)
+
+        // if the user's primary plan is active and the plan is a upgrade then calculate the price for the remaining months of the year
+        if (new Date(primaryPlan.endDate) > new Date()) {
+          const remainingMonths = 12 - new Date(primaryPlan.endDate).getMonth()
+          const price = calculatedPrice! * remainingMonths
+          return {
+            planName: planName,
+            period: planPeriod,
+            isAddOn: plan?.isAddOn,
+            endDate: primaryPlan.endDate,
+            price: price
+          }
+        }
+        
+        // calculate the price for the remaining months of the year
+        const remainingMonths = 12 - new Date(primaryPlan.endDate).getMonth()
+        const price = calculatedPrice! * remainingMonths
+
+        return {
+          planName: planName,
+          period: planPeriod,
+          isAddOn: plan?.isAddOn,
+          endDate: primaryPlan.endDate,
+          price: price
+        }
+      }
+
+    } catch (error) {
+      console.error(error)
+      return null
+    }
+  }
+
+  const handleUpgrade = async (planName: string, period: "month" | "year") => {
     // Find the actual plan that was clicked from all plans
     const allPlans = getAllPlans()
     const selectedPlan = allPlans.find(plan => plan.name === planName)
     
     if (!selectedPlan) return
 
-    const price = getPlanPrice(selectedPlan, period, region)
+    console.log(planName, period, region, userInfo.plans, "userInfo.plans")
+    
+    // Calculate price using the same logic as get-pricing-details.ts
+    const calculatedPrice = calculatePlanPrice(planName, period, region, userInfo.plans as any, false)
+    console.log(calculatedPrice, "calculated price")
 
     setSelectedPlan({
       name: planName,
       period,
-      price
+      price: calculatedPrice?.price || 0
     })
-    setShowPaymentModal(true)
+    
+    // Set price calculation details for the modal
+    setPriceCalculationDetails({
+      planName,
+      period,
+      region,
+      price: calculatedPrice,
+      currentPlan: userInfo.plans?.find((plan: any) => plan.isAddOn === false),
+      selectedPlan: selectedPlan
+    })
+    
+    // Show price calculation modal first
+    setShowPriceCalculationModal(true)
   }
 
   const handleDowngrade = async (planName: string, period: "month" | "year") => {
@@ -489,6 +630,16 @@ export default function SubscriptionSettings() {
   const handleClosePaymentModal = () => {
     setShowPaymentModal(false)
     setSelectedPlan(null)
+  }
+
+  const handleProceedToPayment = () => {
+    setShowPriceCalculationModal(false)
+    setShowPaymentModal(true)
+  }
+
+  const handleClosePriceCalculationModal = () => {
+    setShowPriceCalculationModal(false)
+    setPriceCalculationDetails(null)
   }
 
   const handleGetAddon = (addonId: string) => {
@@ -849,6 +1000,126 @@ export default function SubscriptionSettings() {
         </div>
       )}
 
+      {/* Price Calculation Modal */}
+      {showPriceCalculationModal && priceCalculationDetails && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-100 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Price Calculation</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  {priceCalculationDetails.planName} Plan - {getCurrencySymbol(priceCalculationDetails.region)}
+                </p>
+              </div>
+              <button
+                onClick={handleClosePriceCalculationModal}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Price Breakdown */}
+            <div className="p-4 space-y-4">
+              {/* Current Plan */}
+              {priceCalculationDetails.currentPlan && (
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Current Plan</h3>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">
+                      {priceCalculationDetails.currentPlan.name} ({priceCalculationDetails.currentPlan.period})
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      Expires: {new Date(priceCalculationDetails.currentPlan.endDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* New Plan */}
+              <div className="bg-blue-50 rounded-lg p-3">
+                <h3 className="text-sm font-medium text-blue-700 mb-2">New Plan</h3>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-blue-600">
+                    {priceCalculationDetails.planName} ({priceCalculationDetails.period})
+                  </span>
+                  <span className="text-sm text-blue-500">
+                    {priceCalculationDetails.price?.endDate && 
+                      `Until: ${new Date(priceCalculationDetails.price.endDate).toLocaleDateString()}`
+                    }
+                  </span>
+                </div>
+              </div>
+
+              {/* Price Details */}
+              <div className="border-t border-gray-200 pt-3">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-gray-600">Plan Price</span>
+                  <span className="text-sm text-gray-900">
+                    {getCurrencySymbol(priceCalculationDetails.region)}
+                    {priceCalculationDetails.selectedPlan?.monthlyPriceJson?.[priceCalculationDetails.region] || 0}
+                    /month
+                  </span>
+                </div>
+                
+                {priceCalculationDetails.period === "year" && (
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-600">Yearly Total</span>
+                    <span className="text-sm text-gray-900">
+                      {getCurrencySymbol(priceCalculationDetails.region)}
+                      {(priceCalculationDetails.selectedPlan?.monthlyPriceJson?.[priceCalculationDetails.region] || 0) * 12}
+                    </span>
+                  </div>
+                )}
+
+                {/* Pro-rated calculation if applicable */}
+                {priceCalculationDetails.price?.price !== null && priceCalculationDetails.currentPlan && (
+                  <div className="bg-yellow-50 rounded-lg p-3 mt-3">
+                    <h4 className="text-sm font-medium text-yellow-700 mb-1">Pro-rated Calculation</h4>
+                    <p className="text-xs text-yellow-600">
+                      {priceCalculationDetails.period === "year" && 
+                        `Based on remaining months until ${new Date(priceCalculationDetails.currentPlan.endDate).toLocaleDateString()}`
+                      }
+                    </p>
+                  </div>
+                )}
+
+                {/* Final Price */}
+                <div className="border-t border-gray-200 pt-3 mt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-base font-semibold text-gray-900">Total Amount</span>
+                    <span className="text-lg font-bold text-green-600">
+                      {getCurrencySymbol(priceCalculationDetails.region)}
+                      {priceCalculationDetails.price?.price || 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleClosePriceCalculationModal}
+                  className="flex-1 text-sm"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleProceedToPayment}
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-sm"
+                >
+                  Proceed to Payment
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Payment Gateway Modal */}
       {selectedPlan && (
         <PaymentGatewayModal
@@ -858,7 +1129,7 @@ export default function SubscriptionSettings() {
           planPeriod={selectedPlan.period}
           region={region}
           price={selectedPlan.price}
-          currency={region === "US" ? "$" : region === "IND" ? "₹" : "$"}
+          currency={getCurrencySymbol(region)}
         />
       )}
 

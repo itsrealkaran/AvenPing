@@ -6,6 +6,13 @@ interface UserInfo {
     id: string;
     name: string;
     email: string;
+    plans: {
+      id: string;
+      name: string;
+      price: number;
+      period: string;
+      region: string;
+    }[];
     whatsappAccount: {
       id: string;
       name: string;
@@ -40,6 +47,7 @@ export const UserContext = createContext<UserInfo>({
     name: "",
     email: "",
     whatsappAccount: null,
+    plans: [],
   },
   setUserInfo: () => {},
   setActivePhoneNumber: () => {},
@@ -64,6 +72,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           id: response.data.userData.id,
           name: response.data.userData.name,
           email: response.data.userData.email,
+          plans: response.data.userData.plans,
           whatsappAccount: {
             id: response.data.userData.whatsappAccount.id,
             name: response.data.userData.whatsappAccount.name,
@@ -74,11 +83,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         });
       } else {
         setUserInfo({
+          plans: [],
           whatsappAccount: null,
         });
       }
     } catch (error) {
       setUserInfo({
+        plans: [],
         whatsappAccount: null,
       });
     } finally {
