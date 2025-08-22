@@ -22,21 +22,37 @@ export type Contact = {
 
 export type Message = {
   id: string;
+  wamid?: string;
+  status: "SENT" | "DELIVERED" | "READ" | "PENDING" | "FAILED";
   message: string;
-  createdAt: string;
-  status: "SENT" | "DELIVERED" | "READ";
+  mediaIds?: string[];
+  templateData?: string | null;
+  interactiveJson?: Array<{
+    type: string;
+    label: string;
+  }> | null;
   isOutbound: boolean;
+  errorMessage?: string | null;
+  phoneNumber: string;
+  sentAt?: string | null;
+  deliveredAt?: string | null;
+  readAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  whatsAppPhoneNumberId: string;
+  recipientId: string;
   media?: { type: string; mediaId: string }[];
 };
 
 export type Conversation = {
-    id: string;
-    phoneNumber: string;
-    name: string;
-    messages: Message[];
-    unreadCount?: number;
-    nextCursor?: string | null;
-    hasMore?: boolean;
+  id: string;
+  phoneNumber: string;
+  name: string;
+  messages: Message[];
+  unreadCount?: number;
+  nextCursor?: string | null;
+  hasMore?: boolean;
+  updatedAt?: string;
 };
 
 type FilterType = "all" | "unread" | "label";
@@ -48,7 +64,19 @@ const Loading = () => (
 );
 
 const MessagesInterface = () => {
-  const { conversations, sendMessage, isLoading, searchQuery, setSearchQuery, labels, isLabelsLoading, labelsError, setLabel, addRealTimeMessage, updateConversationUnreadCount } = useMessages();
+  const {
+    conversations,
+    sendMessage,
+    isLoading,
+    searchQuery,
+    setSearchQuery,
+    labels,
+    isLabelsLoading,
+    labelsError,
+    setLabel,
+    addRealTimeMessage,
+    updateConversationUnreadCount,
+  } = useMessages();
 
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
@@ -59,56 +87,77 @@ const MessagesInterface = () => {
   const [isWebSocketConnected, setIsWebSocketConnected] = useState(false);
 
   // WebSocket callbacks - memoized to prevent re-renders
-  const handleWebSocketMessage = useCallback((message: any) => {
-    console.log(message, "message from websocket");
-    if (message.type === 'new_message') {
-      // Handle incoming real-time message
-      const messageData = message.data?.message;
-      if (messageData) {
-        const newMessage: Message = {
-          id: messageData.id || `m${Date.now()}`,
-          message: messageData.message,
-          createdAt: messageData.createdAt || new Date().toISOString(),
-          status: messageData.status || "DELIVERED",
-          isOutbound: false, // Incoming messages are not outbound
-          media: messageData.media,
-        };
-        console.log(newMessage, "newMessage from websocket");
-        
-        // Try to find conversation by recipientId first
-        if (messageData.recipientId) {
-          console.log(messageData.recipientId, "recipientId from websocket");
-          addRealTimeMessage(newMessage, messageData.recipientId);
-        } else if (messageData.phoneNumber && conversations) {
-          // Fallback: find conversation by phone number
-          const conversation = conversations.find(conv => 
-            conv.phoneNumber === messageData.phoneNumber
-          );
-          if (conversation) {
-            console.log(conversation.id, "found conversation by phone number");
-            addRealTimeMessage(newMessage, conversation.id);
+  const handleWebSocketMessage = useCallback(
+    (message: any) => {
+      console.log(message, "message from websocket");
+      if (message.type === "new_message") {
+        // Handle incoming real-time message
+        const messageData = message.data?.message;
+        if (messageData) {
+          const newMessage: Message = {
+            id: messageData.id || `m${Date.now()}`,
+            wamid: messageData.wamid,
+            message: messageData.message || "",
+            createdAt: messageData.createdAt || new Date().toISOString(),
+            status: messageData.status || "DELIVERED",
+            isOutbound: false, // Incoming messages are not outbound
+            media: messageData.media || [],
+            mediaIds: messageData.mediaIds || [],
+            templateData: messageData.templateData || null,
+            interactiveJson: messageData.interactiveJson || null,
+            errorMessage: messageData.errorMessage || null,
+            phoneNumber: messageData.phoneNumber || "",
+            sentAt: messageData.sentAt || null,
+            deliveredAt: messageData.deliveredAt || null,
+            readAt: messageData.readAt || null,
+            updatedAt: messageData.updatedAt || new Date().toISOString(),
+            whatsAppPhoneNumberId: messageData.whatsAppPhoneNumberId || "",
+            recipientId: messageData.recipientId || "",
+          };
+          console.log(newMessage, "newMessage from websocket");
+
+          // Try to find conversation by recipientId first
+          if (messageData.recipientId) {
+            console.log(messageData.recipientId, "recipientId from websocket");
+            addRealTimeMessage(newMessage, messageData.recipientId);
+          } else if (messageData.phoneNumber && conversations) {
+            // Fallback: find conversation by phone number
+            const conversation = conversations.find(
+              (conv) => conv.phoneNumber === messageData.phoneNumber
+            );
+            if (conversation) {
+              console.log(
+                conversation.id,
+                "found conversation by phone number"
+              );
+              addRealTimeMessage(newMessage, conversation.id);
+            } else {
+              console.warn(
+                "No conversation found for phone number:",
+                messageData.phoneNumber
+              );
+            }
           } else {
-            console.warn("No conversation found for phone number:", messageData.phoneNumber);
+            console.warn("No recipientId or phoneNumber in WebSocket message");
           }
-        } else {
-          console.warn("No recipientId or phoneNumber in WebSocket message");
         }
       }
-    }
-  }, [addRealTimeMessage, conversations]);
+    },
+    [addRealTimeMessage, conversations]
+  );
 
   const handleWebSocketConnect = useCallback(() => {
-    console.log('WebSocket connected for real-time messaging');
+    console.log("WebSocket connected for real-time messaging");
     setIsWebSocketConnected(true);
   }, []);
 
   const handleWebSocketDisconnect = useCallback(() => {
-    console.log('WebSocket disconnected');
+    console.log("WebSocket disconnected");
     setIsWebSocketConnected(false);
   }, []);
 
   const handleWebSocketError = useCallback((error: Event) => {
-    console.error('WebSocket error in messages interface:', error);
+    console.error("WebSocket error in messages interface:", error);
     setIsWebSocketConnected(false);
   }, []);
 
@@ -137,16 +186,34 @@ const MessagesInterface = () => {
     }
   }, [conversations, selectedConversationId]);
 
-  const handleSendMessage = async (message: string, media?: { type: string; mediaId: string }) => {
-    if (!selectedConversationId || (!message.trim() && !media) || !conversations) return;
+  const handleSendMessage = async (
+    message: string,
+    media?: { type: string; mediaId: string }
+  ) => {
+    if (
+      !selectedConversationId ||
+      (!message.trim() && !media) ||
+      !conversations
+    )
+      return;
 
-    const newMessage: Message = {
-      id: `m${Date.now()}`,
+    const newMessage = {
+      wamid: undefined,
       message: message || "",
-      createdAt: new Date().toISOString(),
       isOutbound: true,
-      status: "SENT",
+      status: "SENT" as const,
       media: media ? [{ type: media.type, mediaId: media.mediaId }] : undefined,
+      mediaIds: media ? [media.mediaId] : [],
+      templateData: null,
+      interactiveJson: null,
+      errorMessage: null,
+      phoneNumber: selectedConversation?.phoneNumber || "",
+      sentAt: null,
+      deliveredAt: null,
+      readAt: null,
+      updatedAt: new Date().toISOString(),
+      whatsAppPhoneNumberId: "",
+      recipientId: selectedConversationId,
     };
 
     await sendMessage(newMessage, selectedConversationId);
@@ -156,7 +223,14 @@ const MessagesInterface = () => {
       if (conv.id === selectedConversationId) {
         return {
           ...conv,
-          messages: [...conv.messages, newMessage],
+          messages: [
+            ...conv.messages,
+            {
+              ...newMessage,
+              id: `m${Date.now()}`,
+              createdAt: new Date().toISOString(),
+            },
+          ],
           updatedAt: new Date().toISOString(),
         };
       }
@@ -168,7 +242,7 @@ const MessagesInterface = () => {
 
   const handleConversationSelect = (conversation: Conversation) => {
     setSelectedConversationId(conversation.id);
-    
+
     // Reset unread count for the selected conversation
     if (conversation.unreadCount && conversation.unreadCount > 0) {
       updateConversationUnreadCount(conversation.id, 0);
@@ -195,21 +269,21 @@ const MessagesInterface = () => {
               className="pl-10"
             />
           </div>
-          
+
           {/* WebSocket Connection Status */}
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center space-x-1 text-xs">
-              {connectionStatus === 'connected' ? (
+              {connectionStatus === "connected" ? (
                 <>
                   <Wifi className="h-3 w-3 text-green-500" />
                   <span className="text-green-600">Real-time active</span>
                 </>
-              ) : connectionStatus === 'connecting' ? (
+              ) : connectionStatus === "connecting" ? (
                 <>
                   <Loader2 className="h-3 w-3 text-blue-500 animate-spin" />
                   <span className="text-blue-600">Connecting...</span>
                 </>
-              ) : connectionStatus === 'reconnecting' ? (
+              ) : connectionStatus === "reconnecting" ? (
                 <>
                   <Loader2 className="h-3 w-3 text-orange-500 animate-spin" />
                   <span className="text-orange-600">Reconnecting...</span>
@@ -222,7 +296,7 @@ const MessagesInterface = () => {
               )}
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2 mt-3">
             <button
               onClick={(e) => {
@@ -251,11 +325,15 @@ const MessagesInterface = () => {
               Unread
             </button>
             <SearchableDropdown
-              items={labels ?labels.map((label) => ({
-                id: label.id,
-                label: label.name,
-                value: label.name,
-              })) : []}
+              items={
+                labels
+                  ? labels.map((label) => ({
+                      id: label.id,
+                      label: label.name,
+                      value: label.name,
+                    }))
+                  : []
+              }
               placeholder="Label"
               onSelect={handleLabelSelect}
               className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
