@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import Card from "@/components/ui/card";
-import { cx } from "@/lib/utils";
+import Card from "@/components/analytics/card";
 import { AreaChart, TooltipProps } from "@/components/charts/area-chart";
 import { DropdownButton } from "../ui/dropdown-button";
 import { CONTACT_FILTER_OPTIONS, getContactFilterLabel } from "./data";
@@ -57,7 +56,7 @@ const Tooltip = ({ payload, active, label }: TooltipProps) => {
 export default function ContactGrowthChart({ data }: ContactGrowthChartProps) {
   const [selected, setSelected] = React.useState("30");
   const selectedLabel = getContactFilterLabel(selected);
-  
+
   // Filter data based on selected period
   const filteredData = filterContactGrowthData(data, getPeriodDays(selected));
 

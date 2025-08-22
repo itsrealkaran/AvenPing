@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Card from "@/components/ui/card";
+import Card from "@/components/analytics/card";
 import { DonutChart } from "@/components/charts/donut-chart";
 import { DropdownButton } from "@/components/ui/dropdown-button";
 import { RESPONSE_FILTER_OPTIONS, getResponseFilterLabel } from "./data";
