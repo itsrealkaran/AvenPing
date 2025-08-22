@@ -49,6 +49,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
   );
   const searchRef = useRef<HTMLDivElement>(null);
   const messageListRef = useRef<HTMLDivElement>(null);
+  const scrollToBottomRef = useRef<(() => void) | null>(null);
 
   const { getConversation } = useMessages();
 
@@ -70,6 +71,43 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
       }
     });
   }, [conversation]);
+
+  // Scroll to bottom when conversation changes
+  useEffect(() => {
+    if (scrollToBottomRef.current) {
+      setTimeout(() => {
+        scrollToBottomRef.current?.();
+      }, 100);
+    }
+  }, [conversation.id]);
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (scrollToBottomRef.current && allMessages.length > 0) {
+      setTimeout(() => {
+        scrollToBottomRef.current?.();
+      }, 100);
+    }
+  }, [allMessages.length]);
+
+  // Function to scroll to bottom
+  const scrollToBottom = () => {
+    if (scrollToBottomRef.current) {
+      scrollToBottomRef.current();
+    }
+  };
+
+  // Handle sending message and scroll to bottom
+  const handleSendMessage = async (
+    content: string,
+    media?: { type: string; mediaId: string }
+  ) => {
+    await onSendMessage(content, media);
+    // Scroll to bottom after sending message
+    setTimeout(() => {
+      scrollToBottom();
+    }, 200);
+  };
 
   // Debounce search query
   useEffect(() => {
@@ -381,7 +419,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
 
       <div
         ref={messageListRef}
-        className="flex-1 p-4 overflow-y-auto"
+        className="flex-1 overflow-y-auto"
         style={{
           backgroundImage: 'url("/message-bg.png")',
           backgroundRepeat: "repeat",
@@ -394,11 +432,14 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
           searchQuery={debouncedSearchQuery}
           currentMatchIndex={currentMatchIndex}
           matchingMessageIds={matchingMessageIds}
+          onScrollToBottom={(scrollFn) => {
+            scrollToBottomRef.current = scrollFn;
+          }}
         />
       </div>
 
       <div className="p-3 border-t border-gray-200 bg-white flex-shrink-0">
-        <MessageInput onSendMessage={onSendMessage} />
+        <MessageInput onSendMessage={handleSendMessage} />
       </div>
     </div>
   );

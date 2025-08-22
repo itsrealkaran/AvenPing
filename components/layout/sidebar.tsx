@@ -235,9 +235,9 @@ export default function Sidebar({
               <p className="text-xs text-gray-400 mb-1">Choose Number</p>
               <div className="flex items-center w-full justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="bg-gray-100 rounded-md p-1">
+                  {/* <div className="bg-gray-100 rounded-md p-1">
                     <User size={18} className="text-gray-400" />
-                  </div>
+                  </div> */}
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-gray-700">
                       {accountInfo[0].name}
