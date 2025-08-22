@@ -2,7 +2,6 @@
 
 import {
   ChevronDown,
-  ChevronRight,
   FolderClosed,
   LayoutDashboard,
   MoreVertical,
@@ -21,7 +20,6 @@ import {
   GitBranch,
   Bot,
   BarChart,
-  ChevronLeft,
   SidebarClose,
   SidebarOpen,
   Bell,
@@ -132,7 +130,7 @@ export default function Sidebar({
   const accountDropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { setActivePhoneNumber } = useUser();
+  const { userInfo, setActivePhoneNumber } = useUser();
 
   const handleLogout = async() => {
     const response = await axios.post("/api/auth/signout");
@@ -240,10 +238,10 @@ export default function Sidebar({
                   </div> */}
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-gray-700">
-                      {accountInfo[0].name}
+                      {userInfo?.whatsappAccount?.activePhoneNumber?.name}
                     </span>
                     <p className="text-xs text-gray-400">
-                      {formatPhoneNumber(accountInfo[0].number)}
+                      {formatPhoneNumber(userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumber || "")}
                     </p>
                   </div>
                 </div>

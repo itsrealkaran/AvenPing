@@ -43,12 +43,10 @@ export default function RegisterNumberCardContent({
               </div>
               <div className="text-sm text-gray-500 mb-4 leading-relaxed">
                 Your phone number needs to be registered with WhatsApp Business
-                API to send and receive messages.
+                API to send and receive messages. If already registered, please
+                enter the PIN or update the PIN in Whatsapp Business Dashboard.
               </div>
-              <Button
-                onClick={() => setShowRegisterModal(true)}
-                size="sm"
-              >
+              <Button onClick={() => setShowRegisterModal(true)} size="sm">
                 Register Now
               </Button>
             </div>

@@ -248,7 +248,7 @@ export default function QrGeneratorCardContent() {
           </button>
           <div
             id="phone-scroll-row"
-            className="flex gap-2 overflow-x-auto scrollbar-hide p-2"
+            className="flex gap-2 overflow-x-auto scrollbar-hide px-2 py-4"
             style={{ scrollBehavior: "smooth", minWidth: 0, flex: 1 }}
           >
             {phoneNumbers.length === 0 && !isLoading && (
