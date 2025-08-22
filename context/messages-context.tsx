@@ -20,7 +20,11 @@ interface Message {
   status: "SENT" | "DELIVERED" | "READ" | "PENDING" | "FAILED";
   message: string;
   mediaIds?: string[];
-  templateData?: string | null;
+  templateData?: Array<{
+    text: string;
+    type: "HEADER" | "BODY" | "FOOTER";
+    format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT";
+  }> | null;
   interactiveJson?: Array<{
     type: string;
     label: string;

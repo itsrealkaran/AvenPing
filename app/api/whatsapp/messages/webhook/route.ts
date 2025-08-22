@@ -197,6 +197,7 @@ export async function POST(req: NextRequest) {
                     message: messageText,
                     timestamp: message.timestamp,
                     whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
+                    isOutbound: false,  // Explicitly set for incoming messages
                   });
 
                   // newMessage = await prisma.whatsAppRecipient.update({
@@ -246,6 +247,7 @@ export async function POST(req: NextRequest) {
                       message: messageText,
                       timestamp: message.timestamp,
                       whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
+                      isOutbound: false,  // Explicitly set for incoming messages
                     });
 
                   // newMessage = await prisma.whatsAppRecipient.update({

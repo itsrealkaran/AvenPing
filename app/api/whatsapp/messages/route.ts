@@ -264,6 +264,18 @@ export async function POST(request: Request) {
         whatsAppPhoneNumberId: phoneNumberId,
         recipientId,
         mediaIds: media ? media.map((m: any) => m.mediaId) : [],
+        templateData: templateId ? [
+          {
+            text: `Template: ${templateId}`,
+            type: "HEADER",
+            format: "TEXT"
+          },
+          ...(templateParams ? templateParams.map((param: any, index: number) => ({
+            text: param.text || `Parameter ${index + 1}`,
+            type: "BODY",
+            format: "TEXT"
+          })) : [])
+        ] : undefined,
       },
     });
 

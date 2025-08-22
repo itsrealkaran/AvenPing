@@ -110,6 +110,11 @@ export async function POST(request: NextRequest) {
             templateData: templateData.components,
             recipientId: contact.id,
             whatsAppPhoneNumberId: account.phoneNumbers[0].id,
+            isOutbound: true,  // Template messages are sent by business
+            message: "",  // Template messages don't have regular text
+            phoneNumber: contact.phoneNumber,
+            createdAt: new Date(),
+            updatedAt: new Date(),
           },
         });
 

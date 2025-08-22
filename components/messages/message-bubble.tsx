@@ -165,17 +165,135 @@ const MessageBubble = ({
 
   // Render template message
   const renderTemplate = () => {
-    if (!message.templateData) return null;
+    if (
+      !message.templateData ||
+      !Array.isArray(message.templateData) ||
+      message.templateData.length === 0
+    )
+      return null;
+
+    // Use appropriate background colors based on message direction
+    const templateBg = isMe ? "bg-white/20" : "bg-gray-100";
+    const templateBorder = isMe ? "border-white/10" : "border-gray-200";
+    const textColor = isMe ? "text-white" : "text-gray-800";
+    const textColorSecondary = isMe ? "text-white/90" : "text-gray-600";
+    const textColorTertiary = isMe ? "text-white/70" : "text-gray-500";
+    const textColorQuaternary = isMe ? "text-white/60" : "text-gray-400";
+    const separatorBorder = isMe ? "border-white/10" : "border-gray-200";
 
     return (
-      <div className="mt-2 p-3 bg-white/20 rounded-lg">
-        <div className="flex items-center gap-2 mb-2">
-          <Bot size={16} className="text-white" />
-          <span className="text-sm font-medium text-white">
+      <div
+        className={`mt-2 p-4 ${templateBg} rounded-lg border ${templateBorder}`}
+      >
+        <div className={`flex items-center gap-2 mb-3`}>
+          <Bot size={16} className={textColor} />
+          <span className={`text-sm font-medium ${textColor}`}>
             Template Message
           </span>
         </div>
-        <div className="text-sm text-white/90">{message.templateData}</div>
+
+        <div className="space-y-3">
+          {message.templateData.map((section, index) => {
+            if (!section.text) return null;
+
+            let sectionClasses = "text-sm";
+
+            // Style different template sections
+            switch (section.type) {
+              case "HEADER":
+                sectionClasses += ` font-semibold ${textColor} text-base leading-tight`;
+                break;
+              case "BODY":
+                sectionClasses += ` ${textColorSecondary} leading-relaxed`;
+                break;
+              case "FOOTER":
+                sectionClasses += ` ${textColorTertiary} text-xs italic pt-2 border-t ${separatorBorder}`;
+                break;
+              default:
+                sectionClasses += ` ${textColorSecondary}`;
+            }
+
+            // Handle different formats
+            if (section.format === "IMAGE" && section.text) {
+              return (
+                <div key={index} className="mb-3">
+                  <div
+                    className={`relative rounded-lg overflow-hidden ${
+                      isMe ? "bg-white/10" : "bg-gray-200"
+                    }`}
+                  >
+                    <img
+                      src={section.text}
+                      alt="Template Image"
+                      className="max-w-full max-h-40 w-auto object-cover"
+                      onError={(e) => {
+                        console.error(
+                          "Failed to load template image:",
+                          section.text
+                        );
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            }
+
+            // Handle text format
+            if (section.format === "TEXT" || !section.format) {
+              return (
+                <div key={index} className={sectionClasses}>
+                  {section.text}
+                </div>
+              );
+            }
+
+            // Handle document format
+            if (section.format === "DOCUMENT" && section.text) {
+              return (
+                <div
+                  key={index}
+                  className={`flex items-center gap-2 p-2 ${
+                    isMe ? "bg-white/10" : "bg-gray-200"
+                  } rounded`}
+                >
+                  <FileText size={16} className={textColorQuaternary} />
+                  <span className={`text-sm ${textColorSecondary} truncate`}>
+                    {section.text}
+                  </span>
+                </div>
+              );
+            }
+
+            // Handle video format
+            if (section.format === "VIDEO" && section.text) {
+              return (
+                <div key={index} className="mb-3">
+                  <div
+                    className={`relative rounded-lg overflow-hidden ${
+                      isMe ? "bg-white/10" : "bg-gray-200"
+                    }`}
+                  >
+                    <video
+                      src={section.text}
+                      controls
+                      className="max-w-full max-h-40 w-auto"
+                      onError={(e) => {
+                        console.error(
+                          "Failed to load template video:",
+                          section.text
+                        );
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            }
+
+            return null;
+          })}
+        </div>
       </div>
     );
   };
@@ -315,7 +433,9 @@ const MessageBubble = ({
     message.message ||
     (message.media && message.media.length > 0) ||
     (message.mediaIds && message.mediaIds.length > 0) ||
-    message.templateData ||
+    (message.templateData &&
+      Array.isArray(message.templateData) &&
+      message.templateData.length > 0) ||
     (message.interactiveJson && message.interactiveJson.length > 0);
 
   if (!hasContent) {

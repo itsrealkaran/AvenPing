@@ -6,7 +6,7 @@ export async function storeWhatsAppMessage({
   phoneNumber,
   mediaIds,
   wamid,
-  isOutbound,
+  isOutbound = false,  // Default to false (incoming) if not specified
   templateData,
   message,
   timestamp,
@@ -31,7 +31,7 @@ export async function storeWhatsAppMessage({
         phoneNumber,
         mediaIds,
         wamid,
-        isOutbound,
+        isOutbound,  // This will now always have a value
         templateData,
         message,
         sentAt: new Date(timestamp * 1000),
@@ -40,7 +40,7 @@ export async function storeWhatsAppMessage({
       },
     });
     
-    console.log(`Message stored successfully with ID: ${newMessage.id}`);
+    console.log(`Message stored successfully with ID: ${newMessage.id}, isOutbound: ${isOutbound}`);
     return newMessage;
   } catch (error) {
     console.error("Error storing WhatsApp message:", error);
