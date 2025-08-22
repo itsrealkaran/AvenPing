@@ -145,6 +145,11 @@ export default function Sidebar({
     avatar: userProfile.avatar,
   };
 
+  // Debug logging for account info updates
+  useEffect(() => {
+    console.log("Sidebar: Account info updated:", currentAccountInfo);
+  }, [currentAccountInfo]);
+
   const handleLogout = async () => {
     const response = await axios.post("/api/auth/signout");
     if (response.status === 200) {
@@ -186,6 +191,11 @@ export default function Sidebar({
       document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, [accountDropdownOpen, userMenuOpen]);
+
+  // Reset account dropdown when account info changes
+  useEffect(() => {
+    setAccountDropdownOpen(false);
+  }, [currentAccountInfo]);
 
   return (
     <TooltipProvider>
