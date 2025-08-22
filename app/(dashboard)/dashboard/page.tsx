@@ -22,7 +22,7 @@ export default function DashboardPage() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
 
-  const { userInfo, hasWhatsAppAccount } = useUser();
+  const { userInfo, hasWhatsAppAccount, refreshUser } = useUser();
   const { data: analyticsData, isLoading: analyticsLoading } = useAnalytics();
 
   useEffect(() => {
@@ -55,6 +55,20 @@ export default function DashboardPage() {
     }
   }, [userInfo]);
 
+  // Refresh user data when WhatsApp connection status changes
+  useEffect(() => {
+    const refreshInterval = setInterval(async () => {
+      if (hasWhatsAppAccount && !isConnected) {
+        console.log(
+          "Dashboard: Refreshing user data due to WhatsApp connection change"
+        );
+        await refreshUser();
+      }
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(refreshInterval);
+  }, [hasWhatsAppAccount, isConnected, refreshUser]);
+
   // Business Verification state
   const [isVerified, setIsVerified] = useState(true);
 
@@ -82,20 +96,25 @@ export default function DashboardPage() {
     return "z-10";
   };
 
-  const handleRegister = (pin: string, phoneNumberId: string) => {
-    axios
-      .post("/api/whatsapp/phone-numbers/register", {
+  const handleRegister = async (pin: string, phoneNumberId: string) => {
+    try {
+      const res = await axios.post("/api/whatsapp/phone-numbers/register", {
         pin,
         phoneNumberId,
-      })
-      .then((res) => {
-        if (res.data.success) {
-          setIsRegistered(true);
-          setShowRegisterModal(false);
-        } else {
-          console.log(res.data.error);
-        }
       });
+
+      if (res.data.success) {
+        setIsRegistered(true);
+        setShowRegisterModal(false);
+        // Refresh user data to get updated registration status
+        console.log("Dashboard: Phone number registered, refreshing user data");
+        await refreshUser();
+      } else {
+        console.log(res.data.error);
+      }
+    } catch (error) {
+      console.error("Error registering phone number:", error);
+    }
   };
 
   const handleConnectAccount = async () => {
@@ -119,8 +138,18 @@ export default function DashboardPage() {
             .post("/api/whatsapp", {
               code: response.authResponse.code,
             })
-            .then((res) => {
+            .then(async (res) => {
               console.log(res.data);
+              // Refresh user data to get updated WhatsApp account info
+              if (res.data.success) {
+                console.log(
+                  "Dashboard: WhatsApp connected, refreshing user data"
+                );
+                await refreshUser();
+              }
+            })
+            .catch((error) => {
+              console.error("Error connecting WhatsApp:", error);
             });
         } else {
           console.log("User cancelled login or did not fully authorize.");
@@ -293,9 +322,11 @@ export default function DashboardPage() {
       )}
     >
       {/* WhatsApp Connection Overlay - Only covers dashboard body */}
-      {!hasWhatsAppAccount || !isConnected || !isRegistered && (
-        <div className="absolute inset-0 backdrop-blur-xs z-10 pointer-events-none" />
-      )}
+      {!hasWhatsAppAccount ||
+        !isConnected ||
+        (!isRegistered && (
+          <div className="absolute inset-0 backdrop-blur-xs z-10 pointer-events-none" />
+        ))}
 
       <MetricCards />
       <DashboardContent />

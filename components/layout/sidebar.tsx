@@ -126,10 +126,9 @@ export default function Sidebar({
   const pathname = usePathname();
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const accountDropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { userInfo, setActivePhoneNumber } = useUser();
+  const { userInfo, setActivePhoneNumber, refreshUser } = useUser();
 
   // Get account info directly from user context for real-time updates
   const currentAccountInfo =
@@ -150,6 +149,11 @@ export default function Sidebar({
     console.log("Sidebar: Account info updated:", currentAccountInfo);
   }, [currentAccountInfo]);
 
+  // Debug logging for dropdown state
+  useEffect(() => {
+    console.log("Sidebar: Dropdown state changed:", accountDropdownOpen);
+  }, [accountDropdownOpen]);
+
   const handleLogout = async () => {
     const response = await axios.post("/api/auth/signout");
     if (response.status === 200) {
@@ -167,15 +171,6 @@ export default function Sidebar({
     const handleOutsideClick = (event: MouseEvent) => {
       const target = event.target as Node;
 
-      // Check if click is outside account dropdown
-      if (
-        accountDropdownOpen &&
-        accountDropdownRef.current &&
-        !accountDropdownRef.current.contains(target)
-      ) {
-        setAccountDropdownOpen(false);
-      }
-
       // Check if click is outside user menu dropdown
       if (
         userMenuOpen &&
@@ -190,12 +185,31 @@ export default function Sidebar({
     return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
-  }, [accountDropdownOpen, userMenuOpen]);
+  }, [userMenuOpen]);
 
-  // Reset account dropdown when account info changes
+  // Simple click outside handler - only close when clicking outside the entire sidebar
   useEffect(() => {
-    setAccountDropdownOpen(false);
-  }, [currentAccountInfo]);
+    const handleClickOutside = (event: MouseEvent) => {
+      const sidebar = document.querySelector(
+        ".flex.flex-col.h-screen.w-full.sticky.top-0"
+      );
+      if (
+        accountDropdownOpen &&
+        sidebar &&
+        !sidebar.contains(event.target as Node)
+      ) {
+        setAccountDropdownOpen(false);
+      }
+    };
+
+    if (accountDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [accountDropdownOpen]);
 
   return (
     <TooltipProvider>
@@ -257,67 +271,105 @@ export default function Sidebar({
         {/* Account */}
         {!isCollapsed && currentAccountInfo.length > 0 && (
           <div className="px-4 pt-2 pb-2">
-            <div className="bg-white rounded-xl shadow flex flex-col items-start px-4 py-3 mb-2 border border-gray-100 relative">
-              <p className="text-xs text-gray-400 mb-1">Choose Number</p>
-              <div className="flex items-center w-full justify-between">
-                <div className="flex items-center gap-2">
-                  {/* <div className="bg-gray-100 rounded-md p-1">
-                    <User size={18} className="text-gray-400" />
-                  </div> */}
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-700">
-                      {userInfo?.whatsappAccount?.activePhoneNumber?.name}
-                    </span>
-                    <p className="text-xs text-gray-400">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 relative">
+              {/* Header */}
+              <div className="flex items-center justify-between p-2 border-b border-gray-100">
+                <span className="text-xs font-medium text-gray-600">
+                  Phone Numbers
+                </span>
+                <button
+                  onClick={() => refreshUser()}
+                  className="text-xs text-cyan-600 hover:text-cyan-700 hover:underline"
+                >
+                  Refresh
+                </button>
+              </div>
+
+              {/* Current Selection */}
+              <div className="p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {userInfo?.whatsappAccount?.activePhoneNumber?.name ||
+                        "Select Number"}
+                    </div>
+                    <div className="text-xs text-gray-500">
                       {formatPhoneNumber(
                         userInfo?.whatsappAccount?.activePhoneNumber
                           ?.phoneNumber || ""
                       )}
-                    </p>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => {
+                      console.log(
+                        "Toggle dropdown clicked, current state:",
+                        accountDropdownOpen
+                      );
+                      setAccountDropdownOpen((prev) => !prev);
+                    }}
+                    className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <ChevronDown
+                      size={16}
+                      className={`text-gray-400 transition-transform duration-200 ${
+                        accountDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
                 </div>
-                <button
-                  className="ml-2 p-1 rounded hover:bg-gray-50"
-                  onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
-                >
-                  <ChevronDown
-                    size={18}
-                    className={`text-gray-400 transition-transform ${
-                      accountDropdownOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
               </div>
-              {accountDropdownOpen && (
-                <div
-                  ref={accountDropdownRef}
-                  className="absolute left-8 right-8 mt-2 bg-white border border-gray-200 rounded-md shadow-lg z-10"
-                >
-                  <ul className="py-1">
-                    {currentAccountInfo.length > 0 ? (
-                      currentAccountInfo.map((acc, index) => (
-                        <li
-                          key={index}
-                          className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm"
-                          onClick={() => {
-                            handleChangeAccount(acc.number);
-                            setAccountDropdownOpen(false);
-                          }}
-                        >
-                          <div className="font-medium">{acc.name}</div>
-                          <div className="text-xs text-gray-400">
-                            {formatPhoneNumber(acc.number)}
+
+              {/* Dropdown Menu */}
+              <div
+                className={`absolute left-0 right-0 top-full bg-white border-t border-gray-100 rounded-b-xl shadow-lg z-50 transition-all duration-200 ${
+                  accountDropdownOpen
+                    ? "opacity-100 visible"
+                    : "opacity-0 invisible"
+                }`}
+              >
+                <div className="py-1">
+                  {currentAccountInfo.map((acc, index) => {
+                    const isActive =
+                      acc.number ===
+                      userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumber;
+                    return (
+                      <button
+                        key={index}
+                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors ${
+                          isActive
+                            ? "bg-cyan-50 text-cyan-700"
+                            : "text-gray-700"
+                        }`}
+                        onClick={() => {
+                          handleChangeAccount(acc.number);
+                          setAccountDropdownOpen(false);
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-sm">
+                              {acc.name}
+                            </div>
+                            <div
+                              className={`text-xs ${
+                                isActive ? "text-cyan-600" : "text-gray-500"
+                              }`}
+                            >
+                              {formatPhoneNumber(acc.number)}
+                            </div>
                           </div>
-                        </li>
-                      ))
-                    ) : (
-                      <li className="px-4 py-2 text-sm text-gray-500">
-                        No accounts available
-                      </li>
-                    )}
-                  </ul>
+                          {isActive && (
+                            <div className="text-cyan-600">
+                              <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         )}
