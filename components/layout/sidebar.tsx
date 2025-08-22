@@ -287,7 +287,16 @@ export default function Sidebar({
 
               {/* Current Selection */}
               <div className="p-3">
-                <div className="flex items-center justify-between">
+                <div
+                  className="flex items-center justify-between"
+                  onClick={() => {
+                    console.log(
+                      "Toggle dropdown clicked, current state:",
+                      accountDropdownOpen
+                    );
+                    setAccountDropdownOpen((prev) => !prev);
+                  }}
+                >
                   <div>
                     <div className="text-sm font-medium text-gray-900">
                       {userInfo?.whatsappAccount?.activePhoneNumber?.name ||
@@ -300,16 +309,7 @@ export default function Sidebar({
                       )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      console.log(
-                        "Toggle dropdown clicked, current state:",
-                        accountDropdownOpen
-                      );
-                      setAccountDropdownOpen((prev) => !prev);
-                    }}
-                    className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
-                  >
+                  <button className="p-2 hover:bg-gray-50 rounded-lg transition-colors">
                     <ChevronDown
                       size={16}
                       className={`text-gray-400 transition-transform duration-200 ${
