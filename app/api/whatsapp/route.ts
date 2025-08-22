@@ -150,12 +150,16 @@ const getUserInfo = async (accessToken: string) => {
       (phoneNumber: any) => phoneNumber.phoneNumberId
     );
 
+    const isSubscribed = await axios.post(`https://graph.facebook.com/v23.0/${wabaId}/subscribed_apps?access_token=${accessToken}`);
+    console.log('Is subscribed:', isSubscribed.data);
+
     return {
       displayName: userInfo.data.name,
       phoneNumberData,
       phoneNumberIds,
       wabaid: wabaId,
       accessToken,
+      isSubscribed: isSubscribed.data.success,
     };
   } catch (error) {
     console.error('Error:', JSON.stringify(error, null, 2));
