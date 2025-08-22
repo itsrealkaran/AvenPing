@@ -19,6 +19,7 @@ import { useContacts } from "@/context/contact-provider";
 import { useTemplates } from "@/context/template-provider";
 import { useUser } from "@/context/user-context";
 import { toast } from "sonner";
+import SearchableDropdown from "../ui/searchable-dropdown";
 
 interface Contact {
   id: string;
@@ -282,16 +283,26 @@ export function CreateCampaignModal({
         .filter((variable) => variable.componentType === "HEADER")
         .forEach((variable) => {
           const placeholder = `{{${variable.variableIndex}}}`;
-          const value =
-            variable.useAttribute && variable.attributeName
-              ? `[${
-                  attributes?.find(
-                    (attr) => attr.name === variable.attributeName
-                  )?.name || "Attribute"
-                }]`
-              : variable.value ||
-                variable.fallbackValue ||
-                `Variable ${variable.variableIndex}`;
+          let value = "";
+
+          if (variable.useAttribute && variable.attributeName) {
+            if (variable.attributeName === "name") {
+              value = "[Contact Name]";
+            } else if (variable.attributeName === "phoneNumber") {
+              value = "[Phone Number]";
+            } else {
+              // Custom attribute
+              const attr = attributes?.find(
+                (attr) => attr.name === variable.attributeName
+              );
+              value = `[${attr?.name || variable.attributeName}]`;
+            }
+          } else {
+            value =
+              variable.value ||
+              variable.fallbackValue ||
+              `Variable ${variable.variableIndex}`;
+          }
 
           headerText = headerText.replace(placeholder, value);
         });
@@ -305,16 +316,26 @@ export function CreateCampaignModal({
         .filter((variable) => variable.componentType === "BODY")
         .forEach((variable) => {
           const placeholder = `{{${variable.variableIndex}}}`;
-          const value =
-            variable.useAttribute && variable.attributeName
-              ? `[${
-                  attributes?.find(
-                    (attr) => attr.name === variable.attributeName
-                  )?.name || "Attribute"
-                }]`
-              : variable.value ||
-                variable.fallbackValue ||
-                `Variable ${variable.variableIndex}`;
+          let value = "";
+
+          if (variable.useAttribute && variable.attributeName) {
+            if (variable.attributeName === "name") {
+              value = "[Contact Name]";
+            } else if (variable.attributeName === "phoneNumber") {
+              value = "[Phone Number]";
+            } else {
+              // Custom attribute
+              const attr = attributes?.find(
+                (attr) => attr.name === variable.attributeName
+              );
+              value = `[${attr?.name || variable.attributeName}]`;
+            }
+          } else {
+            value =
+              variable.value ||
+              variable.fallbackValue ||
+              `Variable ${variable.variableIndex}`;
+          }
 
           bodyText = bodyText.replace(placeholder, value);
         });
@@ -703,24 +724,57 @@ export function CreateCampaignModal({
                                 <Label className="text-xs text-gray-600 block mb-1">
                                   Select Attribute
                                 </Label>
-                                <select
-                                  value={variable.attributeName || ""}
-                                  onChange={(e) =>
+                                <SearchableDropdown
+                                  variant="outline"
+                                  items={[
+                                    // Built-in attributes
+                                    {
+                                      id: "name",
+                                      label: "Contact Name",
+                                      value: "name",
+                                      category: "built-in",
+                                    },
+                                    {
+                                      id: "phoneNumber",
+                                      label: "Phone Number",
+                                      value: "phoneNumber",
+                                      category: "built-in",
+                                    },
+                                    // Custom attributes
+                                    ...(attributes?.map((attr) => ({
+                                      id: `attr_${attr.name}`,
+                                      label: `${attr.name} (Custom)`,
+                                      value: `attr_${attr.name}`,
+                                      category: "custom",
+                                    })) || []),
+                                  ]}
+                                  onSelect={(item) => {
+                                    // Extract the actual attribute name from the value
+                                    let attributeName = item.value;
+                                    if (item.value.startsWith("attr_")) {
+                                      attributeName = item.value.replace(
+                                        "attr_",
+                                        ""
+                                      );
+                                    }
                                     handleVariableChange(
                                       variable.id,
                                       "attributeName",
-                                      e.target.value
-                                    )
+                                      attributeName
+                                    );
+                                  }}
+                                  selectedLabel={
+                                    variable.attributeName
+                                      ? variable.attributeName === "name"
+                                        ? "Contact Name"
+                                        : variable.attributeName ===
+                                          "phoneNumber"
+                                        ? "Phone Number"
+                                        : `${variable.attributeName} (Custom)`
+                                      : null
                                   }
-                                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                                >
-                                  <option value="">Select an attribute</option>
-                                  {attributes?.map((attr) => (
-                                    <option key={attr.name} value={attr.name}>
-                                      {attr.name}
-                                    </option>
-                                  ))}
-                                </select>
+                                  placeholder="Select Attribute"
+                                />
                               </div>
                               <div>
                                 <Label className="text-xs text-gray-600 block mb-1">

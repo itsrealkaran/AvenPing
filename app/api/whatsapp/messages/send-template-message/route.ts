@@ -48,15 +48,26 @@ export async function POST(request: NextRequest) {
         const bodyParams: any[] = [];
         variables.forEach((variable: any) => {
           let paramValue = variable.value || variable.fallbackValue || "";
+          
           if (variable.useAttribute && variable.attributeName) {
-            // Find the attribute value for this contact
-            const attr = contact.attributeValues?.find((a: any) => a.name === variable.attributeName);
-            paramValue = attr?.value || variable.fallbackValue || "";
+            if (variable.attributeName === "name") {
+              // Built-in attribute: contact name
+              paramValue = contact.name || variable.fallbackValue || "";
+            } else if (variable.attributeName === "phoneNumber") {
+              // Built-in attribute: phone number
+              paramValue = contact.phoneNumber || variable.fallbackValue || "";
+            } else {
+              // Custom attribute: find in contact's attributeValues
+              const attr = contact.attributeValues?.find((a: any) => a.name === variable.attributeName);
+              paramValue = attr?.value || variable.fallbackValue || "";
+            }
           }
+          
           const param = {
             type: "text",
             text: paramValue,
           };
+          
           if (variable.componentType === "HEADER") {
             headerParams.push(param);
           } else if (variable.componentType === "BODY") {

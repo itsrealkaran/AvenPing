@@ -25,6 +25,10 @@ export const DropdownButton = React.forwardRef<
   // Merge forwarded ref with local ref
   React.useImperativeHandle(ref, () => buttonRef.current as HTMLButtonElement);
 
+  // Get the selected option label
+  const selectedOption = options.find((option) => option.value === selected);
+  const displayText = children || selectedOption?.label || "Select Option";
+
   React.useEffect(() => {
     if (!open) return;
     function handleClickOutside(event: MouseEvent) {
@@ -48,7 +52,7 @@ export const DropdownButton = React.forwardRef<
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        {children}
+        {displayText}
         <ChevronDown className="ml-1 size-4" />
       </Button>
       {open && (
@@ -59,8 +63,6 @@ export const DropdownButton = React.forwardRef<
           {options.map((option) => (
             <Button
               key={option.value}
-              ref={buttonRef}
-              {...props}
               className="w-full justify-start"
               variant="ghost"
               onClick={() => {
