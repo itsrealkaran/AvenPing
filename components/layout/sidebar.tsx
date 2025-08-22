@@ -109,7 +109,7 @@ export interface Brand {
 // Main sidebar props interface
 interface SidebarProps {
   navigationItems?: NavItem[];
-  accountInfo?: AccountInfoItem[];
+  accountInfo?: AccountInfoItem[]; // Optional for backward compatibility
   userProfile?: UserProfile;
   brand?: Brand;
   isCollapsed?: boolean;
@@ -119,7 +119,6 @@ interface SidebarProps {
 export default function Sidebar({
   brand,
   navigationItems = [],
-  accountInfo = [],
   userProfile = { name: "apectory", email: "apectory@duck.com" },
   isCollapsed = false,
   onCollapsedChange,
@@ -132,7 +131,21 @@ export default function Sidebar({
   const router = useRouter();
   const { userInfo, setActivePhoneNumber } = useUser();
 
-  const handleLogout = async() => {
+  // Get account info directly from user context for real-time updates
+  const currentAccountInfo =
+    userInfo?.whatsappAccount?.phoneNumbers?.map((phone: any) => ({
+      name: phone.name,
+      number: phone.phoneNumber,
+    })) || [];
+
+  // Get current user profile from context
+  const currentUserProfile = {
+    name: userInfo?.whatsappAccount?.name || userProfile.name,
+    email: userInfo?.whatsappAccount?.email || userProfile.email,
+    avatar: userProfile.avatar,
+  };
+
+  const handleLogout = async () => {
     const response = await axios.post("/api/auth/signout");
     if (response.status === 200) {
       router.push("/login");
@@ -148,14 +161,22 @@ export default function Sidebar({
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
       const target = event.target as Node;
-      
+
       // Check if click is outside account dropdown
-      if (accountDropdownOpen && accountDropdownRef.current && !accountDropdownRef.current.contains(target)) {
+      if (
+        accountDropdownOpen &&
+        accountDropdownRef.current &&
+        !accountDropdownRef.current.contains(target)
+      ) {
         setAccountDropdownOpen(false);
       }
-      
+
       // Check if click is outside user menu dropdown
-      if (userMenuOpen && userMenuRef.current && !userMenuRef.current.contains(target)) {
+      if (
+        userMenuOpen &&
+        userMenuRef.current &&
+        !userMenuRef.current.contains(target)
+      ) {
         setUserMenuOpen(false);
       }
     };
@@ -185,10 +206,7 @@ export default function Sidebar({
             )}
           >
             {!isCollapsed && (
-              <Link
-                href=""
-                className="flex items-center font-bold text-xl"
-              >
+              <Link href="" className="flex items-center font-bold text-xl">
                 <img src={brand?.logo} alt={brand?.name} className="w-7 h-7" />
                 <span className="tracking-tight text-cyan-600">
                   {brand?.name}
@@ -227,7 +245,7 @@ export default function Sidebar({
         </div>
 
         {/* Account */}
-        {!isCollapsed && accountInfo.length > 0 && (
+        {!isCollapsed && currentAccountInfo.length > 0 && (
           <div className="px-4 pt-2 pb-2">
             <div className="bg-white rounded-xl shadow flex flex-col items-start px-4 py-3 mb-2 border border-gray-100 relative">
               <p className="text-xs text-gray-400 mb-1">Choose Number</p>
@@ -241,7 +259,10 @@ export default function Sidebar({
                       {userInfo?.whatsappAccount?.activePhoneNumber?.name}
                     </span>
                     <p className="text-xs text-gray-400">
-                      {formatPhoneNumber(userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumber || "")}
+                      {formatPhoneNumber(
+                        userInfo?.whatsappAccount?.activePhoneNumber
+                          ?.phoneNumber || ""
+                      )}
                     </p>
                   </div>
                 </div>
@@ -263,8 +284,8 @@ export default function Sidebar({
                   className="absolute left-8 right-8 mt-2 bg-white border border-gray-200 rounded-md shadow-lg z-10"
                 >
                   <ul className="py-1">
-                    {accountInfo.length > 0 ? (
-                      accountInfo.map((acc, index) => (
+                    {currentAccountInfo.length > 0 ? (
+                      currentAccountInfo.map((acc, index) => (
                         <li
                           key={index}
                           className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm"
@@ -355,10 +376,10 @@ export default function Sidebar({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button className="h-10 w-10 rounded-full flex items-center justify-center bg-white shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all duration-200">
-                    {userProfile.avatar ? (
+                    {currentUserProfile.avatar ? (
                       <img
-                        src={userProfile.avatar}
-                        alt={userProfile.name}
+                        src={currentUserProfile.avatar}
+                        alt={currentUserProfile.name}
                         className="h-8 w-8 rounded-full object-cover"
                       />
                     ) : (
@@ -371,9 +392,11 @@ export default function Sidebar({
                 <TooltipContent side="right">
                   <div className="space-y-1">
                     <p className="font-medium text-gray-800">
-                      {userProfile.name}
+                      {currentUserProfile.name}
                     </p>
-                    <p className="text-xs text-gray-500">{userProfile.email}</p>
+                    <p className="text-xs text-gray-500">
+                      {currentUserProfile.email}
+                    </p>
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -382,7 +405,7 @@ export default function Sidebar({
         ) : (
           <div className="mt-auto flex flex-col items-center pb-6">
             {userMenuOpen && (
-              <div 
+              <div
                 ref={userMenuRef}
                 className="w-[90%] mb-1 bg-white border-2 border-gray-200 rounded-md shadow-xl z-10 relative"
               >
@@ -403,10 +426,10 @@ export default function Sidebar({
               </div>
             )}
             <div className="w-[90%] bg-white rounded-xl border-2 border-[#E0E0E0] shadow-lg flex items-center gap-2 px-4 py-3">
-              {userProfile.avatar ? (
+              {currentUserProfile.avatar ? (
                 <img
-                  src={userProfile.avatar}
-                  alt={userProfile.name}
+                  src={currentUserProfile.avatar}
+                  alt={currentUserProfile.name}
                   className="h-8 w-8 flex-1 rounded-full flex-shrink-0 object-cover"
                 />
               ) : (
@@ -416,10 +439,10 @@ export default function Sidebar({
               )}
               <div className="flex flex-col w-[67%]">
                 <p className="text-sm font-medium text-gray-800 leading-tight">
-                  {userProfile.name}
+                  {currentUserProfile.name}
                 </p>
                 <p className="text-xs text-gray-500 leading-tight truncate">
-                  {userProfile.email}
+                  {currentUserProfile.email}
                 </p>
               </div>
               <button

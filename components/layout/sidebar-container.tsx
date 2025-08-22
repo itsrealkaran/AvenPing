@@ -12,14 +12,12 @@ interface AccountInfoItem {
 interface SidebarContainerProps {
   brand: Brand;
   navigationItems: NavItem[];
-  accountInfo: AccountInfoItem[];
   userProfile: UserProfile;
 }
 
 export default function SidebarContainer({
   brand,
   navigationItems,
-  accountInfo,
   userProfile,
 }: SidebarContainerProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -43,7 +41,6 @@ export default function SidebarContainer({
       <Sidebar
         brand={brand}
         navigationItems={navigationItems}
-        accountInfo={accountInfo}
         userProfile={userProfile}
         isCollapsed={isSidebarCollapsed}
         onCollapsedChange={setIsSidebarCollapsed}

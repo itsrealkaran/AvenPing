@@ -8,7 +8,7 @@ import Header from "@/components/layout/header";
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { userInfo, setActivePhoneNumber } = useUser();
 
-  console.log(userInfo, 'userInfo');
+  console.log(userInfo, "userInfo");
 
   // Define navigation items with typed icon names
   const navigationItems = [
@@ -58,15 +58,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           logo: "/AvenPing-Logo.svg",
         }}
         navigationItems={navigationItems}
-        accountInfo={userInfo && userInfo.whatsappAccount && userInfo.whatsappAccount.phoneNumbers.length > 0 ? userInfo.whatsappAccount.phoneNumbers.map((phone: any) => {
-          return {
-            name: phone.name,
-            number: phone.phoneNumber,
-          }
-        }) : []}
         userProfile={{
-          name: userInfo && userInfo.whatsappAccount && userInfo.whatsappAccount.name || '',
-          email: userInfo && userInfo.whatsappAccount && userInfo.whatsappAccount.email || '',
+          name: userInfo?.name || "User",
+          email: userInfo?.email || "user@example.com",
         }}
       />
       <div className="flex flex-col flex-1 relative overflow-hidden bg-white rounded-xl mr-2 border-[#E0DADA] border-5">
