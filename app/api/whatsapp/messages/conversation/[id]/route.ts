@@ -1,6 +1,5 @@
 import { getSession } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
-import axios from "axios";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -33,21 +32,24 @@ export async function GET(
         const limit = parseInt(searchParams.get('limit') || '20');
         const take = Math.min(limit, 100); // Maximum 100 messages per request
         
+        // Build the messages query with proper pagination
+        const messagesQuery: any = {
+            take: take + 1, // Take one extra to check if there are more results
+            orderBy: {
+                createdAt: 'desc' // Latest messages first
+            },
+            ...(cursor ? {
+                cursor: {
+                    id: cursor
+                },
+                skip: 1 // Skip the cursor message itself
+            } : {})
+        };
+
         const conversation = await prisma.whatsAppRecipient.findUnique({
             where: { id: id },
             include: {
-                messages: {
-                    take: take + 1,
-                    orderBy: {
-                        createdAt: 'asc'
-                    },
-                    ...(cursor ? {
-                        cursor: {
-                            id: cursor
-                        },
-                        skip: 1
-                    } : {})
-                },
+                messages: messagesQuery,
                 labels: true
             }
         });
@@ -56,6 +58,7 @@ export async function GET(
             return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
         }
 
+        // Update last checked time and mark messages as read
         prisma.whatsAppRecipient.update({
             where: { id: id },
             data: {
@@ -88,51 +91,25 @@ export async function GET(
             console.log(err);
         });
 
-
         // Check if there are more results
         const hasMore = conversation.messages.length > take;
         let messages = hasMore ? conversation.messages.slice(0, take) : conversation.messages;
 
-        // messages = await Promise.all(messages.map(async (item: any) => ({
-        //     ...item,
-        //         media: item.media.length > 0 ? await (async () => {
-        //         try {
-        //           const mediaResponse = await axios.get(`https://graph.facebook.com/v23.0/${item.media[0].mediaId}`, {
-        //             headers: {
-        //               'Authorization': `Bearer ${account.accessToken}`
-        //             }
-        //           });
-                  
-        //           // Download the actual media file
-        //           const mediaFile = await axios.get(mediaResponse.data.url, {
-        //             headers: {
-        //               'Authorization': `Bearer ${account.accessToken}`
-        //             },
-        //             responseType: 'arraybuffer'
-        //           });
-                  
-        //           // Convert to base64 for frontend display
-        //           const base64 = Buffer.from(mediaFile.data).toString('base64');
-        //           const dataUrl = `data:${mediaResponse.data.mime_type};base64,${base64}`;
-                  
-        //           return [{type: mediaResponse.data.mime_type, mediaId: dataUrl}];
-        //         } catch (error) {
-        //           console.error('Failed to fetch media:', error instanceof Error ? error.message : 'Unknown error');
-        //           // Return empty array if media fetch fails
-        //           return [];
-        //         }
-        //       })() : []
-        //   })));
+        // Get the cursor for the next page (use the oldest message ID from current page)
+        const nextCursor = hasMore && messages.length > 0 ? messages[messages.length - 1].id : null;
 
-        // Get the cursor for the next page
-        const nextCursor = hasMore ? messages[messages.length - 1].id : null;
+        // Sort messages by createdAt ascending for frontend display (oldest to newest)
+        // This maintains the chat flow while keeping pagination working
+        const sortedMessages = messages.sort((a, b) => 
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
 
         return NextResponse.json({
             id: conversation.id,
             phoneNumber: conversation.phoneNumber,
             name: conversation.name,
             labels: conversation.labels,
-            messages,
+            messages: sortedMessages,
             nextCursor,
             hasMore
         });

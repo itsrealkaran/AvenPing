@@ -11,6 +11,9 @@ interface MessageListProps {
   currentMatchIndex?: number;
   matchingMessageIds?: string[];
   onScrollToBottom?: (scrollFn: () => void) => void;
+  onLoadMore?: () => Promise<void>;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
 }
 
 const MessageList = ({
@@ -19,12 +22,63 @@ const MessageList = ({
   currentMatchIndex = 0,
   matchingMessageIds = [],
   onScrollToBottom,
+  onLoadMore,
+  hasMore = false,
+  isLoadingMore = false,
 }: MessageListProps) => {
   const messageListRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
 
-  // Group messages by date
+  // Check scroll position to show/hide scroll button and handle infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (messageListRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } =
+          messageListRef.current;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+        const isNearTop = scrollTop < 100;
+
+        setShowScrollButton(!isNearBottom);
+
+        // Auto-scroll if user is near bottom
+        if (isNearBottom) {
+          setIsAutoScrolling(true);
+        }
+
+        // Load more messages if user scrolls to top
+        if (isNearTop && hasMore && !isLoadingMore && onLoadMore) {
+          console.log("Scroll to top detected, loading more messages...", {
+            scrollTop,
+            hasMore,
+            isLoadingMore,
+            messagesCount: messages.length,
+          });
+          onLoadMore();
+        }
+      }
+    };
+
+    const messageList = messageListRef.current;
+    if (messageList) {
+      messageList.addEventListener("scroll", handleScroll, { passive: true });
+      return () => messageList.removeEventListener("scroll", handleScroll);
+    }
+  }, [hasMore, isLoadingMore, onLoadMore, messages.length]);
+
+  // Debug logging for props
+  useEffect(() => {
+    console.log("MessageList props updated:", {
+      hasMore,
+      isLoadingMore,
+      messagesCount: messages.length,
+      onLoadMore: !!onLoadMore,
+      firstMessageDate: messages[0]?.createdAt,
+      lastMessageDate: messages[messages.length - 1]?.createdAt,
+    });
+  }, [hasMore, isLoadingMore, messages.length, onLoadMore, messages]);
+
+  // Group messages by date - messages are now properly ordered from API
   const groupedMessages: { [key: string]: Message[] } = {};
 
   messages.forEach((message) => {
@@ -72,29 +126,6 @@ const MessageList = ({
     }
   }, [messages.length, isAutoScrolling]);
 
-  // Check scroll position to show/hide scroll button
-  useEffect(() => {
-    const handleScroll = () => {
-      if (messageListRef.current) {
-        const { scrollTop, scrollHeight, clientHeight } =
-          messageListRef.current;
-        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-        setShowScrollButton(!isNearBottom);
-
-        // Auto-scroll if user is near bottom
-        if (isNearBottom) {
-          setIsAutoScrolling(true);
-        }
-      }
-    };
-
-    const messageList = messageListRef.current;
-    if (messageList) {
-      messageList.addEventListener("scroll", handleScroll);
-      return () => messageList.removeEventListener("scroll", handleScroll);
-    }
-  }, []);
-
   const scrollToBottom = () => {
     if (messageListRef.current) {
       messageListRef.current.scrollTo({
@@ -115,6 +146,16 @@ const MessageList = ({
         ref={messageListRef}
         className="space-y-4 h-full px-4 overflow-y-auto scroll-smooth"
       >
+        {/* Loading indicator at top */}
+        {isLoadingMore && (
+          <div className="flex justify-center py-4">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+              Loading older messages...
+            </div>
+          </div>
+        )}
+
         {Object.entries(groupedMessages).map(([date, dateMessages]) => (
           <div key={date}>
             <div className="flex justify-center my-4">
@@ -144,6 +185,27 @@ const MessageList = ({
             </div>
           </div>
         ))}
+
+        {/* More messages available indicator */}
+        {hasMore && (
+          <div className="flex justify-center py-2">
+            <div className="text-xs text-gray-400 bg-gray-50 px-3 py-1 rounded-full">
+              ↑ Scroll up to load older messages
+            </div>
+          </div>
+        )}
+
+        {/* Manual load more button for testing */}
+        {hasMore && !isLoadingMore && (
+          <div className="flex justify-center py-2">
+            <button
+              onClick={() => onLoadMore?.()}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-600 transition-colors"
+            >
+              Load Older Messages
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Scroll to bottom button */}

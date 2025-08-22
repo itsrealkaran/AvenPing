@@ -57,20 +57,26 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
   useEffect(() => {
     getConversation(conversation.id).then((conversation) => {
       if (conversation) {
+        console.log("Conversation loaded:", {
+          id: conversation.id,
+          messagesCount: conversation.messages.length,
+          hasMore: conversation.hasMore,
+          nextCursor: conversation.nextCursor,
+        });
+
         setCurrentConversation(conversation);
         setAllMessages(conversation.messages);
         setNextCursor((conversation as any).nextCursor || null);
-        console.log(conversation.hasMore, "conversation.hasMore");
-        console.log(conversation, "conversation");
         setHasMoreMessages(conversation.hasMore || false);
       } else {
+        console.log("No conversation found, resetting state");
         setCurrentConversation(conversation as any);
         setAllMessages([]);
         setNextCursor(null);
         setHasMoreMessages(false);
       }
     });
-  }, [conversation]);
+  }, [conversation.id, getConversation]);
 
   // Scroll to bottom when conversation changes
   useEffect(() => {
@@ -90,6 +96,16 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
     }
   }, [allMessages.length]);
 
+  // Debug logging for infinite scroll state
+  useEffect(() => {
+    console.log("MessagePanel infinite scroll state:", {
+      hasMoreMessages,
+      isLoadingMore,
+      nextCursor,
+      messagesCount: allMessages.length,
+    });
+  }, [hasMoreMessages, isLoadingMore, nextCursor, allMessages.length]);
+
   // Function to scroll to bottom
   const scrollToBottom = () => {
     if (scrollToBottomRef.current) {
@@ -107,6 +123,69 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
     setTimeout(() => {
       scrollToBottom();
     }, 200);
+  };
+
+  // Load more messages when scrolling to top
+  const handleLoadMore = async () => {
+    console.log("handleLoadMore called:", {
+      isLoadingMore,
+      hasMoreMessages,
+      nextCursor,
+    });
+
+    if (isLoadingMore || !hasMoreMessages || !nextCursor) {
+      console.log("handleLoadMore early return:", {
+        isLoadingMore,
+        hasMoreMessages,
+        nextCursor,
+      });
+      return;
+    }
+
+    setIsLoadingMore(true);
+    try {
+      console.log("Fetching more messages with cursor:", nextCursor);
+      const response = await axios.get(
+        `/api/whatsapp/messages/conversation/${currentConversation.id}?cursor=${nextCursor}&limit=20`
+      );
+      const newConversation = response.data;
+      console.log("API response:", newConversation);
+
+      // Store current scroll position
+      const messageList = messageListRef.current;
+      const currentScrollTop = messageList?.scrollTop || 0;
+      const currentScrollHeight = messageList?.scrollHeight || 0;
+
+      // Prepend new messages to the beginning (older messages)
+      // The API now returns messages in correct order (oldest to newest)
+      const updatedMessages = [...newConversation.messages, ...allMessages];
+      setAllMessages(updatedMessages);
+
+      // Update conversation data with the nextCursor from API response
+      setNextCursor(newConversation.nextCursor || null);
+      setHasMoreMessages(newConversation.hasMore || false);
+
+      console.log("Updated state:", {
+        newCursor: newConversation.nextCursor,
+        newHasMore: newConversation.hasMore,
+        newMessagesCount: newConversation.messages.length,
+        totalMessagesCount: updatedMessages.length,
+      });
+
+      // Restore scroll position after new messages are added
+      // This keeps the user at the same relative position
+      setTimeout(() => {
+        if (messageList) {
+          const newScrollHeight = messageList.scrollHeight;
+          const scrollDifference = newScrollHeight - currentScrollHeight;
+          messageList.scrollTop = currentScrollTop + scrollDifference;
+        }
+      }, 100);
+    } catch (error) {
+      console.error("Error loading more messages:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
   };
 
   // Debounce search query
@@ -435,6 +514,9 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
           onScrollToBottom={(scrollFn) => {
             scrollToBottomRef.current = scrollFn;
           }}
+          onLoadMore={handleLoadMore}
+          hasMore={hasMoreMessages}
+          isLoadingMore={isLoadingMore}
         />
       </div>
 
