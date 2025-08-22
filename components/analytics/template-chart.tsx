@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Card from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { LineChart, TooltipProps } from "@/components/charts/line-chart";
 import { DropdownButton } from "@/components/ui/dropdown-button";
 import { TEMPLATE_FILTER_OPTIONS, getTemplateFilterLabel } from "./data";

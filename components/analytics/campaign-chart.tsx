@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import Card from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { cx } from "@/lib/utils";
 import { AreaChart, TooltipProps } from "@/components/charts/area-chart";
 import { DropdownButton } from "@/components/ui/dropdown-button";

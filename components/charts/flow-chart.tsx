@@ -1,5 +1,5 @@
 import React from "react";
-import Card from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { cx } from "@/lib/utils";
 import { BarChart, TooltipProps } from "@/components/charts/bar-chart";
 import { DropdownButton } from "../ui/dropdown-button";
