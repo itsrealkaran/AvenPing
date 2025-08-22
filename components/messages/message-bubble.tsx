@@ -12,6 +12,7 @@ import {
   Clock,
   AlertCircle,
   Bot,
+  Reply,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useRef } from "react";
@@ -92,13 +93,16 @@ const MessageBubble = ({
         {message.interactiveJson.map((button, index) => (
           <button
             key={index}
-            className="w-full text-left px-3 py-2 bg-[#00BCD4]/10 hover:bg-[#00BCD4]/20 rounded-lg border border-[#00BCD4]/30 text-sm text-[#1A687D] transition-colors"
+            className="w-full px-3 py-2 bg-[#00BCD4]/10 hover:bg-[#00BCD4]/20 rounded-lg border border-[#00BCD4]/30 text-sm text-[#1A687D] transition-colors"
             onClick={() => {
               // Handle button click - you can implement the logic here
               console.log("Button clicked:", button.label);
             }}
           >
-            {button.label}
+            <span className="flex items-center gap-2 justify-center">
+              <Reply size={16} />
+              {button.label}
+            </span>
           </button>
         ))}
       </div>
