@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import Card from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { DonutChart } from "@/components/charts/donut-chart";
 
 const FILTERS = [

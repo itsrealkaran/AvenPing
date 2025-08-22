@@ -1,5 +1,5 @@
 import { useUser } from "@/context/user-context";
-import Card from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Phone, Settings, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";

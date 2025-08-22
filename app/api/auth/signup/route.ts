@@ -55,6 +55,7 @@ export async function POST(request: Request) {
       userId: user.id,
       email: user.email,
       name: user.name,
+      whatsAppAccountId: null,
       hasWhatsAppAccount: false,
       plan: null,
       expiresAt: null,

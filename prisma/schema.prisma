@@ -105,6 +105,8 @@ model WhatsAppAccount {
   phoneNumbers    WhatsAppPhoneNumber[]
   labels          Label[]
   attributes      ContactAttribute[]
+
+  recipients WhatsAppRecipient[]
 }
 
 model WhatsAppPhoneNumber {
@@ -135,6 +137,9 @@ model WhatsAppRecipient {
 
   whatsAppPhoneNumberId String?
   whatsAppPhoneNumber   WhatsAppPhoneNumber? @relation(fields: [whatsAppPhoneNumberId], references: [id])
+
+  whatsAppAccountId String
+  whatsAppAccount   WhatsAppAccount @relation(fields: [whatsAppAccountId], references: [id])
 
   hasConversation Boolean @default(false)
 

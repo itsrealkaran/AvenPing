@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getSession()
 
-    if (!session || !session.email) {
+    if (!session || !session.email || !session.whatsAppAccountId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -19,9 +19,7 @@ export async function GET(request: NextRequest) {
 
     const contacts = await prisma.whatsAppRecipient.findMany({
       where: {
-        whatsAppPhoneNumber: {
-          id: phoneNumberId,
-        },
+        whatsAppAccountId: session.whatsAppAccountId as string,
       },
     });
 
@@ -39,7 +37,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getSession()
 
-    if (!session || !session.email) {
+    if (!session || !session.email || !session.whatsAppAccountId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -73,11 +71,8 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         phoneNumber: phoneNumber.replace(/[^\d]/g, ''),
-        whatsAppPhoneNumber: {
-          connect: {
-            id: phoneNumberId,
-          },
-        },
+        whatsAppPhoneNumberId: phoneNumberId,
+        whatsAppAccountId: session.whatsAppAccountId as string,
         attributeValues: attributeValues,
       },
     });
