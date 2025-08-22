@@ -286,12 +286,17 @@ export default function DashboardPage() {
   return (
     <Body
       title="Dashboard"
-      className={cn(hasWhatsAppAccount ? "relative overflow-hidden" : "")}
+      className={cn(
+        hasWhatsAppAccount && isConnected && isRegistered
+          ? "relative overflow-hidden"
+          : ""
+      )}
     >
       {/* WhatsApp Connection Overlay - Only covers dashboard body */}
-      {!hasWhatsAppAccount && (
+      {!hasWhatsAppAccount || !isConnected || !isRegistered && (
         <div className="absolute inset-0 backdrop-blur-xs z-10 pointer-events-none" />
       )}
+
       <MetricCards />
       <DashboardContent />
     </Body>
