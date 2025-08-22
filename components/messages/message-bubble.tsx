@@ -16,6 +16,10 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useRef } from "react";
+import {
+  parseWhatsAppFormatting,
+  getWhatsAppFormattingClasses,
+} from "@/lib/utils";
 
 interface MessageBubbleProps {
   message: Message;
@@ -68,6 +72,37 @@ const MessageBubble = ({
       ) : (
         part
       )
+    );
+  };
+
+  // Render formatted WhatsApp message
+  const renderFormattedMessage = (text: string, searchQuery?: string) => {
+    if (!text) return null;
+
+    // Parse WhatsApp formatting
+    const formattedParts = parseWhatsAppFormatting(text);
+
+    return (
+      <div className="text-sm">
+        {formattedParts.map((part, index) => {
+          const classes = getWhatsAppFormattingClasses(part.type);
+
+          // Apply search highlighting if query exists
+          if (searchQuery && part.type === "plain") {
+            return (
+              <span key={index} className={classes}>
+                {highlightText(part.text, searchQuery)}
+              </span>
+            );
+          }
+
+          return (
+            <span key={index} className={classes}>
+              {part.text}
+            </span>
+          );
+        })}
+      </div>
     );
   };
 
@@ -289,13 +324,8 @@ const MessageBubble = ({
         {renderMedia()}
 
         {/* Render text message */}
-        {message.message && (
-          <div className="text-sm">
-            {searchQuery
-              ? highlightText(message.message, searchQuery)
-              : message.message}
-          </div>
-        )}
+        {message.message &&
+          renderFormattedMessage(message.message, searchQuery)}
 
         {/* Render interactive buttons */}
         {renderInteractiveButtons()}
