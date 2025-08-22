@@ -237,7 +237,10 @@ export default function DashboardPage() {
         <Card
           title="WhatsApp Account"
           headerInfo="Manage your connected WhatsApp numbers. Add new numbers or remove existing ones from your account."
-          className={cn("md:col-span-1 !p-0", getCardZIndex("whatsapp-numbers"))}
+          className={cn(
+            "md:col-span-1 !p-0",
+            getCardZIndex("whatsapp-numbers")
+          )}
           size="md"
           ref={whatsappNumbersCardRef}
           hoverable={!isConnected}
@@ -396,11 +399,9 @@ export default function DashboardPage() {
       )}
     >
       {/* WhatsApp Connection Overlay - Only covers dashboard body */}
-      { !hasWhatsAppAccount ||
-        !isConnected ||
-        (!isRegistered && (
-          <div className="absolute inset-0 backdrop-blur-xs z-10 pointer-events-none" />
-        ))}
+      {(!hasWhatsAppAccount || !isConnected || !isRegistered) && (
+        <div className="absolute inset-0 backdrop-blur-xs z-10 pointer-events-none" />
+      )}
 
       <MetricCards />
       <DashboardContent />

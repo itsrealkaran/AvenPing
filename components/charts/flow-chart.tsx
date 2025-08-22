@@ -1,5 +1,5 @@
 import React from "react";
-import { Card } from "@/components/ui/card";
+import Card from "@/components/analytics/card";
 import { cx } from "@/lib/utils";
 import { BarChart, TooltipProps } from "@/components/charts/bar-chart";
 import { DropdownButton } from "../ui/dropdown-button";
@@ -73,6 +73,32 @@ const Tooltip = ({ payload, active, label }: TooltipProps) => {
 export default function FlowChart({ data }: FlowChartProps) {
   const [selected, setSelected] = React.useState("30");
   const selectedLabel = getFlowFilterLabel(selected);
+
+  // Safety check: Don't render charts if data is invalid
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return (
+      <Card title="Message Flow Analytics">
+        <div className="p-4">
+          <div className="flex items-center justify-center h-72 text-gray-500 text-sm">
+            No flow data available
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Validate that data has the expected structure
+  if (!data[0] || typeof data[0].name === "undefined") {
+    return (
+      <Card title="Message Flow Analytics">
+        <div className="p-4">
+          <div className="flex items-center justify-center h-72 text-gray-500 text-sm">
+            Invalid flow data format
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   // Determine categories dynamically from the first data row, fallback to []
   const categories =

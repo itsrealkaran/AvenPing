@@ -526,6 +526,46 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
       customTooltip,
       ...other
     } = props;
+
+    // Safety check: Don't render if data is invalid
+    if (!data || !Array.isArray(data) || data.length === 0 || !index) {
+      return (
+        <div
+          ref={ref}
+          className={cx("flex items-center justify-center h-64", className)}
+          {...other}
+        >
+          <p className="text-gray-500 text-sm">No data available</p>
+        </div>
+      );
+    }
+
+    // Validate that the index exists in the first data item
+    if (!data[0] || typeof data[0][index] === "undefined") {
+      return (
+        <div
+          ref={ref}
+          className={cx("flex items-center justify-center h-64", className)}
+          {...other}
+        >
+          <p className="text-gray-500 text-sm">Invalid data format</p>
+        </div>
+      );
+    }
+
+    // Validate categories array
+    if (!categories || !Array.isArray(categories) || categories.length === 0) {
+      return (
+        <div
+          ref={ref}
+          className={cx("flex items-center justify-center h-64", className)}
+          {...other}
+        >
+          <p className="text-gray-500 text-sm">No categories defined</p>
+        </div>
+      );
+    }
+
     const CustomTooltip = customTooltip;
     const paddingValue =
       (!showXAxis && !showYAxis) || (startEndOnly && !showYAxis) ? 0 : 20;
@@ -631,7 +671,11 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
               interval={startEndOnly ? "preserveStartEnd" : intervalType}
               tick={{ transform: "translate(0, 6)" }}
               ticks={
-                startEndOnly
+                startEndOnly &&
+                data &&
+                data.length > 0 &&
+                data[0] &&
+                data[data.length - 1]
                   ? [data[0][index], data[data.length - 1][index]]
                   : undefined
               }

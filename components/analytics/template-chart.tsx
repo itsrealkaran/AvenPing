@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Card } from "@/components/ui/card";
+import Card from "@/components/analytics/card";
 import { LineChart, TooltipProps } from "@/components/charts/line-chart";
 import { DropdownButton } from "@/components/ui/dropdown-button";
 import { TEMPLATE_FILTER_OPTIONS, getTemplateFilterLabel } from "./data";
@@ -53,6 +53,36 @@ const Tooltip = ({ payload, active, label }: TooltipProps) => {
 export default function TemplateChart({ data }: TemplateChartProps) {
   const [selected, setSelected] = React.useState("30");
   const selectedLabel = getTemplateFilterLabel(selected);
+
+  // Safety check: Don't render charts if data is invalid
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return (
+      <Card title="Template Performance">
+        <div className="p-4">
+          <div className="flex items-center justify-center h-72 text-gray-500 text-sm">
+            No template data available
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Validate that data has the expected structure
+  if (
+    !data[0] ||
+    typeof data[0].name === "undefined" ||
+    typeof data[0].success === "undefined"
+  ) {
+    return (
+      <Card title="Template Performance">
+        <div className="p-4">
+          <div className="flex items-center justify-center h-72 text-gray-500 text-sm">
+            Invalid template data format
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card

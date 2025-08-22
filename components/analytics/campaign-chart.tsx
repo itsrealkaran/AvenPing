@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Card } from "@/components/ui/card";
+import Card from "@/components/analytics/card";
 import { cx } from "@/lib/utils";
 import { AreaChart, TooltipProps } from "@/components/charts/area-chart";
 import { DropdownButton } from "@/components/ui/dropdown-button";
@@ -42,9 +42,7 @@ const Tooltip = ({ payload, active, label }: TooltipProps) => {
     value: item.value,
     percentage: (
       (item.value /
-        (item.payload.unread +
-          item.payload.read +
-          item.payload.replied)) *
+        (item.payload.unread + item.payload.read + item.payload.replied)) *
       100
     ).toFixed(2),
   }));
@@ -121,7 +119,63 @@ function AreaChartCustomTooltipExample({ data }: { data: CampaignData[] }) {
 export default function CampaignChart({ data }: CampaignChartProps) {
   const [selected, setSelected] = React.useState("30");
   const selectedLabel = getFilterLabel(selected);
-  
+
+  // Safety check: Don't render charts if data is invalid
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return (
+      <Card
+        title="Campaign Performance"
+        headerButton={
+          <DropdownButton
+            options={FILTER_OPTIONS}
+            onChange={setSelected}
+            selected={selected}
+            size="sm"
+            variant="outline"
+          >
+            {selectedLabel}
+          </DropdownButton>
+        }
+      >
+        <div className="p-4">
+          <div className="flex items-center justify-center h-72 text-gray-500 text-sm">
+            No campaign data available
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Validate that data has the expected structure
+  if (
+    !data[0] ||
+    typeof data[0].date === "undefined" ||
+    typeof data[0].unread === "undefined"
+  ) {
+    return (
+      <Card
+        title="Campaign Performance"
+        headerButton={
+          <DropdownButton
+            options={FILTER_OPTIONS}
+            onChange={setSelected}
+            selected={selected}
+            size="sm"
+            variant="outline"
+          >
+            {selectedLabel}
+          </DropdownButton>
+        }
+      >
+        <div className="p-4">
+          <div className="flex items-center justify-center h-72 text-gray-500 text-sm">
+            Invalid campaign data format
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   // Filter data based on selected period
   const filteredData = filterCampaignData(data, getPeriodDays(selected));
 
