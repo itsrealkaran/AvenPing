@@ -420,3 +420,45 @@ export function hasWhatsAppFormatting(text: string): boolean {
 export function getWhatsAppMessageLength(formattedText: string): number {
   return unformatWhatsAppMessage(formattedText).length;
 }
+
+/**
+ * Generates a random pastel color
+ * @returns A pastel color hex string
+ */
+export function generateRandomPastelColor(): string {
+  const hue = Math.floor(Math.random() * 360);
+  const saturation = Math.floor(Math.random() * 30) + 70; // 70-100%
+  const lightness = Math.floor(Math.random() * 20) + 70; // 70-90%
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
+/**
+ * Generates a consistent color based on a string input
+ * Useful for avatar placeholders where you want the same name to always have the same color
+ * @param str - The string to generate a color for
+ * @returns A pastel color hex string
+ */
+export function generateColorFromString(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  const hue = Math.abs(hash) % 360;
+  const saturation = 70 + (Math.abs(hash) % 20); // 70-90%
+  const lightness = 75 + (Math.abs(hash) % 15); // 75-90%
+  
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
+/**
+ * Gets the first letter of a string, handling edge cases
+ * @param str - The input string
+ * @returns The first letter or a fallback character
+ */
+export function getFirstLetter(str: string): string {
+  if (!str || typeof str !== 'string') return '?';
+  const trimmed = str.trim();
+  if (trimmed.length === 0) return '?';
+  return trimmed.charAt(0).toUpperCase();
+}

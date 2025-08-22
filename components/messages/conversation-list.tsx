@@ -2,7 +2,7 @@
 
 import { Conversation } from "./messages-interface";
 import { formatDistanceToNow } from "date-fns";
-import { User } from "lucide-react";
+import { generateColorFromString, getFirstLetter } from "@/lib/utils";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -31,7 +31,6 @@ const ConversationList = ({
           const contact = {
             name,
             phoneNumber,
-            avatar:  "https://placehold.co/150x150",
             isOnline: true,
             unreadCount: conversation.unreadCount,
           };
@@ -46,25 +45,22 @@ const ConversationList = ({
           return (
             <div
               key={conversation.id}
-              className={`flex items-center p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
+              className={`flex items-center p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-200 ${
                 isSelected ? "bg-gray-50" : ""
               }`}
               onClick={() => onSelectConversation(conversation)}
             >
               <div className="relative flex-shrink-0">
-                {contact.avatar ? (
-                  <img
-                    src={contact.avatar}
-                    alt={contact.name}
-                    className="h-12 w-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
-                    <User size={20} className="text-gray-500" />
-                  </div>
-                )}
+                <div
+                  className="h-12 w-12 rounded-full flex items-center justify-center text-white text-lg shadow-sm"
+                  style={{
+                    backgroundColor: generateColorFromString(contact.name),
+                  }}
+                >
+                  {getFirstLetter(contact.name)}
+                </div>
                 {contact.isOnline && (
-                  <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-primary border-2 border-white"></div>
+                  <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white shadow-sm"></div>
                 )}
               </div>
 
@@ -75,15 +71,17 @@ const ConversationList = ({
                       {contact.name}
                     </h3>
                   </div>
-                  {!isSelected && conversation.unreadCount && conversation.unreadCount > 0 ? (
+                  {!isSelected &&
+                  conversation.unreadCount &&
+                  conversation.unreadCount > 0 ? (
                     <span
                       className={`text-xs ${
                         conversation.unreadCount > 0
                           ? "font-semibold text-unread-timestamp"
                           : "text-gray-500"
                       } flex-shrink-0`}
-                      >
-                        {timeAgo}
+                    >
+                      {timeAgo}
                     </span>
                   ) : null}
                 </div>
@@ -94,7 +92,9 @@ const ConversationList = ({
                     {lastMsg?.message || "No messages yet"}
                   </p>
 
-                  {!isSelected && conversation.unreadCount && conversation.unreadCount > 0 ? (
+                  {!isSelected &&
+                  conversation.unreadCount &&
+                  conversation.unreadCount > 0 ? (
                     <div className="ml-2 bg-primary text-white rounded-full h-5 w-5 flex items-center justify-center text-xs flex-shrink-0">
                       {conversation.unreadCount}
                     </div>
