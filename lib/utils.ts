@@ -68,6 +68,199 @@ export interface WhatsAppFormatting {
 }
 
 /**
+ * Parses WhatsApp formatted text into parts for rendering
+ * @param formattedText - Text with WhatsApp formatting
+ * @returns Array of text parts with formatting information
+ */
+export function parseWhatsAppFormatting(formattedText: string): Array<{ text: string; type: 'bold' | 'italic' | 'strikethrough' | 'monospace' | 'codeBlock' | 'plain' }> {
+  if (!formattedText) return [];
+  
+  const result: Array<{ text: string; type: 'bold' | 'italic' | 'strikethrough' | 'monospace' | 'codeBlock' | 'plain' }> = [];
+  let currentIndex = 0;
+  
+  // First, handle code blocks (```text```) as they can't contain other formatting
+  const codeBlockRegex = /```([^`]+)```/g;
+  let codeBlockMatch;
+  const codeBlockPositions: Array<{ start: number; end: number; text: string }> = [];
+  
+  while ((codeBlockMatch = codeBlockRegex.exec(formattedText)) !== null) {
+    codeBlockPositions.push({
+      start: codeBlockMatch.index,
+      end: codeBlockMatch.index + codeBlockMatch[0].length,
+      text: codeBlockMatch[1]
+    });
+  }
+  
+  // Process the text, skipping code blocks
+  while (currentIndex < formattedText.length) {
+    // Check if we're at a code block
+    const codeBlock = codeBlockPositions.find(pos => pos.start === currentIndex);
+    if (codeBlock) {
+      result.push({
+        text: codeBlock.text,
+        type: 'codeBlock'
+      });
+      currentIndex = codeBlock.end;
+      continue;
+    }
+    
+    // Check for other formatting patterns
+    let foundFormatting = false;
+    
+    // Check for monospace (`text`) - but not code blocks
+    if (formattedText[currentIndex] === '`' && 
+        currentIndex + 1 < formattedText.length && 
+        !formattedText.startsWith('```', currentIndex)) {
+      const endIndex = formattedText.indexOf('`', currentIndex + 1);
+      if (endIndex !== -1) {
+        const text = formattedText.substring(currentIndex + 1, endIndex);
+        result.push({
+          text,
+          type: 'monospace'
+        });
+        currentIndex = endIndex + 1;
+        foundFormatting = true;
+      }
+    }
+    
+    // Check for bold (*text*)
+    if (!foundFormatting && formattedText[currentIndex] === '*') {
+      const endIndex = formattedText.indexOf('*', currentIndex + 1);
+      if (endIndex !== -1) {
+        const text = formattedText.substring(currentIndex + 1, endIndex);
+        // Recursively parse nested formatting
+        const nestedParts = parseWhatsAppFormatting(text);
+        if (nestedParts.length > 0) {
+          // Apply bold to all nested parts
+          nestedParts.forEach(part => {
+            result.push({
+              text: part.text,
+              type: 'bold'
+            });
+          });
+        } else {
+          result.push({
+            text,
+            type: 'bold'
+          });
+        }
+        currentIndex = endIndex + 1;
+        foundFormatting = true;
+      }
+    }
+    
+    // Check for italic (_text_)
+    if (!foundFormatting && formattedText[currentIndex] === '_') {
+      const endIndex = formattedText.indexOf('_', currentIndex + 1);
+      if (endIndex !== -1) {
+        const text = formattedText.substring(currentIndex + 1, endIndex);
+        // Recursively parse nested formatting
+        const nestedParts = parseWhatsAppFormatting(text);
+        if (nestedParts.length > 0) {
+          // Apply italic to all nested parts
+          nestedParts.forEach(part => {
+            result.push({
+              text: part.text,
+              type: 'italic'
+            });
+          });
+        } else {
+          result.push({
+            text,
+            type: 'italic'
+          });
+        }
+        currentIndex = endIndex + 1;
+        foundFormatting = true;
+      }
+    }
+    
+    // Check for strikethrough (~text~)
+    if (!foundFormatting && formattedText[currentIndex] === '~') {
+      const endIndex = formattedText.indexOf('~', currentIndex + 1);
+      if (endIndex !== -1) {
+        const text = formattedText.substring(currentIndex + 1, endIndex);
+        // Recursively parse nested formatting
+        const nestedParts = parseWhatsAppFormatting(text);
+        if (nestedParts.length > 0) {
+          // Apply strikethrough to all nested parts
+          nestedParts.forEach(part => {
+            result.push({
+              text: part.text,
+              type: 'strikethrough'
+            });
+          });
+        } else {
+          result.push({
+            text,
+            type: 'strikethrough'
+          });
+        }
+        currentIndex = endIndex + 1;
+        foundFormatting = true;
+      }
+    }
+    
+    // If no formatting found, add as plain text
+    if (!foundFormatting) {
+      // Find the next formatting character
+      let nextFormatIndex = formattedText.length;
+      for (let i = currentIndex; i < formattedText.length; i++) {
+        if (['*', '_', '~', '`'].includes(formattedText[i])) {
+          // Check if it's a code block start
+          if (formattedText[i] === '`' && formattedText.startsWith('```', i)) {
+            const codeBlock = codeBlockPositions.find(pos => pos.start === i);
+            if (codeBlock) {
+              nextFormatIndex = i;
+              break;
+            }
+          } else if (formattedText[i] === '`' && !formattedText.startsWith('```', i)) {
+            nextFormatIndex = i;
+            break;
+          } else {
+            nextFormatIndex = i;
+            break;
+          }
+        }
+      }
+      
+      const plainText = formattedText.substring(currentIndex, nextFormatIndex);
+      if (plainText.trim()) {
+        result.push({
+          text: plainText,
+          type: 'plain'
+        });
+      }
+      currentIndex = nextFormatIndex;
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * Gets CSS classes for WhatsApp formatting types
+ * @param type - The formatting type
+ * @returns CSS classes string
+ */
+export function getWhatsAppFormattingClasses(type: 'bold' | 'italic' | 'strikethrough' | 'monospace' | 'codeBlock' | 'plain'): string {
+  switch (type) {
+    case 'bold':
+      return 'font-bold';
+    case 'italic':
+      return 'italic';
+    case 'strikethrough':
+      return 'line-through';
+    case 'monospace':
+      return 'font-mono bg-black/10 dark:bg-white/20 px-1.5 py-0.5 rounded text-sm';
+    case 'codeBlock':
+      return 'font-mono bg-black/10 dark:bg-white/20 px-3 py-2 rounded-lg text-sm block my-2 border border-black/5 dark:border-white/10';
+    default:
+      return '';
+  }
+}
+
+/**
  * Formats text with WhatsApp formatting syntax
  * @param text - The text to format
  * @param formatting - Object containing formatting options
@@ -226,86 +419,4 @@ export function hasWhatsAppFormatting(text: string): boolean {
  */
 export function getWhatsAppMessageLength(formattedText: string): number {
   return unformatWhatsAppMessage(formattedText).length;
-}
-
-/**
- * Parses WhatsApp formatted text into parts for rendering
- * @param formattedText - Text with WhatsApp formatting
- * @returns Array of text parts with formatting information
- */
-export function parseWhatsAppFormatting(formattedText: string): Array<{ text: string; type: 'bold' | 'italic' | 'strikethrough' | 'monospace' | 'codeBlock' | 'plain' }> {
-  if (!formattedText) return [];
-  
-  // Split text by formatting patterns while preserving the delimiters
-  const parts = formattedText.split(/(\*[^*]+\*|_[^_]+_|~[^~]+~|`[^`]+`|```[^`]+```)/);
-  
-  return parts.map((part) => {
-    // Bold formatting: *text*
-    if (part.startsWith('*') && part.endsWith('*')) {
-      return {
-        text: part.slice(1, -1),
-        type: 'bold' as const
-      };
-    }
-    
-    // Italic formatting: _text_
-    if (part.startsWith('_') && part.endsWith('_')) {
-      return {
-        text: part.slice(1, -1),
-        type: 'italic' as const
-      };
-    }
-    
-    // Strikethrough formatting: ~text~
-    if (part.startsWith('~') && part.endsWith('~')) {
-      return {
-        text: part.slice(1, -1),
-        type: 'strikethrough' as const
-      };
-    }
-    
-    // Monospace formatting: `text` (but not code blocks)
-    if (part.startsWith('`') && part.endsWith('`') && !part.startsWith('```')) {
-      return {
-        text: part.slice(1, -1),
-        type: 'monospace' as const
-      };
-    }
-    
-    // Code block formatting: ```text```
-    if (part.startsWith('```') && part.endsWith('```')) {
-      return {
-        text: part.slice(3, -3),
-        type: 'codeBlock' as const
-      };
-    }
-    
-    // Return plain text as-is
-    return {
-      text: part,
-      type: 'plain' as const
-    };
-  });
-}
-
-/**
- * Gets CSS classes for WhatsApp formatting types
- * @param type - The formatting type
- * @returns CSS classes string
- */
-export function getWhatsAppFormattingClasses(type: 'bold' | 'italic' | 'strikethrough' | 'monospace' | 'codeBlock' | 'plain'): string {
-  switch (type) {
-    case 'bold':
-      return 'font-bold';
-    case 'italic':
-      return 'italic';
-    case 'strikethrough':
-      return 'line-through';
-    case 'monospace':
-      return 'font-mono bg-gray-200 px-1 rounded';
-    case 'codeBlock':
-      return 'font-mono bg-gray-200 px-2 py-1 rounded block';
-    default:
-      return '';
-  }
 }
