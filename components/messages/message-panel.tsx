@@ -8,6 +8,7 @@ import { useMessages } from "@/context/messages-context";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import axios from "axios";
+import { generateColorFromString, getFirstLetter } from "@/lib/utils";
 
 interface MessagePanelProps {
   conversation: Conversation;
@@ -229,8 +230,13 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
       <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-white flex-shrink-0">
         <div className="flex items-center">
           <div className="relative">
-            <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-              <User size={18} className="text-gray-500" />
+            <div
+              className="size-8 rounded-full flex items-center justify-center text-white text-md shadow-sm"
+              style={{
+                backgroundColor: generateColorFromString(name),
+              }}
+            >
+              {getFirstLetter(name)}
             </div>
           </div>
 
