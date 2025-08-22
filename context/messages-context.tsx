@@ -202,8 +202,8 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         `/api/whatsapp/messages?phoneNumberId=${phoneNumberId}`,
         {
           message: newMessage.message,
-          templateId: newMessage.templateId,
-          templateParams: newMessage.templateParams,
+          templateData: newMessage.templateData,
+          interactiveJson: newMessage.interactiveJson,
           recipientId,
           media: newMessage.media,
         }
