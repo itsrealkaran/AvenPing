@@ -123,37 +123,43 @@ export async function POST(req: NextRequest) {
                       data: {
                         status: mappedStatus,
                       },
-                    })
-                    // First, get the current recipientStats to append to it
+                    });
+
+                    // First, get the current recipientStats to update existing entry or add new one
                     const currentCampaign = await prisma.whatsAppCampaign.findUnique({
                       where: { id: recipient.activeCampaignId },
                       select: { recipientStats: true }
                     });
 
-                  const currentStats = Array.isArray(currentCampaign?.recipientStats) 
-                    ? (currentCampaign.recipientStats as any[]) 
-                    : [];
+                    const currentStats = Array.isArray(currentCampaign?.recipientStats) 
+                      ? (currentCampaign.recipientStats as any[]) 
+                      : [];
+
+                  // Remove all existing entries with the same recipient ID and add the new one
+                  const filteredStats = currentStats.filter((stat: any) => stat.id !== recipient.id);
+                  
+                  const updatedStats = [
+                    ...filteredStats,
+                    {
+                      id: recipient.id,
+                      name: recipient.name || "",
+                      phoneNumber: recipient.phoneNumber,
+                      status: mappedStatus,
+                    }
+                  ];
 
                     await prisma.whatsAppCampaign.update({
                       where: {
                         id: recipient.activeCampaignId,
                       },
                       data: {
-                        recipientStats: [
-                          ...currentStats,
-                          {
-                            id: recipient.id,
-                            name: recipient.name || "",
-                            phoneNumber: recipient.phoneNumber,
-                            status: mappedStatus,
-                          }
-                        ]
+                        recipientStats: updatedStats
                       }
                     });
                   }
                 }
 
-                // Emit status update event
+                  // Emit status update event
                 const eventData = {
                   type: "status_update",
                   userId: whatsAppPhoneNumber.account.id,
@@ -325,20 +331,25 @@ export async function POST(req: NextRequest) {
                     ? (currentCampaign.recipientStats as any[]) 
                     : [];
 
+                  // Remove all existing entries with the same recipient ID and add the new one
+                  const filteredStats = currentStats.filter((stat: any) => stat.id !== recipient.id);
+                  
+                  const updatedStats = [
+                    ...filteredStats,
+                    {
+                      id: recipient.id,
+                      name: recipient.name || "",
+                      phoneNumber: recipient.phoneNumber,
+                      status: "REPLIED",
+                    }
+                  ];
+
                   await prisma.whatsAppCampaign.update({
                     where: {
                       id: recipient.activeCampaignId,
                     },
                     data: {
-                      recipientStats: [
-                        ...currentStats,
-                        {
-                          id: recipient.id,
-                          name: recipient.name || "",
-                          phoneNumber: recipient.phoneNumber,
-                          status: "REPLIED",
-                        }
-                      ]
+                      recipientStats: updatedStats
                     }
                   });
                 }
