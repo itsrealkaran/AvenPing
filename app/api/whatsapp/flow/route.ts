@@ -123,6 +123,16 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "No WhatsApp account found" }, { status: 404 });
     }
 
+    const currentFlow = await prisma.whatsAppFlow.findUnique({
+      where: {
+        id,
+      },
+    });
+    
+    if (currentFlow?.isDisabled) {
+      return NextResponse.json({ error: "Flow is disabled" }, { status: 400 });
+    }
+
     const existingFlows = await prisma.whatsAppFlow.findMany({
       where: {
         accountId: user.whatsAppAccount.id,
