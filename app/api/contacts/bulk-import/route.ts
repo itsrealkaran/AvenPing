@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
+import { validateContactLimit } from "@/lib/subscription-utils";
 
 interface BulkContactData {
   name: string;
@@ -49,16 +50,70 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get user info for validation
+    const user = await prisma.user.findUnique({
+      where: {
+        id: session.userId as string,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Get current count of active contacts
+    const currentActiveContacts = await prisma.whatsAppRecipient.count({
+      where: {
+        whatsAppAccountId: session.whatsAppAccountId as string,
+        isDisabled: false
+      },
+    });
+
+    // Initialize response
     const response: BulkImportResponse = {
       success: 0,
       failed: 0,
       errors: []
     };
 
+    // Validate if all contacts can be imported
+    const validation = await validateContactLimit(session, user, currentActiveContacts);
+    
+    let contactsToProcess = contacts;
+    
+    if (!validation.isValid) {
+      // Check how many contacts can actually be imported
+      const maxContacts = validation.maxContacts || 0;
+      const availableSlots = maxContacts - currentActiveContacts;
+      
+      if (availableSlots <= 0) {
+        return NextResponse.json({ 
+          error: validation.error,
+          canImport: 0,
+          requested: contacts.length
+        }, { status: 400 });
+      }
+      
+      // Limit contacts to available slots
+      const contactsToImport = contacts.slice(0, availableSlots);
+      const contactsToSkip = contacts.slice(availableSlots);
+      
+      // Add errors for contacts that can't be imported
+      response.errors.push(
+        ...contactsToSkip.map((_, index) => ({
+          index: availableSlots + index,
+          error: `Contact limit reached. Only ${availableSlots} contacts can be imported.`
+        }))
+      );
+      
+      // Update the contacts array to only process what can be imported
+      contactsToProcess = contactsToImport;
+    }
+
     // Process contacts in batches of 10
     const batchSize = 10;
-    for (let i = 0; i < contacts.length; i += batchSize) {
-      const batch = contacts.slice(i, i + batchSize);
+    for (let i = 0; i < contactsToProcess.length; i += batchSize) {
+      const batch = contactsToProcess.slice(i, i + batchSize);
       
       // Process each contact in the batch
       for (let j = 0; j < batch.length; j++) {
@@ -133,7 +188,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(response);
+    return NextResponse.json({
+      ...response,
+      requested: contacts.length,
+      processed: contactsToProcess.length,
+      skipped: contacts.length - contactsToProcess.length
+    });
   } catch (error) {
     console.error("Bulk import error:", error);
     return NextResponse.json(

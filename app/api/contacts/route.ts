@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
+import { validateContactLimit } from "@/lib/subscription-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -37,8 +38,33 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getSession()
 
-    if (!session || !session.email || !session.whatsAppAccountId) {
+    if (!session || !session.email || !session.whatsAppAccountId || !session.plan) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: session.userId as string,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Get current count of active contacts
+    const totalContacts = await prisma.whatsAppRecipient.count({
+      where: {
+        whatsAppAccountId: session.whatsAppAccountId as string,
+        isDisabled: false
+      },
+    });
+
+    // Validate contact limit using utility function
+    const validation = await validateContactLimit(session, user, totalContacts);
+    
+    if (!validation.isValid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     const body = await request.json()

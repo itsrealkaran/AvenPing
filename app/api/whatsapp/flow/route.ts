@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
+import { validateFlowLimit } from "@/lib/subscription-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -58,6 +59,21 @@ export async function POST(req: NextRequest) {
 
     if (!user?.whatsAppAccount) {
       return NextResponse.json({ error: "No WhatsApp account found" }, { status: 404 });
+    }
+
+    // Get current count of active flows
+    const totalFlows = await prisma.whatsAppFlow.count({
+      where: {
+        accountId: session.whatsAppAccountId as string,
+        isDisabled: false
+      },
+    });
+
+    // Validate flow limit using utility function
+    const validation = await validateFlowLimit(session, user, totalFlows);
+    
+    if (!validation.isValid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     const existingFlows = await prisma.whatsAppFlow.findMany({

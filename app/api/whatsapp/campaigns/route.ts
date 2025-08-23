@@ -204,7 +204,7 @@ export async function POST(request: Request) {
             },
           });
         }
-      } catch (messageError) {
+      } catch (messageError: any) {
         console.error("Error creating messages:", messageError);
         
         // Update campaign status to FAILED if message creation failed

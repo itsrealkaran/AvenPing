@@ -140,6 +140,7 @@ export default function FlowPage() {
     error,
     deleteFlow,
     toggleFlowStatus,
+    toggleFlowDisabled,
     saveFlowFromBuilder,
     reconstructFlowData,
     clearError,
@@ -177,6 +178,14 @@ export default function FlowPage() {
       await toggleFlowStatus(flow.id);
     } catch (error) {
       console.error("Failed to toggle flow status:", error);
+    }
+  };
+
+  const handleToggleDisabled = async (flow: Flow) => {
+    try {
+      await toggleFlowDisabled(flow.id);
+    } catch (error) {
+      console.error("Failed to toggle flow disabled status:", error);
     }
   };
 
@@ -224,6 +233,24 @@ export default function FlowPage() {
             }`}
           >
             {isActive ? "Active" : "Inactive"}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "isDisabled",
+      header: "Disabled",
+      Cell: ({ row }) => {
+        const isDisabled = row.original.isDisabled;
+        return (
+          <span
+            className={`px-2 py-1 text-xs font-medium rounded-full ${
+              isDisabled
+                ? "bg-red-100 text-red-800"
+                : "bg-green-100 text-green-800"
+            }`}
+          >
+            {isDisabled ? "Disabled" : "Enabled"}
           </span>
         );
       },
@@ -282,6 +309,16 @@ export default function FlowPage() {
         handleToggleStatus(flow);
         closeMenu();
       },
+    },
+    {
+      key: "toggleDisabled",
+      label: (flow: Flow) => flow.isDisabled ? "Enable" : "Disable",
+      icon: (flow: Flow) => flow.isDisabled ? <Play className="size-4" /> : <Pause className="size-4" />,
+      onClick: (flow: Flow, closeMenu: () => void) => {
+        handleToggleDisabled(flow);
+        closeMenu();
+      },
+      className: "text-amber-600",
     },
     {
       key: "delete",

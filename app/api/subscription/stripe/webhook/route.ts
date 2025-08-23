@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import Stripe from "stripe"
+import { getTotalContactsOrFlows } from "@/lib/subscription-utils"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-06-30.basil",
@@ -64,9 +65,6 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     const planPeriod = session.metadata.planPeriod
     const endDate = new Date(session.metadata.endDate)
 
-    console.log(planPeriod, "planPeriod")
-    console.log(session.metadata, "session.metadata")
-    
     if (userId && planId) {
       const isAddon = session.metadata.isAddon === "true"
       const months = parseInt(session.metadata.months || "1")
@@ -82,20 +80,25 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       const existingPlans = (userPlans?.plans as any[]) || []
       
       if (isAddon) {
-        const addonPlan = existingPlans.find((p: any) => p.planName === planName)
+        const addonPlan = existingPlans.find((p: any) => p.planName === planName && new Date(p.endDate) > new Date())
         if (addonPlan) {
+          const addonMaxLimit = getTotalContactsOrFlows(planName, quantity + addonPlan.quantity)
+
           addonPlan.quantity = addonPlan.quantity + quantity
           addonPlan.endDate = endDate
           await prisma.user.update({
             where: { id: userId },
             data: {
               plans: existingPlans,
+              ...(addonMaxLimit || {}),
             },
           })
           return
         }
+
         // For addons, remove the existing plan with same name and add a new one
         const filteredPlans = existingPlans.filter((p: any) => p.planName !== planName)
+        const addonMaxLimit = getTotalContactsOrFlows(planName, quantity)
         const newPlans = [...filteredPlans, {
           planName: planName,
           period: null,
@@ -103,11 +106,12 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
           quantity: quantity,
           endDate: endDate,
         }]
-        
+          
         await prisma.user.update({
           where: { id: userId },
           data: {
             plans: newPlans,
+            ...(addonMaxLimit || {}),
           },
         })
         
