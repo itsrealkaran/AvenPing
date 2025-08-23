@@ -173,19 +173,52 @@ export async function POST(request: Request) {
         );
       }
 
-      // Send all data to the message API, let it handle personalization
-      axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/whatsapp/messages/send-template-message`, {
-        contacts: selectedContacts,
-        templateName,
-        templateData,
-        variables,
-        campaignId: campaign.id,
-        phoneNumberId: phoneNumber.phoneNumberId
-      }, {
-        headers: {
-          Cookie: `Authorization=${token}`,
-        },
-      });
+      try {
+        // Send all data to the message API, let it handle personalization
+        const messageResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/whatsapp/messages/send-template-message`, {
+          contacts: selectedContacts,
+          templateName,
+          templateData,
+          variables,
+          campaignId: campaign.id,
+          campaignName: name,
+          phoneNumberId: phoneNumber.phoneNumberId
+        }, {
+          headers: {
+            Cookie: `Authorization=${token}`,
+          },
+        });
+
+        console.log("Message creation response:", messageResponse.data);
+
+        // Update campaign status to COMPLETED if messages were sent successfully
+        if (messageResponse.status === 200) {
+          await prisma.whatsAppCampaign.update({
+            where: { id: campaign.id },
+            data: {
+              status: "COMPLETED",
+              completedAt: new Date(),
+            },
+          });
+        }
+      } catch (messageError) {
+        console.error("Error creating messages:", messageError);
+        
+        // Update campaign status to FAILED if message creation failed
+        await prisma.whatsAppCampaign.update({
+          where: { id: campaign.id },
+          data: {
+            status: "FAILED",
+            completedAt: new Date(),
+          },
+        });
+
+        // Return error response
+        return NextResponse.json({
+          error: "Campaign created but failed to send messages",
+          details: messageError.response?.data || messageError.message
+        }, { status: 500 });
+      }
     }
 
     return NextResponse.json(campaign, { status: 201 });
