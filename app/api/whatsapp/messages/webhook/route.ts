@@ -124,19 +124,30 @@ export async function POST(req: NextRequest) {
                         status: mappedStatus,
                       },
                     })
+                    // First, get the current recipientStats to append to it
+                    const currentCampaign = await prisma.whatsAppCampaign.findUnique({
+                      where: { id: recipient.activeCampaignId },
+                      select: { recipientStats: true }
+                    });
+
+                    const currentStats = Array.isArray(currentCampaign?.recipientStats) 
+                      ? currentCampaign.recipientStats 
+                      : [];
+
                     await prisma.whatsAppCampaign.update({
                       where: {
                         id: recipient.activeCampaignId,
                       },
                       data: {
-                        recipientStats: {
-                          push: {
+                        recipientStats: [
+                          ...currentStats,
+                          {
                             id: recipient.id,
                             name: recipient.name || "",
                             phoneNumber: recipient.phoneNumber,
                             status: mappedStatus,
                           }
-                        }
+                        ]
                       }
                     });
                   }
@@ -303,21 +314,34 @@ export async function POST(req: NextRequest) {
                       status: "REPLIED",
                     },
                   });
+                  
+                  // First, get the current recipientStats to append to it
+                  const currentCampaign = await prisma.whatsAppCampaign.findUnique({
+                    where: { id: recipient.activeCampaignId },
+                    select: { recipientStats: true }
+                  });
+
+                  const currentStats = Array.isArray(currentCampaign?.recipientStats) 
+                    ? currentCampaign.recipientStats 
+                    : [];
+
                   await prisma.whatsAppCampaign.update({
                     where: {
                       id: recipient.activeCampaignId,
                     },
                     data: {
-                      recipientStats: {
-                        push: {
+                      recipientStats: [
+                        ...currentStats,
+                        {
                           id: recipient.id,
                           name: recipient.name || "",
                           phoneNumber: recipient.phoneNumber,
                           status: "REPLIED",
                         }
-                      }
-                    }});
-                  }
+                      ]
+                    }
+                  });
+                }
 
                 // Process flow automation for existing recipient
                 if (recipient && whatsAppPhoneNumber.account.user?.id && !isOptedOut) {

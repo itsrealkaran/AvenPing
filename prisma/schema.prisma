@@ -173,7 +173,7 @@ model WhatsAppCampaign {
   mediaUrl       String?
   templateName   String?
 
-  recipientStats Json? // [ { id: string, name: string, recipientNumber: string, status: string } ]
+  recipientStats Json[] // [ { id: string, name: string, recipientNumber: string, status: string } ]
   accountId      String
   account        WhatsAppAccount  @relation(fields: [accountId], references: [id])
   status         String           @default("COMPLETED") // DRAFT, SCHEDULED, ACTIVE, PAUSED, COMPLETED, FAILED
