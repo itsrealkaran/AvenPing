@@ -72,9 +72,11 @@ export default function ContactsPage() {
     createContact,
     updateContact,
     deleteContacts,
+    toggleContactStatus,
     isCreating,
     isUpdating,
     isDeleting,
+    isTogglingStatus,
     createError,
     updateError,
     deleteError,
@@ -136,13 +138,12 @@ export default function ContactsPage() {
     setShowAddModal(true);
   };
 
-  const handleToggleStatus = (contact: Contact) => {
-    const newStatus = contact.status === "Active" ? "Inactive" : "Active";
-    // setContacts(
-    //   contacts.map((c) =>
-    //     c.id === contact.id ? { ...c, status: newStatus } : c
-    //   )
-    // );
+  const handleToggleStatus = async (contact: Contact) => {
+    try {
+      await toggleContactStatus(contact.id);
+    } catch (error) {
+      console.error("Failed to toggle contact status:", error);
+    }
   };
 
   const handleCloseModal = () => {
@@ -199,8 +200,8 @@ export default function ContactsPage() {
       },
     },
     {
-      accessorKey: "status",
-      header: "Status",
+      accessorKey: "Activity",
+      header: "Activity",
       Cell: ({ row }) => {
         const value = row.original.status;
         return (
@@ -218,6 +219,26 @@ export default function ContactsPage() {
             }`}
           >
             {value || "Unknown"}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      Cell: ({ row }) => {
+        const contact = row.original;
+        const isDisabled = contact.isDisabled;
+        
+        return (
+          <span
+            className={`px-2 py-1 text-xs font-medium rounded-full ${
+              isDisabled
+                ? "bg-red-100 text-red-800"
+                : "bg-green-100 text-green-800"
+            }`}
+          >
+            {isDisabled ? "Disabled" : "Active"}
           </span>
         );
       },
@@ -258,14 +279,8 @@ export default function ContactsPage() {
     },
     {
       key: "toggle",
-      label: (row: Contact) =>
-        row.status === "Active" ? "Deactivate" : "Activate",
-      icon: (row: Contact) =>
-        row.status === "Active" ? (
-          <Pause className="size-4" />
-        ) : (
-          <Play className="size-4" />
-        ),
+      label: (contact) => contact.isDisabled ? "Enable" : "Disable",
+      icon: (contact) => contact.isDisabled ? <Play className="size-4" /> : <Pause className="size-4" />,
       onClick: (contact, closeMenu) => {
         handleToggleStatus(contact);
         closeMenu();
@@ -316,7 +331,7 @@ export default function ContactsPage() {
           deleteButtonLabel="Delete Contact"
           searchPlaceholder="Search contacts..."
           toolbarActions={toolbarActions}
-          isSaving={isCreating || isUpdating || isDeleting}
+          isSaving={isCreating || isUpdating || isDeleting || isTogglingStatus}
         />
       </Body>
 

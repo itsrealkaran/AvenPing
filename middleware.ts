@@ -104,6 +104,13 @@ export async function middleware(request: NextRequest) {
         redirectResponse.headers.set('x-middleware-cache', 'no-cache');
         return redirectResponse;
       }
+
+      if (session.plan === "BASIC" && pathname.startsWith('/flows')) {
+        const url = new URL('/flow-lock', request.url);
+        const redirectResponse = NextResponse.redirect(url);
+        redirectResponse.headers.set('x-middleware-cache', 'no-cache');
+        return redirectResponse;
+      }
     }
 
     // If session exists and WhatsApp check passes, allow the request

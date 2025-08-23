@@ -118,10 +118,12 @@ export function CreateCampaignModal({
     scheduleType: "immediate",
   });
 
-  const { attributes, contacts: allContacts } = useContacts();
+  let { attributes, contacts: allContacts } = useContacts();
   const { templates, selectedWhatsAppAccountId, setSelectedWhatsAppAccountId } =
     useTemplates();
   const { userInfo } = useUser();
+
+  allContacts = allContacts?.filter((contact) => !contact.isDisabled);
 
   // Media upload functions
   const handleMediaUpload = async (variableId: string, file: File) => {

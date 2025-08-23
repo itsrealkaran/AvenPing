@@ -5,6 +5,7 @@ import Razorpay from "razorpay"
 import { getSession } from "@/lib/jwt"
 import { PlanPeriod } from "@prisma/client"
 import { getPricingDetails } from "@/lib/get-pricing-details"
+import { getTotalContactsOrFlows } from "@/lib/subscription-utils"
 import crypto from "crypto"
 
 interface PriceJson {
@@ -192,8 +193,25 @@ export async function GET(request: NextRequest) {
         const existingPlans = (userPlans?.plans as any[]) || []
         
         if (isAddon) {
+          const addonPlan = existingPlans.find((p: any) => p.planName === planName && new Date(p.endDate) > new Date())
+          if (addonPlan) {
+            const addonMaxLimit = getTotalContactsOrFlows(planName, quantity + addonPlan.quantity)
+
+            addonPlan.quantity = addonPlan.quantity + quantity
+            addonPlan.endDate = endDate
+            await prisma.user.update({
+              where: { id: userId },
+              data: {
+                plans: existingPlans,
+                ...(addonMaxLimit || {}),
+              },
+            })
+            return
+          }
+
           // For addons, remove the existing plan with same name and add a new one
           const filteredPlans = existingPlans.filter((p: any) => p.planName !== planName)
+          const addonMaxLimit = getTotalContactsOrFlows(planName, quantity)
           const newPlans = [...filteredPlans, {
             planName: planName || "Unknown",
             period: null,
@@ -206,6 +224,7 @@ export async function GET(request: NextRequest) {
             where: { id: userId },
             data: {
               plans: newPlans,
+              ...(addonMaxLimit || {}),
             },
           })
           

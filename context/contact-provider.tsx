@@ -4,6 +4,7 @@ import { createContext, useContext, ReactNode, useState, useCallback, useEffect 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useUser } from './user-context';
+import { toast } from 'sonner';
 
 export interface Contact {
   id: string;
@@ -19,6 +20,7 @@ export interface Contact {
   labels?: Label[];
   attributeValues?: ContactAttribute[];
   source?: string;
+  isDisabled?: boolean;
 }
 
 interface ContactAttribute {
@@ -59,6 +61,7 @@ interface ContactContextType {
   updateContact: (data: UpdateContactData) => Promise<Contact>;
   deleteContacts: (ids: string[]) => Promise<void>;
   bulkImportContacts: (contacts: CreateContactData[]) => Promise<{ success: number; failed: number; errors?: Array<{ index: number; error: string }> }>;
+  toggleContactStatus: (contactId: string) => Promise<void>;
   attributes: ContactAttribute[] | undefined;
   isLoadingAttributes: boolean;
   errorAttributes: Error | null;
@@ -69,10 +72,12 @@ interface ContactContextType {
   isUpdating: boolean;
   isDeleting: boolean;
   isImporting: boolean;
+  isTogglingStatus: boolean;
   createError: Error | null;
   updateError: Error | null;
   deleteError: Error | null;
   importError: Error | null;
+  toggleStatusError: Error | null;
   isCreatingAttribute: boolean;
   isUpdatingAttribute: boolean;
   isDeletingAttribute: boolean;
@@ -138,6 +143,9 @@ export function ContactProvider({ children }: { children: ReactNode }) {
     onSuccess: () => {
       // Invalidate and refetch contacts data
       queryClient.invalidateQueries({ queryKey: ['contacts', phoneNumberId] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response.data.error);
     },
   });
 
@@ -220,6 +228,22 @@ export function ContactProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Toggle contact status mutation
+  const toggleStatusMutation = useMutation({
+    mutationFn: async (contactId: string) => {
+      const response = await axios.put('/api/contacts/toggle-status', { contactId });
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate and refetch contacts data
+      queryClient.invalidateQueries({ queryKey: ['contacts', phoneNumberId] });
+      toast.success('Contact status updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Failed to update contact status');
+    },
+  });
+
   const value: ContactContextType = {
     // Contacts
     contacts,
@@ -237,14 +261,19 @@ export function ContactProvider({ children }: { children: ReactNode }) {
     bulkImportContacts: async (contacts: CreateContactData[]) => {
       return await bulkImportContactsMutation.mutateAsync(contacts);
     },
+    toggleContactStatus: async (contactId: string) => {
+      await toggleStatusMutation.mutateAsync(contactId);
+    },
     isCreating: createContactMutation.isPending,
     isUpdating: updateContactMutation.isPending,
     isDeleting: deleteContactsMutation.isPending,
     isImporting: bulkImportContactsMutation.isPending,
+    isTogglingStatus: toggleStatusMutation.isPending,
     createError: createContactMutation.error as Error | null,
     updateError: updateContactMutation.error as Error | null,
     deleteError: deleteContactsMutation.error as Error | null,
     importError: bulkImportContactsMutation.error as Error | null,
+    toggleStatusError: toggleStatusMutation.error as Error | null,
 
     // Attributes
     attributes,

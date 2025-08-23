@@ -3,6 +3,7 @@ import { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import Razorpay from "razorpay"
 import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils"
+import { getTotalContactsOrFlows } from "@/lib/subscription-utils"
 
 export async function POST(request: NextRequest) {
   try {
@@ -191,14 +192,24 @@ async function handleOrderPaid(order: any) {
     const planId = order.notes?.planId as string
     const planName = order.notes?.planName as string
     const planPeriod = order.notes?.planPeriod as string
-    let expiryDate;
+    const isAddon = order.notes?.isAddon === "true"
+    const months = parseInt(order.notes?.months as string || "1")
+    const quantity = parseInt(order.notes?.quantity as string || "1")
     
-    if (planPeriod === "MONTHLY") {
-      expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) 
-    } else if (planPeriod === "YEARLY") {
-      expiryDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)        
+    let endDate;
+    
+    if (isAddon) {
+      // For addons, calculate end date based on months
+      endDate = new Date(Date.now() + (months || 1) * 30 * 24 * 60 * 60 * 1000)
     } else {
-      return NextResponse.json({ message: "Invalid plan period" }, { status: 400 })
+      // For regular plans, calculate based on plan period
+      if (planPeriod === "MONTHLY") {
+        endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) 
+      } else if (planPeriod === "YEARLY") {
+        endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)        
+      } else {
+        return NextResponse.json({ message: "Invalid plan period" }, { status: 400 })
+      }
     }
 
     if (userId && planId) {
@@ -212,52 +223,92 @@ async function handleOrderPaid(order: any) {
 
       const existingPlans = (userPlans?.plans as any[]) || []
       
-      // Remove existing BASIC, PREMIUM, ENTERPRISE plans
-      const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
-      const premiumPlanIndex = existingPlans.findIndex((p: any) => p.planName === "PREMIUM")
-      const enterprisePlanIndex = existingPlans.findIndex((p: any) => p.planName === "ENTERPRISE")
-      
-      if (basicPlanIndex !== -1) {
-        existingPlans.splice(basicPlanIndex, 1)
-      }
-      if (premiumPlanIndex !== -1) {
-        existingPlans.splice(premiumPlanIndex, 1)
-      }
-      if (enterprisePlanIndex !== -1) {
-        existingPlans.splice(enterprisePlanIndex, 1)
-      }
-      
-      // Add the new plan
-      const newPlans = [...existingPlans, {
-        planName: planName,
-        period: planPeriod,
-        isAddOn: false,
-        endDate: expiryDate,
-      }]
+      if (isAddon) {
+        const addonPlan = existingPlans.find((p: any) => p.planName === planName && new Date(p.endDate) > new Date())
+        if (addonPlan) {
+          const addonMaxLimit = getTotalContactsOrFlows(planName, quantity + addonPlan.quantity)
 
-      // Update user's plan
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          plans: newPlans,
-          expiresAt: expiryDate,
-        },
-      })
+          addonPlan.quantity = addonPlan.quantity + quantity
+          addonPlan.endDate = endDate
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              plans: existingPlans,
+              ...(addonMaxLimit || {}),
+            },
+          })
+          console.log(`Updated user ${userId} with existing addon ${planName} for ${quantity} × ${months} months`)
+          return
+        }
 
-      // Update subscription status
-      await prisma.subscription.updateMany({
-        where: {
-          userId: userId,
-          endDate: {
-            gte: new Date(),
+        // For addons, remove the existing plan with same name and add a new one
+        const filteredPlans = existingPlans.filter((p: any) => p.planName !== planName)
+        const addonMaxLimit = getTotalContactsOrFlows(planName, quantity)
+        const newPlans = [...filteredPlans, {
+          planName: planName,
+          period: null,
+          isAddOn: true,
+          quantity: quantity,
+          endDate: endDate,
+        }]
+        
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            plans: newPlans,
+            ...(addonMaxLimit || {}),
           },
-        },
-        data: {
-          endDate: expiryDate,
-        },
-      })
+        })
+        
+        console.log(`Updated user ${userId} with addon ${planName} for ${quantity} × ${months} months`)
+      } else {
+        // For regular plans, remove existing BASIC, PREMIUM, ENTERPRISE plans
+        const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
+        const premiumPlanIndex = existingPlans.findIndex((p: any) => p.planName === "PREMIUM")
+        const enterprisePlanIndex = existingPlans.findIndex((p: any) => p.planName === "ENTERPRISE")
+        
+        if (basicPlanIndex !== -1) {
+          existingPlans.splice(basicPlanIndex, 1)
+        }
+        if (premiumPlanIndex !== -1) {
+          existingPlans.splice(premiumPlanIndex, 1)
+        }
+        if (enterprisePlanIndex !== -1) {
+          existingPlans.splice(enterprisePlanIndex, 1)
+        }
+        
+        const newPlans = [...existingPlans, {
+          planName: planName,
+          period: planPeriod,
+          isAddOn: false,
+          quantity: null,
+          endDate: endDate,
+        }]
 
-      console.log(`Order paid for user ${userId}, plan ${planId}`)
+        // Update user's plan
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            plans: newPlans,
+            expiresAt: endDate,
+          },
+        })
+
+        // Update subscription status
+        await prisma.subscription.updateMany({
+          where: {
+            userId: userId,
+            endDate: {
+              gte: new Date(),
+            },
+          },
+          data: {
+            endDate: endDate,
+          },
+        })
+
+        console.log(`Order paid for user ${userId}, plan ${planId}`)
+      }
     }
   } catch (error) {
     console.error("Error handling order paid:", error)

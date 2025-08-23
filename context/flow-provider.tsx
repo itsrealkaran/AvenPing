@@ -17,6 +17,7 @@ export interface Flow {
   date: string;
   triggers: string[];
   steps: any[];
+  isDisabled?: boolean;
 }
 
 // Database Flow type (matches Prisma schema)
@@ -27,6 +28,7 @@ export interface DatabaseFlow {
   automationJson: any[];
   recipientArray: any[];
   status: string;
+  isDisabled?: boolean;
   createdAt: string;
   updatedAt: string;
   accountId: string;
@@ -42,6 +44,7 @@ interface FlowContextType {
   updateFlow: (id: string, flow: Partial<Flow>) => Promise<Flow>;
   deleteFlow: (id: string) => Promise<void>;
   toggleFlowStatus: (id: string) => Promise<void>;
+  toggleFlowDisabled: (id: string) => Promise<void>;
 
   // Flow Builder Operations
   saveFlowFromBuilder: (flow: Flow) => Promise<Flow>;
@@ -69,6 +72,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
       name: dbFlow.name,
       status: dbFlow.status,
       date: dbFlow.createdAt,
+      isDisabled: dbFlow.isDisabled || false,
       triggers:
         Array.isArray(dbFlow.automationJson) && dbFlow.automationJson.length > 0
           ? dbFlow.automationJson[0]?.triggers || []
@@ -204,6 +208,30 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
       } catch (err: any) {
         const errorMessage =
           err.response?.data?.error || "Failed to toggle flow status";
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      }
+    },
+    [flows]
+  );
+
+  // Toggle flow disabled status
+  const toggleFlowDisabled = useCallback(
+    async (id: string): Promise<void> => {
+      try {
+        setError(null);
+        const flow = flows.find((f) => f.id === id);
+        if (!flow) throw new Error("Flow not found");
+
+        const response = await axios.put("/api/whatsapp/flow/toggle-status", {
+          flowId: id,
+        });
+
+        const updatedFlow = convertDatabaseFlowToFlow(response.data.flow);
+        setFlows((prev) => prev.map((f) => (f.id === id ? updatedFlow : f)));
+      } catch (err: any) {
+        const errorMessage =
+          err.response?.data?.error || "Failed to toggle flow disabled status";
         setError(errorMessage);
         throw new Error(errorMessage);
       }
@@ -379,6 +407,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
     updateFlow,
     deleteFlow,
     toggleFlowStatus,
+    toggleFlowDisabled,
     saveFlowFromBuilder,
     getFlowById,
     reconstructFlowData,
