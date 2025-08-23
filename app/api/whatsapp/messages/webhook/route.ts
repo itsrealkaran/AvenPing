@@ -130,9 +130,9 @@ export async function POST(req: NextRequest) {
                       select: { recipientStats: true }
                     });
 
-                    const currentStats = Array.isArray(currentCampaign?.recipientStats) 
-                      ? currentCampaign.recipientStats 
-                      : [];
+                  const currentStats = Array.isArray(currentCampaign?.recipientStats) 
+                    ? (currentCampaign.recipientStats as any[]) 
+                    : [];
 
                     await prisma.whatsAppCampaign.update({
                       where: {
@@ -322,7 +322,7 @@ export async function POST(req: NextRequest) {
                   });
 
                   const currentStats = Array.isArray(currentCampaign?.recipientStats) 
-                    ? currentCampaign.recipientStats 
+                    ? (currentCampaign.recipientStats as any[]) 
                     : [];
 
                   await prisma.whatsAppCampaign.update({
