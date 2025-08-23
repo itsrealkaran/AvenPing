@@ -338,7 +338,10 @@ export function CreateTemplateModal({
   ) => {
     const target = e.target as HTMLInputElement | HTMLTextAreaElement;
     setSelectedText(
-      target.value.substring(target.selectionStart || 0, target.selectionEnd || 0)
+      target.value.substring(
+        target.selectionStart || 0,
+        target.selectionEnd || 0
+      )
     );
     setCursorPosition({
       start: target.selectionStart || 0,

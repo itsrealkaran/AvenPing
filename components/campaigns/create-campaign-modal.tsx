@@ -11,6 +11,10 @@ import {
   Clock,
   Check,
   Eye,
+  Upload,
+  Image as ImageIcon,
+  Video,
+  File,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +24,8 @@ import { useTemplates } from "@/context/template-provider";
 import { useUser } from "@/context/user-context";
 import { toast } from "sonner";
 import SearchableDropdown from "../ui/searchable-dropdown";
+import MessageBubble from "../messages/message-bubble";
+import axios from "axios";
 
 interface Contact {
   id: string;
@@ -45,6 +51,7 @@ interface TemplateComponent {
   example?: {
     header_text?: string[];
     body_text?: string[][];
+    header_media?: string[];
   };
 }
 
@@ -72,6 +79,18 @@ interface VariableData {
   attributeName?: string;
   fallbackValue: string;
   componentType: "HEADER" | "BODY";
+  format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT"; // Add format support
+  mediaUrl?: string; // Add media URL support for media variables
+  mediaId?: string; // WhatsApp media ID for uploaded files
+  mediaFile?: File; // Local file for preview
+  mediaPreview?: string; // Blob URL for preview
+}
+
+interface ExtractedVariable {
+  index: number;
+  original: string;
+  componentType: "HEADER" | "BODY";
+  format: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT";
 }
 
 const STEPS = [
@@ -103,6 +122,84 @@ export function CreateCampaignModal({
   const { templates, selectedWhatsAppAccountId, setSelectedWhatsAppAccountId } =
     useTemplates();
   const { userInfo } = useUser();
+
+  // Media upload functions
+  const handleMediaUpload = async (variableId: string, file: File) => {
+    try {
+      // Create blob preview
+      const previewUrl = URL.createObjectURL(file);
+
+      // Update variable with file and preview
+      setCampaignData((prev) => ({
+        ...prev,
+        variables: prev.variables.map((v) =>
+          v.id === variableId
+            ? { ...v, mediaFile: file, mediaPreview: previewUrl }
+            : v
+        ),
+      }));
+
+      // Upload to WhatsApp API
+      if (userInfo?.whatsappAccount?.phoneNumbers?.[0]?.phoneNumberId) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append(
+          "phoneNumberId",
+          userInfo.whatsappAccount.phoneNumbers[0].phoneNumberId
+        );
+
+        const response = await axios.post(
+          "/api/whatsapp/upload-file",
+          formData
+        );
+
+        if (response.data.mediaId) {
+          // Update variable with media ID
+          setCampaignData((prev) => ({
+            ...prev,
+            variables: prev.variables.map((v) =>
+              v.id === variableId ? { ...v, mediaId: response.data.mediaId } : v
+            ),
+          }));
+
+          toast.success("Media uploaded successfully!");
+        }
+      }
+    } catch (error) {
+      console.error("Media upload error:", error);
+      toast.error("Failed to upload media");
+    }
+  };
+
+  const handleMediaRemove = (variableId: string) => {
+    setCampaignData((prev) => ({
+      ...prev,
+      variables: prev.variables.map((v) =>
+        v.id === variableId
+          ? {
+              ...v,
+              mediaFile: undefined,
+              mediaPreview: undefined,
+              mediaId: undefined,
+              mediaUrl: "",
+            }
+          : v
+      ),
+    }));
+  };
+
+  const getMediaIcon = (format: string) => {
+    switch (format) {
+      case "IMAGE":
+        return <ImageIcon className="h-4 w-4" />;
+      case "VIDEO":
+        return <Video className="h-4 w-4" />;
+      case "DOCUMENT":
+        return <File className="h-4 w-4" />;
+      default:
+        return <File className="h-4 w-4" />;
+    }
+  };
 
   // Set the selected WhatsApp account ID when user info is available
   useEffect(() => {
@@ -137,29 +234,53 @@ export function CreateCampaignModal({
   );
 
   // Extract variables from template - separate header and body
-  const headerVariables =
+  const headerVariables: ExtractedVariable[] =
     selectedTemplate?.components
-      .filter((comp) => comp.type === "HEADER" && comp.text)
-      .flatMap((comp) => {
-        const matches = comp.text?.match(/{{(\d+)}}/g) || [];
-        return matches.map((match) => {
-          const index = parseInt(match.match(/\d+/)![0]);
-          return { index, original: match, componentType: "HEADER" };
-        });
+      .filter((comp) => comp.type === "HEADER")
+      .flatMap((comp): ExtractedVariable[] => {
+        if (comp.format === "TEXT" && comp.text) {
+          // Text header variables
+          const matches = comp.text.match(/{{(\d+)}}/g) || [];
+          return matches.map((match) => {
+            const index = parseInt(match.match(/\d+/)![0]);
+            return {
+              index,
+              original: match,
+              componentType: "HEADER" as const,
+              format: "TEXT" as const,
+            };
+          });
+        } else if (comp.format && comp.format !== "TEXT") {
+          // Media header variables (IMAGE, VIDEO, DOCUMENT)
+          return [
+            {
+              index: 1, // Media components typically have index 1
+              original: "{{1}}",
+              componentType: "HEADER" as const,
+              format: comp.format as "IMAGE" | "VIDEO" | "DOCUMENT",
+            },
+          ];
+        }
+        return [];
       })
       .filter(
         (v, i, arr) => arr.findIndex((item) => item.index === v.index) === i
       )
       .sort((a, b) => a.index - b.index) || [];
 
-  const bodyVariables =
+  const bodyVariables: ExtractedVariable[] =
     selectedTemplate?.components
       .filter((comp) => comp.type === "BODY" && comp.text)
-      .flatMap((comp) => {
+      .flatMap((comp): ExtractedVariable[] => {
         const matches = comp.text?.match(/{{(\d+)}}/g) || [];
         return matches.map((match) => {
           const index = parseInt(match.match(/\d+/)![0]);
-          return { index, original: match, componentType: "BODY" };
+          return {
+            index,
+            original: match,
+            componentType: "BODY" as const,
+            format: "TEXT" as const,
+          };
         });
       })
       .filter(
@@ -180,6 +301,11 @@ export function CreateCampaignModal({
         attributeName: "",
         fallbackValue: "",
         componentType: v.componentType,
+        format: v.format || "TEXT", // Include format
+        mediaUrl: v.format && v.format !== "TEXT" ? "" : undefined, // Include mediaUrl for media variables
+        mediaId: undefined, // Initialize mediaId
+        mediaFile: undefined, // Initialize mediaFile
+        mediaPreview: undefined, // Initialize mediaPreview
       }));
       setCampaignData((prev) => ({ ...prev, variables: newVariables }));
     }
@@ -206,15 +332,21 @@ export function CreateCampaignModal({
     if (currentStep === 3) {
       // Check if all variables have values or are configured with attributes
       const hasInvalidVariables = campaignData.variables.some((variable) => {
-        if (variable.useAttribute) {
-          return (
-            !variable.attributeName ||
-            (variable.attributeName !== "name" &&
-              variable.attributeName !== "phoneNumber" &&
-              !variable.fallbackValue)
-          );
+        if (variable.format === "TEXT") {
+          // Text variables
+          if (variable.useAttribute) {
+            return (
+              !variable.attributeName ||
+              (variable.attributeName !== "name" &&
+                variable.attributeName !== "phoneNumber" &&
+                !variable.fallbackValue)
+            );
+          }
+          return !variable.value && !variable.fallbackValue;
+        } else {
+          // Media variables (IMAGE, VIDEO, DOCUMENT) - only need uploaded media
+          return !variable.mediaId;
         }
-        return !variable.value && !variable.fallbackValue;
       });
 
       if (hasInvalidVariables) {
@@ -315,43 +447,65 @@ export function CreateCampaignModal({
     let previewText = "";
 
     // Process header if exists
-    if (headerComponent?.text) {
-      let headerText = headerComponent.text;
-      campaignData.variables
-        .filter((variable) => variable.componentType === "HEADER")
-        .forEach((variable) => {
-          const placeholder = `{{${variable.variableIndex}}}`;
-          let value = "";
+    if (headerComponent) {
+      if (headerComponent.format === "TEXT" && headerComponent.text) {
+        // Text header
+        let headerText = headerComponent.text;
+        campaignData.variables
+          .filter(
+            (variable) =>
+              variable.componentType === "HEADER" && variable.format === "TEXT"
+          )
+          .forEach((variable) => {
+            const placeholder = `{{${variable.variableIndex}}}`;
+            let value = "";
 
-          if (variable.useAttribute && variable.attributeName) {
-            if (variable.attributeName === "name") {
-              value = "[Name]";
-            } else if (variable.attributeName === "phoneNumber") {
-              value = "[Phone Number]";
+            if (variable.useAttribute && variable.attributeName) {
+              if (variable.attributeName === "name") {
+                value = "[Name]";
+              } else if (variable.attributeName === "phoneNumber") {
+                value = "[Phone Number]";
+              } else {
+                // Custom attribute
+                const attr = attributes?.find(
+                  (attr) => attr.name === variable.attributeName
+                );
+                value = `[${attr?.name || variable.attributeName}]`;
+              }
             } else {
-              // Custom attribute
-              const attr = attributes?.find(
-                (attr) => attr.name === variable.attributeName
-              );
-              value = `[${attr?.name || variable.attributeName}]`;
+              value =
+                variable.value ||
+                variable.fallbackValue ||
+                `Variable ${variable.variableIndex}`;
             }
-          } else {
-            value =
-              variable.value ||
-              variable.fallbackValue ||
-              `Variable ${variable.variableIndex}`;
-          }
 
-          headerText = headerText.replace(placeholder, value);
-        });
-      previewText += `<strong>${headerText}</strong>\n\n`;
+            headerText = headerText.replace(placeholder, value);
+          });
+        previewText += `${headerText}\n\n`;
+      } else if (headerComponent.format && headerComponent.format !== "TEXT") {
+        // Media header
+        const mediaVariable = campaignData.variables.find(
+          (v) =>
+            v.componentType === "HEADER" && v.format === headerComponent.format
+        );
+        if (mediaVariable?.mediaId) {
+          previewText += `📎 ${headerComponent.format}: [Uploaded Media ID: ${mediaVariable.mediaId}]\n\n`;
+        } else if (mediaVariable?.mediaPreview) {
+          previewText += `📎 ${headerComponent.format}: [Local Preview Available]\n\n`;
+        } else {
+          previewText += `📎 ${headerComponent.format}: [Media Required]\n\n`;
+        }
+      }
     }
 
     // Process body if exists
     if (bodyComponent?.text) {
       let bodyText = bodyComponent.text;
       campaignData.variables
-        .filter((variable) => variable.componentType === "BODY")
+        .filter(
+          (variable) =>
+            variable.componentType === "BODY" && variable.format === "TEXT"
+        )
         .forEach((variable) => {
           const placeholder = `{{${variable.variableIndex}}}`;
           let value = "";
@@ -762,119 +916,226 @@ export function CreateCampaignModal({
                           <div className="flex items-center justify-between mb-3">
                             <Label className="text-sm font-medium text-gray-700">
                               Variable {variable.variableIndex}
+                              {variable.format &&
+                                variable.format !== "TEXT" && (
+                                  <span className="ml-2 text-xs text-gray-500 capitalize">
+                                    ({variable.format.toLowerCase()})
+                                  </span>
+                                )}
                             </Label>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                id={`use-attribute-${variable.variableIndex}`}
-                                checked={variable.useAttribute}
-                                onChange={(e) =>
-                                  handleVariableChange(
-                                    variable.id,
-                                    "useAttribute",
-                                    e.target.checked
-                                  )
-                                }
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              <Label
-                                htmlFor={`use-attribute-${variable.variableIndex}`}
-                                className="text-xs text-gray-600"
-                              >
-                                Use Attribute
-                              </Label>
-                            </div>
-                          </div>
-
-                          {variable.useAttribute ? (
-                            <div className="space-y-3">
-                              <div>
-                                <Label className="text-xs text-gray-600 block mb-1">
-                                  Select Attribute
-                                </Label>
-                                <SearchableDropdown
-                                  variant="outline"
-                                  items={[
-                                    // Built-in attributes
-                                    {
-                                      id: "name",
-                                      label: "Name",
-                                      value: "name",
-                                      category: "built-in",
-                                    },
-                                    {
-                                      id: "phoneNumber",
-                                      label: "Phone Number",
-                                      value: "phoneNumber",
-                                      category: "built-in",
-                                    },
-                                    // Custom attributes
-                                    ...(attributes?.map((attr) => ({
-                                      id: `attr_${attr.name}`,
-                                      label: `${attr.name} (Custom)`,
-                                      value: `attr_${attr.name}`,
-                                      category: "custom",
-                                    })) || []),
-                                  ]}
-                                  onSelect={(item) => {
-                                    // Extract the actual attribute name from the value
-                                    let attributeName = item.value;
-                                    if (item.value.startsWith("attr_")) {
-                                      attributeName = item.value.replace(
-                                        "attr_",
-                                        ""
-                                      );
-                                    }
-                                    handleVariableChange(
-                                      variable.id,
-                                      "attributeName",
-                                      attributeName
-                                    );
-                                  }}
-                                  selectedLabel={
-                                    variable.attributeName
-                                      ? variable.attributeName === "name"
-                                        ? "Name"
-                                        : variable.attributeName ===
-                                          "phoneNumber"
-                                        ? "Phone Number"
-                                        : `${variable.attributeName} (Custom)`
-                                      : null
-                                  }
-                                  placeholder="Select Attribute"
-                                />
-                              </div>
-                              <div>
-                                <Label className="text-xs text-gray-600 block mb-1">
-                                  Fallback Value
-                                </Label>
-                                <Input
-                                  value={variable.fallbackValue}
+                            {variable.format === "TEXT" && (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id={`use-attribute-${variable.variableIndex}`}
+                                  checked={variable.useAttribute}
                                   onChange={(e) =>
                                     handleVariableChange(
                                       variable.id,
-                                      "fallbackValue",
-                                      e.target.value
+                                      "useAttribute",
+                                      e.target.checked
                                     )
                                   }
-                                  placeholder="Value if contact doesn't have this attribute"
-                                  className="text-sm"
+                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                 />
+                                <Label
+                                  htmlFor={`use-attribute-${variable.variableIndex}`}
+                                  className="text-xs text-gray-600"
+                                >
+                                  Use Attribute
+                                </Label>
+                              </div>
+                            )}
+                          </div>
+
+                          {variable.format === "TEXT" ? (
+                            // Text variable configuration
+                            variable.useAttribute ? (
+                              <div className="space-y-3">
+                                <div>
+                                  <Label className="text-xs text-gray-600 block mb-1">
+                                    Select Attribute
+                                  </Label>
+                                  <SearchableDropdown
+                                    variant="outline"
+                                    items={[
+                                      // Built-in attributes
+                                      {
+                                        id: "name",
+                                        label: "Name",
+                                        value: "name",
+                                        category: "built-in",
+                                      },
+                                      {
+                                        id: "phoneNumber",
+                                        label: "Phone Number",
+                                        value: "phoneNumber",
+                                        category: "built-in",
+                                      },
+                                      // Custom attributes
+                                      ...(attributes?.map((attr) => ({
+                                        id: `attr_${attr.name}`,
+                                        label: `${attr.name} (Custom)`,
+                                        value: `attr_${attr.name}`,
+                                        category: "custom",
+                                      })) || []),
+                                    ]}
+                                    onSelect={(item) => {
+                                      // Extract the actual attribute name from the value
+                                      let attributeName = item.value;
+                                      if (item.value.startsWith("attr_")) {
+                                        attributeName = item.value.replace(
+                                          "attr_",
+                                          ""
+                                        );
+                                      }
+                                      handleVariableChange(
+                                        variable.id,
+                                        "attributeName",
+                                        attributeName
+                                      );
+                                    }}
+                                    selectedLabel={
+                                      variable.attributeName
+                                        ? variable.attributeName === "name"
+                                          ? "Name"
+                                          : variable.attributeName ===
+                                            "phoneNumber"
+                                          ? "Phone Number"
+                                          : `${variable.attributeName} (Custom)`
+                                        : null
+                                    }
+                                    placeholder="Select Attribute"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-gray-600 block mb-1">
+                                    Fallback Value
+                                  </Label>
+                                  <Input
+                                    value={variable.fallbackValue}
+                                    onChange={(e) =>
+                                      handleVariableChange(
+                                        variable.id,
+                                        "fallbackValue",
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="Value if contact doesn't have this attribute"
+                                    className="text-sm"
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <Input
+                                value={variable.value}
+                                onChange={(e) =>
+                                  handleVariableChange(
+                                    variable.id,
+                                    "value",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder={`Enter value for variable ${variable.variableIndex}`}
+                                className="text-sm"
+                              />
+                            )
+                          ) : (
+                            // Media variable configuration
+                            <div className="space-y-3">
+                              <div>
+                                <Label className="text-xs text-gray-600 block mb-1">
+                                  Upload Media
+                                </Label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="file"
+                                    id={`media-upload-${variable.id}`}
+                                    accept={
+                                      variable.format === "IMAGE"
+                                        ? "image/*"
+                                        : variable.format === "VIDEO"
+                                        ? "video/*"
+                                        : ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                                    }
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        handleMediaUpload(variable.id, file);
+                                      }
+                                    }}
+                                    className="hidden"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      document
+                                        .getElementById(
+                                          `media-upload-${variable.id}`
+                                        )
+                                        ?.click()
+                                    }
+                                    className="flex items-center gap-2"
+                                  >
+                                    <Upload className="h-4 w-4" />
+                                    Upload {variable.format?.toLowerCase()}
+                                  </Button>
+                                  {variable.mediaFile && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleMediaRemove(variable.id)
+                                      }
+                                      className="text-red-600 hover:text-red-700"
+                                    >
+                                      Remove
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Media Preview */}
+                              {variable.mediaPreview && (
+                                <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                                  <Label className="text-xs text-gray-600 block mb-2">
+                                    Preview
+                                  </Label>
+                                  <div className="flex items-center gap-2">
+                                    {getMediaIcon(variable.format || "TEXT")}
+                                    <span className="text-sm text-gray-700">
+                                      {variable.mediaFile?.name}
+                                    </span>
+                                    {variable.mediaId && (
+                                      <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                                        ✓ Uploaded
+                                      </span>
+                                    )}
+                                  </div>
+                                  {variable.format === "IMAGE" &&
+                                    variable.mediaPreview && (
+                                      <div className="mt-2">
+                                        <img
+                                          src={variable.mediaPreview}
+                                          alt="Preview"
+                                          className="max-w-full h-32 object-contain rounded border"
+                                        />
+                                      </div>
+                                    )}
+                                </div>
+                              )}
+
+                              <div className="text-xs text-gray-500">
+                                Supported formats:{" "}
+                                {variable.format === "IMAGE" && "JPG, PNG, GIF"}
+                                {variable.format === "VIDEO" && "MP4, 3GP"}
+                                {variable.format === "DOCUMENT" &&
+                                  "PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX"}
                               </div>
                             </div>
-                          ) : (
-                            <Input
-                              value={variable.value}
-                              onChange={(e) =>
-                                handleVariableChange(
-                                  variable.id,
-                                  "value",
-                                  e.target.value
-                                )
-                              }
-                              placeholder={`Enter value for variable ${variable.variableIndex}`}
-                              className="text-sm"
-                            />
                           )}
                         </div>
                       ))}
@@ -894,30 +1155,113 @@ export function CreateCampaignModal({
                           </span>
                         </div>
 
-                        <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
-                              <span className="text-white text-xs font-bold">
-                                W
-                              </span>
-                            </div>
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                Your Business
+                        {/* Chat Background Container */}
+                        <div
+                          className="relative rounded-lg overflow-hidden shadow-lg border-2 border-gray-300"
+                          style={{
+                            backgroundImage: "url(/message-bg.png)",
+                            backgroundSize: "200px",
+                            backgroundPosition: "center",
+                            backgroundRepeat: "repeat",
+                            minHeight: "400px",
+                          }}
+                        >
+                          {/* Background Overlay for better readability */}
+                          <div className="absolute inset-0 bg-white/20 pointer-events-none"></div>
+
+                          {/* Chat Header */}
+                          <div className="relative bg-white/90 backdrop-blur-sm border-b border-gray-200 p-3 shadow-sm">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                                <span className="text-white text-sm font-bold">
+                                  W
+                                </span>
                               </div>
-                              <div className="text-xs text-gray-500">
-                                Template Message
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  Your Business
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  Template Message
+                                </div>
                               </div>
                             </div>
                           </div>
 
-                          <div className="bg-green-50 rounded-lg p-3">
-                            <p
-                              className="text-sm text-gray-800 whitespace-pre-wrap"
-                              dangerouslySetInnerHTML={{
-                                __html: generatePreviewMessage(),
-                              }}
-                            ></p>
+                          {/* Chat Messages Area */}
+                          <div className="relative p-4 space-y-4 min-h-[300px]">
+                            {/* Preview Message using MessageBubble */}
+                            {selectedTemplate ? (
+                              (() => {
+                                // Create a mock message object for preview
+                                const previewMessage = {
+                                  id: "preview",
+                                  message: generatePreviewMessage(),
+                                  isOutbound: true,
+                                  status: "SENT" as const,
+                                  createdAt: new Date().toISOString(),
+                                  phoneNumber: "+1234567890",
+                                  whatsAppPhoneNumberId: "preview",
+                                  recipientId: "preview",
+                                  updatedAt: new Date().toISOString(),
+                                  media: (() => {
+                                    // Create media array for media variables
+                                    const mediaArray: Array<{
+                                      type: string;
+                                      mediaId: string;
+                                    }> = [];
+                                    campaignData.variables
+                                      .filter(
+                                        (v) => v.format && v.format !== "TEXT"
+                                      )
+                                      .forEach((variable) => {
+                                        if (
+                                          variable.mediaId ||
+                                          variable.mediaPreview
+                                        ) {
+                                          let mediaType = "image/jpeg";
+                                          if (variable.format === "VIDEO")
+                                            mediaType = "video/mp4";
+                                          if (variable.format === "DOCUMENT")
+                                            mediaType = "application/pdf";
+
+                                          mediaArray.push({
+                                            type: mediaType,
+                                            mediaId:
+                                              variable.mediaId ||
+                                              variable.mediaPreview ||
+                                              "",
+                                          });
+                                        }
+                                      });
+                                    return mediaArray;
+                                  })(),
+                                  mediaIds: [],
+                                  templateData:
+                                    selectedTemplate?.components
+                                      .filter((comp) => comp.text)
+                                      .map((comp) => ({
+                                        text: comp.text || "",
+                                        type: comp.type,
+                                        format: comp.format,
+                                      })) || [],
+                                  interactiveJson: [],
+                                };
+
+                                return (
+                                  <MessageBubble message={previewMessage} />
+                                );
+                              })()
+                            ) : (
+                              <div className="flex items-center justify-center h-64 text-gray-500">
+                                <div className="text-center">
+                                  <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                  <p className="text-sm">
+                                    Select a template to see preview
+                                  </p>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -928,17 +1272,26 @@ export function CreateCampaignModal({
                           <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                           <span>
                             {campaignData.variables.some((variable) => {
-                              if (variable.useAttribute) {
+                              if (variable.format === "TEXT") {
+                                // Text variables
+                                if (variable.useAttribute) {
+                                  return (
+                                    !variable.attributeName ||
+                                    (variable.attributeName !== "name" &&
+                                      variable.attributeName !==
+                                        "phoneNumber" &&
+                                      !variable.fallbackValue)
+                                  );
+                                }
                                 return (
-                                  !variable.attributeName ||
-                                  (variable.attributeName !== "name" &&
-                                    variable.attributeName !== "phoneNumber" &&
-                                    !variable.fallbackValue)
+                                  !variable.value && !variable.fallbackValue
                                 );
+                              } else {
+                                // Media variables - only need uploaded media
+                                return !variable.mediaId;
                               }
-                              return !variable.value && !variable.fallbackValue;
                             })
-                              ? "Configure all template variables or provide fallback values to continue"
+                              ? "Configure all template variables or provide fallback values"
                               : "All variables configured. You can now proceed to schedule your campaign."}
                           </span>
                         </div>
@@ -1108,15 +1461,21 @@ export function CreateCampaignModal({
                     (currentStep === 2 && !campaignData.templateName) ||
                     (currentStep === 3 &&
                       campaignData.variables.some((variable) => {
-                        if (variable.useAttribute) {
-                          return (
-                            !variable.attributeName ||
-                            (variable.attributeName !== "name" &&
-                              variable.attributeName !== "phoneNumber" &&
-                              !variable.fallbackValue)
-                          );
+                        if (variable.format === "TEXT") {
+                          // Text variables
+                          if (variable.useAttribute) {
+                            return (
+                              !variable.attributeName ||
+                              (variable.attributeName !== "name" &&
+                                variable.attributeName !== "phoneNumber" &&
+                                !variable.fallbackValue)
+                            );
+                          }
+                          return !variable.value && !variable.fallbackValue;
+                        } else {
+                          // Media variables - only need uploaded media
+                          return !variable.mediaId;
                         }
-                        return !variable.value && !variable.fallbackValue;
                       }))
                   }
                 >

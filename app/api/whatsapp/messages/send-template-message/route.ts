@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
         
         variables.forEach((variable: any) => {
           let paramValue = variable.value || variable.fallbackValue || "";
+          let paramType = "text";
           
           if (variable.useAttribute && variable.attributeName) {
             if (variable.attributeName === "name") {
@@ -65,9 +66,24 @@ export async function POST(request: NextRequest) {
             }
           }
           
+          // Handle media variables
+          if (variable.format && variable.format !== "TEXT") {
+            paramType = variable.format.toLowerCase();
+            // For media, only use mediaId (uploaded file) - no fallback
+            paramValue = variable.mediaId || "";
+            
+            // Skip media variables without uploaded files
+            if (!variable.mediaId) {
+              console.warn(`Skipping media variable ${variable.id} - no uploaded media`);
+              return;
+            }
+          }
+          
           const param = {
-            type: "text",
-            text: paramValue,
+            type: paramType,
+            ...(paramType === "text" ? { text: paramValue } : { 
+              ...(variable.mediaId ? { id: paramValue } : {})
+            }),
           };
           
           if (variable.componentType === "HEADER") {
@@ -80,17 +96,29 @@ export async function POST(request: NextRequest) {
           const originalComponent = templateData.components.find((comp: any) => comp.type === variable.componentType);
           if (originalComponent) {
             let replacedText = originalComponent.text || "";
-            const placeholder = `{{${variable.variableIndex}}}`;
-            replacedText = replacedText.replace(placeholder, paramValue);
+            let replacedMedia = "";
+            
+            if (variable.format === "TEXT" && originalComponent.text) {
+              // Text replacement
+              const placeholder = `{{${variable.variableIndex}}}`;
+              replacedText = replacedText.replace(placeholder, paramValue);
+            } else if (variable.format && variable.format !== "TEXT") {
+              // Media replacement
+              replacedMedia = paramValue;
+            }
             
             replacedTemplateData.push({
               ...originalComponent,
-              text: replacedText,
+              text: replacedText || undefined,
+              mediaUrl: replacedMedia || undefined,
+              mediaId: variable.mediaId || undefined,
               originalText: originalComponent.text,
+              originalMedia: originalComponent.format !== "TEXT" ? originalComponent.example?.header_media?.[0] : undefined,
               replacedValue: paramValue,
               variableIndex: variable.variableIndex,
               attributeName: variable.attributeName,
-              useAttribute: variable.useAttribute
+              useAttribute: variable.useAttribute,
+              format: variable.format
             });
           }
         });
@@ -109,11 +137,44 @@ export async function POST(request: NextRequest) {
             components: [] as any[],
           },
         };
+        
+        // Add header component if we have header parameters
         if (headerParams.length > 0) {
-          templateStructure.template.components.push({ type: "header", parameters: headerParams });
+          const headerComponent = templateData.components.find((comp: any) => comp.type === "HEADER");
+          if (headerComponent) {
+            if (headerComponent.format === "TEXT") {
+              templateStructure.template.components.push({ 
+                type: "header", 
+                parameters: headerParams.filter(p => p.type === "text")
+              });
+            } else if (headerComponent.format && headerComponent.format !== "TEXT") {
+              // Media header component
+              const mediaParam = headerParams.find(p => p.type !== "text");
+              if (mediaParam) {
+                // For media, we only use uploaded files (mediaId)
+                const mediaVariable = variables.find((v: any) => 
+                  v.componentType === "HEADER" && v.format === headerComponent.format
+                );
+                
+                if (mediaVariable?.mediaId) {
+                  // Use media ID for uploaded files
+                  templateStructure.template.components.push({
+                    type: "header",
+                    parameters: [{ type: mediaParam.type, id: mediaParam.id }]
+                  });
+                }
+                // If no mediaId, skip this component (media is required)
+              }
+            }
+          }
         }
+        
+        // Add body component if we have body parameters
         if (bodyParams.length > 0) {
-          templateStructure.template.components.push({ type: "body", parameters: bodyParams });
+          templateStructure.template.components.push({ 
+            type: "body", 
+            parameters: bodyParams 
+          });
         }
 
         console.log("templateStructure", templateStructure.template.components)
