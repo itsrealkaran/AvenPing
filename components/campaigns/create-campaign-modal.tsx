@@ -386,6 +386,21 @@ export function CreateCampaignModal({
       return;
     }
 
+    // Final validation: ensure all media variables have uploaded files
+    const missingMedia = campaignData.variables.filter(
+      (variable) =>
+        variable.format && variable.format !== "TEXT" && !variable.mediaId
+    );
+
+    if (missingMedia.length > 0) {
+      toast.error(
+        `Please upload media files for the following variables: ${missingMedia
+          .map((v) => `Variable ${v.variableIndex} (${v.format})`)
+          .join(", ")}`
+      );
+      return;
+    }
+
     try {
       // Include the full template data in the campaign data
       const campaignDataWithTemplate = {

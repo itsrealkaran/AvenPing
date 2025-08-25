@@ -6,6 +6,19 @@ export async function POST(request: NextRequest) {
   try {
     const { contacts, templateName, templateData, variables, campaignId, campaignName, phoneNumberId } = await request.json();
 
+    // Validate required fields
+    if (!contacts || !Array.isArray(contacts) || contacts.length === 0) {
+      return NextResponse.json({ error: 'Contacts array is required and must not be empty' }, { status: 400 });
+    }
+
+    if (!templateName || !templateData || !variables || !Array.isArray(variables)) {
+      return NextResponse.json({ error: 'Template name, data, and variables are required' }, { status: 400 });
+    }
+
+    if (!campaignId || !phoneNumberId) {
+      return NextResponse.json({ error: 'Campaign ID and phone number ID are required' }, { status: 400 });
+    }
+
     const session = await getSession();
     console.log("session from send template message", session)
 
@@ -31,6 +44,18 @@ export async function POST(request: NextRequest) {
 
     if (!account) {
       return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+    }
+
+    // Validate that all required media files are uploaded
+    const missingMedia = variables.filter((variable: any) => 
+      variable.format && variable.format !== "TEXT" && !variable.mediaId
+    );
+    
+    if (missingMedia.length > 0) {
+      return NextResponse.json({ 
+        error: 'Missing media files', 
+        details: `The following media variables require uploaded files: ${missingMedia.map((v: any) => `Variable ${v.variableIndex} (${v.format})`).join(', ')}`
+      }, { status: 400 });
     }
 
     let campaignStats: {
@@ -79,12 +104,20 @@ export async function POST(request: NextRequest) {
             }
           }
           
-          const param = {
-            type: paramType,
-            ...(paramType === "text" ? { text: paramValue } : { 
-              ...(variable.mediaId ? { id: paramValue } : {})
-            }),
-          };
+          // Create parameter object based on type
+          let param;
+          if (paramType === "text") {
+            param = {
+              type: "text",
+              text: paramValue
+            };
+          } else {
+            // Media parameter - use WhatsApp media ID
+            param = {
+              type: paramType,
+              id: paramValue
+            };
+          }
           
           if (variable.componentType === "HEADER") {
             headerParams.push(param);
@@ -143,14 +176,18 @@ export async function POST(request: NextRequest) {
           const headerComponent = templateData.components.find((comp: any) => comp.type === "HEADER");
           if (headerComponent) {
             if (headerComponent.format === "TEXT") {
-              templateStructure.template.components.push({ 
-                type: "header", 
-                parameters: headerParams.filter(p => p.type === "text")
-              });
+              // Text header - only add if we have text parameters
+              const textParams = headerParams.filter(p => p.type === "text");
+              if (textParams.length > 0) {
+                templateStructure.template.components.push({ 
+                  type: "header", 
+                  parameters: textParams
+                });
+              }
             } else if (headerComponent.format && headerComponent.format !== "TEXT") {
               // Media header component
               const mediaParam = headerParams.find(p => p.type !== "text");
-              if (mediaParam) {
+              if (mediaParam && mediaParam.id) {
                 // For media, we only use uploaded files (mediaId)
                 const mediaVariable = variables.find((v: any) => 
                   v.componentType === "HEADER" && v.format === headerComponent.format
@@ -160,8 +197,18 @@ export async function POST(request: NextRequest) {
                   // Use media ID for uploaded files
                   templateStructure.template.components.push({
                     type: "header",
-                    parameters: [{ type: mediaParam.type, id: mediaParam.id }]
+                    parameters: [{ 
+                      type: mediaParam.type, 
+                      id: mediaParam.id 
+                    }]
                   });
+                  console.log(`Added media header component for ${contact.phoneNumber}:`, {
+                    type: mediaParam.type,
+                    mediaId: mediaParam.id,
+                    format: headerComponent.format
+                  });
+                } else {
+                  console.warn(`Skipping media header for ${contact.phoneNumber} - no mediaId found`);
                 }
                 // If no mediaId, skip this component (media is required)
               }
@@ -177,9 +224,11 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        console.log("templateStructure", templateStructure.template.components)
+        console.log(`Template structure for ${contact.phoneNumber}:`, JSON.stringify(templateStructure.template.components, null, 2));
 
         // Send message via WhatsApp API
+        console.log(`Sending to WhatsApp API for ${contact.phoneNumber}:`, JSON.stringify(templateStructure, null, 2));
+        
         const response = await fetch(
           `https://graph.facebook.com/v23.0/${phoneNumberId}/messages`,
           {
@@ -192,12 +241,65 @@ export async function POST(request: NextRequest) {
           }
         );
 
+        // Check if the request was successful
+        if (!response.ok) {
+          console.error(`HTTP error for ${contact.phoneNumber}:`, response.status, response.statusText);
+          const errorText = await response.text();
+          console.error(`Error response body:`, errorText);
+          
+          // Create message with error status
+          const message = await prisma.whatsAppMessage.create({
+            data: {
+              templateData: {
+                components: replacedTemplateData,
+                campaignId: campaignId,
+                campaignName: campaignName || "Template Campaign",
+                templateName: templateName,
+                variables: variables,
+                replacedValues: replacedTemplateData.map(item => ({
+                  variableIndex: item.variableIndex,
+                  attributeName: item.attributeName,
+                  useAttribute: item.useAttribute,
+                  replacedValue: item.replacedValue,
+                  originalText: item.originalText,
+                  finalText: item.text
+                }))
+              },
+              recipientId: contact.id,
+              whatsAppPhoneNumberId: account.phoneNumbers[0].id,
+              isOutbound: true,
+              message: "",
+              phoneNumber: contact.phoneNumber,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              status: "FAILED",
+              errorMessage: `HTTP ${response.status}: ${response.statusText}`,
+            },
+          });
+
+          await prisma.whatsAppRecipient.update({
+            where: { id: contact.id },
+            data: {
+              status: "UNDELIVERED",
+              activeCampaignId: campaignId,
+            },
+          });
+
+          campaignStats.push({
+            id: contact.id,
+            name: contact.name,
+            phoneNumber: contact.phoneNumber,
+            status: "UNDELIVERED",
+          });
+          
+          continue; // Skip to next contact
+        }
         
         const result = await response.json();
         
-        console.log("response from send template message", JSON.stringify(result, null, 2))
+        console.log(`WhatsApp API response for ${contact.phoneNumber}:`, JSON.stringify(result, null, 2));
 
-        // Create message with campaign data and replaced values
+        // Create message with campaign data and replaced values first
         const message = await prisma.whatsAppMessage.create({
           data: {
             templateData: {
@@ -228,15 +330,16 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        console.log("result from send template message", message)
-
+        // Check for WhatsApp API errors
         if (result.error) {
+          console.error(`WhatsApp API error for ${contact.phoneNumber}:`, result.error);
+          
           // Update message with error status
           await prisma.whatsAppMessage.update({
             where: { id: message.id },
             data: {
               status: "FAILED",
-              errorMessage: result.error.message,
+              errorMessage: result.error.message || result.error.error_user_msg || "WhatsApp API error",
               wamid: result.error.message_id,
             },
           });
@@ -255,21 +358,27 @@ export async function POST(request: NextRequest) {
             phoneNumber: contact.phoneNumber,
             status: "UNDELIVERED",
           });
-        } else {
-          // Update message with success status and WhatsApp message ID
+          
+          continue; // Skip to next contact
+        }
+
+        // Validate successful response structure
+        if (!result.messages || !Array.isArray(result.messages) || result.messages.length === 0) {
+          console.error(`Invalid WhatsApp API response for ${contact.phoneNumber}:`, result);
+          
+          // Update message with error status
           await prisma.whatsAppMessage.update({
             where: { id: message.id },
             data: {
-              status: "SENT", // Success status
-              wamid: result.messages?.[0]?.id,
-              sentAt: new Date(),
+              status: "FAILED",
+              errorMessage: "Invalid response from WhatsApp API - no message ID received",
             },
           });
 
           await prisma.whatsAppRecipient.update({
             where: { id: contact.id },
             data: {
-              status: "UNREAD",
+              status: "UNDELIVERED",
               activeCampaignId: campaignId,
             },
           });
@@ -278,9 +387,36 @@ export async function POST(request: NextRequest) {
             id: contact.id,
             name: contact.name,
             phoneNumber: contact.phoneNumber,
-            status: "SENT",
+            status: "UNDELIVERED",
           });
+          
+          continue; // Skip to next contact
         }
+
+        // Update message with success status and WhatsApp message ID
+        await prisma.whatsAppMessage.update({
+          where: { id: message.id },
+          data: {
+            status: "SENT", // Success status
+            wamid: result.messages?.[0]?.id,
+            sentAt: new Date(),
+          },
+        });
+
+        await prisma.whatsAppRecipient.update({
+          where: { id: contact.id },
+          data: {
+            status: "UNREAD",
+            activeCampaignId: campaignId,
+          },
+        });
+
+        campaignStats.push({
+          id: contact.id,
+          name: contact.name,
+          phoneNumber: contact.phoneNumber,
+          status: "SENT",
+        });
       } catch (error) {
         console.error(`Error sending message to ${contact.phoneNumber}:`, error);
       }
