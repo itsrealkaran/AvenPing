@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
                     type: "header",
                     parameters: [{ 
                       type: mediaParam.type, 
-                      id: mediaParam.id 
+                      [mediaParam.type]: { id: mediaParam.id }
                     }]
                   });
                   console.log(`Added media header component for ${contact.phoneNumber}:`, {
