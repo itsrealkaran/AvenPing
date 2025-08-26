@@ -1,15 +1,8 @@
-import Redis from 'ioredis';
+import redis from './redis';
 import { prisma } from './prisma';
 import { storeWhatsAppMessage } from './store-message';
 
-// Redis client
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
-redis.on('connect', () => {
-  console.log('Redis connected');
-});
-redis.on('error', (error) => {
-  console.error('Redis error:', error);
-});
+// redis client is provided by lib/redis with build-time stub support
 
 // Flow Session Interface
 export interface FlowSession {
@@ -55,7 +48,7 @@ export interface IncomingMessage {
 
 // Flow Runner Class
 export class FlowRunner {
-  private redis: Redis;
+  private redis: any; // Changed to any as Redis is now stubbed
 
   constructor() {
     this.redis = redis;

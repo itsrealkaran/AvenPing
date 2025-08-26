@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "build:skip-redis": "powershell -Command \"$env:SKIP_REDIS='1'; next build\"",
     "start": "next start",
     "lint": "next lint",
     "setup:redis": "node scripts/setup-redis.js",
