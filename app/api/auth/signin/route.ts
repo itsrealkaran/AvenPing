@@ -66,6 +66,7 @@ export async function POST(request: Request) {
       name: user.name,
       whatsAppAccountId: user.whatsAppAccount?.id,
       hasWhatsAppAccount: hasWhatsAppAccount,
+      signupStatus: user.signupStatus,
       plan: plan,
       expiresAt: user.expiresAt,
     });

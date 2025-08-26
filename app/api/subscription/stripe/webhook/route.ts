@@ -73,9 +73,12 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       const userPlans = await prisma.user.findUnique({
         where: { id: userId },
         select: {
+          signupStatus: true,
           plans: true,
         },
       })
+
+      const signupStatus = userPlans?.signupStatus === "COMPLETED" ? "COMPLETED" : "PAID"
 
       const existingPlans = (userPlans?.plans as any[]) || []
       
@@ -145,10 +148,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
           data: {
             plans: newPlans,
             expiresAt: endDate,
+            signupStatus: signupStatus,
           },
         })
-        
-        console.log(`Updated user ${userId} with plan ${planId} for ${planPeriod} period`)
       }
     }
   }

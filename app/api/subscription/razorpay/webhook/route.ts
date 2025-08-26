@@ -73,9 +73,12 @@ async function handlePaymentCaptured(payment: any) {
       const userPlans = await prisma.user.findUnique({
         where: { id: userId },
         select: {
+          signupStatus: true,
           plans: true,
         },
       })
+
+      const signupStatus = userPlans?.signupStatus === "COMPLETED" ? "COMPLETED" : "PAID"
 
       const existingPlans = (userPlans?.plans as any[]) || []
       
@@ -127,6 +130,7 @@ async function handlePaymentCaptured(payment: any) {
           data: {
             plans: newPlans,
             expiresAt: endDate,
+            signupStatus: signupStatus,
           },
         })
 
@@ -142,8 +146,6 @@ async function handlePaymentCaptured(payment: any) {
             endDate: endDate,
           },
         })
-
-        console.log(`Payment captured for user ${userId}, plan ${planId}`)
       }
     }
   } catch (error) {
@@ -217,9 +219,12 @@ async function handleOrderPaid(order: any) {
       const userPlans = await prisma.user.findUnique({
         where: { id: userId },
         select: {
+          signupStatus: true,
           plans: true,
         },
       })
+
+      const signupStatus = userPlans?.signupStatus === "COMPLETED" ? "COMPLETED" : "PAID"
 
       const existingPlans = (userPlans?.plans as any[]) || []
       
@@ -237,7 +242,6 @@ async function handleOrderPaid(order: any) {
               ...(addonMaxLimit || {}),
             },
           })
-          console.log(`Updated user ${userId} with existing addon ${planName} for ${quantity} × ${months} months`)
           return
         }
 
@@ -259,8 +263,6 @@ async function handleOrderPaid(order: any) {
             ...(addonMaxLimit || {}),
           },
         })
-        
-        console.log(`Updated user ${userId} with addon ${planName} for ${quantity} × ${months} months`)
       } else {
         // For regular plans, remove existing BASIC, PREMIUM, ENTERPRISE plans
         const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
@@ -291,6 +293,7 @@ async function handleOrderPaid(order: any) {
           data: {
             plans: newPlans,
             expiresAt: endDate,
+            signupStatus: signupStatus,
           },
         })
 
@@ -306,8 +309,6 @@ async function handleOrderPaid(order: any) {
             endDate: endDate,
           },
         })
-
-        console.log(`Order paid for user ${userId}, plan ${planId}`)
       }
     }
   } catch (error) {

@@ -8,10 +8,12 @@ interface JWTPayload {
   companyId?: string;
   exp: number;
   hasWhatsAppAccount?: boolean;
+  signupStatus?: string;
 }
 
 // List of public routes that don't require authentication
 const publicRoutes = [
+  '/signup',
   '/login',
   '/register',
   '/forgot-password',
@@ -58,6 +60,8 @@ export async function middleware(request: NextRequest) {
     
     // Allow public routes without any checks
     if (publicRoutes.some((route) => pathname.startsWith(route))) {
+      
+      
       if (session && pathname.startsWith("/login")) {
         const url = new URL('/dashboard', request.url);
         const redirectResponse = NextResponse.redirect(url);
@@ -66,7 +70,22 @@ export async function middleware(request: NextRequest) {
       }
       return NextResponse.next();
     }
-  
+
+    if (pathname.startsWith('/api')) return NextResponse.next();
+    console.log(session, "session from middleware");
+    
+    if (session && session.signupStatus === 'REGISTERED' && !pathname.startsWith('/signup') ) {
+      const url = new URL('/signup?status=registered', request.url);
+      const redirectResponse = NextResponse.redirect(url);
+      redirectResponse.headers.set('x-middleware-cache', 'no-cache');
+      return redirectResponse;
+    } else if (session && session.signupStatus === 'PAID' && !pathname.startsWith('/signup')) {
+      const url = new URL('/signup?status=paid', request.url);
+      const redirectResponse = NextResponse.redirect(url);
+      redirectResponse.headers.set('x-middleware-cache', 'no-cache');
+      return redirectResponse;
+    }
+
     // Check if the current path requires authentication
     const requiresAuth = protectedRoutes.some((route) => pathname.startsWith(route));
   

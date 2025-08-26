@@ -2,13 +2,15 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 import Navbar from "@/components/landing/navbar";
 import SearchableDropdown from "@/components/landing/ui/searchable-dropdown";
+import PaymentStep from "@/components/signup/payment-step";
+import PaymentGatewayModal from "@/components/settings/payment-gateway-modal";
 
 // Facebook SDK types
 declare global {
@@ -53,7 +55,15 @@ export default function Signup() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isConnectingWhatsApp, setIsConnectingWhatsApp] = useState(false);
+  
+  // Payment modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<any>(null);
+  const [planPeriodForPayment, setPlanPeriodForPayment] = useState<"month" | "year">("year");
+  const [regionForPayment, setRegionForPayment] = useState<"US" | "IND" | "ASIA">("US");
   const router = useRouter();
+
+
 
   const [formData, setFormData] = useState<SignupData>({
     name: "",
@@ -66,12 +76,24 @@ export default function Signup() {
 
   const [selectedIndustry, setSelectedIndustry] = useState<{ id: string; label: string; value: string } | null>(null);
 
+  // get the status from the url 
+  const searchParams = useSearchParams();
+  const status = searchParams.get("status");
+
+  useEffect(() => {
+    if (status === "registered") {
+      setCurrentStep(6);
+    } else if (status === "paid") {
+      setCurrentStep(7);
+    }
+  }, [status]);
+
   const updateFormData = (field: keyof SignupData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const nextStep = () => {
-    if (currentStep < 6) {
+    if (currentStep < 7) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -90,30 +112,79 @@ export default function Signup() {
       return;
     }
 
-    try {
-      setIsLoading(true);
-      const response = await axios.post("/api/auth/signup", formData);
+    setCurrentStep(6);
 
-      if (response.status === 200) {
-        toast.success("Account created successfully!");
-        // Move to WhatsApp connection step instead of going directly to dashboard
-        setCurrentStep(6);
-      }
-    } catch (error: any) {
-      console.error(error);
-      if (error.response?.data?.error) {
-        toast.error(error.response.data.error);
-      } else {
-        toast.error("An error occurred during signup");
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    // try {
+    //   setIsLoading(true);
+    //   const response = await axios.post("/api/auth/signup", formData);
+
+    //   if (response.status === 200) {
+    //     toast.success("Account created successfully!");
+    //     // Move to plan selection step
+    //     setCurrentStep(6);
+    //   }
+    // } catch (error: any) {
+    //   console.error(error);
+    //   if (error.response?.data?.error) {
+    //     toast.error(error.response.data.error);
+    //   } else {
+    //     toast.error("An error occurred during signup");
+    //   }
+    // } finally {
+    //   setIsLoading(false);
+    // }
   };
+
+
+
 
   const handleSkipWhatsApp = () => {
     router.push("/dashboard");
   };
+
+  const handleShowPaymentModal = (plan: any, period: "month" | "year", region: "US" | "IND" | "ASIA") => {
+    setSelectedPlanForPayment(plan);
+    setPlanPeriodForPayment(period);
+    setRegionForPayment(region);
+    setShowPaymentModal(true);
+  };
+
+  const getPlanPrice = (plan: any, period: "month" | "year", region: "US" | "IND" | "ASIA") => {
+    if (!plan) return 0;
+    const priceJson = period === "month" ? plan.monthlyPriceJson : plan.yearlyPriceJson;
+    return priceJson?.[region] || 0;
+  };
+
+  const getCurrencySymbol = (region: "US" | "IND" | "ASIA") => {
+    switch (region) {
+      case "US": return "$";
+      case "IND": return "₹";
+      case "ASIA": return "$";
+      default: return "$";
+    }
+  };
+
+
+
+  // Check for payment success from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentSuccess = urlParams.get('success');
+    const paymentCanceled = urlParams.get('canceled');
+    
+    console.log("Signup page - URL params:", paymentSuccess, paymentCanceled);
+    
+    if (paymentSuccess === 'true') {
+      console.log("Payment success detected in signup page, setting step to 6");
+      // Set current step to 6 (payment step) so PaymentStep component can handle it
+      setCurrentStep(6);
+      // Don't proceed automatically, let PaymentStep handle the polling
+    } else if (paymentCanceled === 'true') {
+      toast.error('Payment was canceled. Please try again.');
+      // Clear the URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const handleConnectWhatsApp = async () => {
     setIsConnectingWhatsApp(true);
@@ -314,6 +385,15 @@ export default function Signup() {
 
       case 6:
         return (
+          <PaymentStep 
+            onNext={nextStep}
+            onBack={prevStep}
+            onShowPaymentModal={handleShowPaymentModal}
+          />
+        );
+
+      case 7:
+        return (
           <div className="min-h-[260px] flex flex-col justify-center space-y-6">
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-cyan-100 rounded-full flex items-center justify-center">
@@ -373,7 +453,7 @@ export default function Signup() {
       case 5:
         return formData.password.length >= 8 && formData.confirm_password.length >= 8;
       case 6:
-        return true; // WhatsApp step doesn't need validation
+        return true; // Payment step is handled by the PaymentStep component
       default:
         return false;
     }
@@ -390,7 +470,7 @@ export default function Signup() {
         <Navbar />
 
         {/* Main Form Card */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border-4 border-black/10 p-6 sm:p-8 w-full max-w-lg">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border-4 border-black/10 p-6 sm:p-8 w-full max-h-[70vh] max-w-lg overflow-y-auto">
           <form onSubmit={handleSubmit}>
             {renderStep()}
 
@@ -436,7 +516,7 @@ export default function Signup() {
 
                      {/* Progress Indicator */}
            <div className="flex items-center justify-center gap-2 mt-6">
-             {[1, 2, 3, 4, 5, 6].map((step) => (
+             {[1, 2, 3, 4, 5, 6, 7].map((step) => (
                <div
                  key={step}
                  className={`w-2 h-2 rounded-full transition-colors ${
@@ -457,6 +537,21 @@ export default function Signup() {
           </p>
         </div>
       </div>
+
+      {/* Payment Gateway Modal */}
+      <PaymentGatewayModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        planName={selectedPlanForPayment?.name || ""}
+        planPeriod={planPeriodForPayment}
+        region={regionForPayment}
+        price={getPlanPrice(selectedPlanForPayment, planPeriodForPayment, regionForPayment)}
+        currency={getCurrencySymbol(regionForPayment)}
+        isAddon={false}
+        months={1}
+        quantity={1}
+        isFromSignup={true}
+      />
     </div>
   );
 } 

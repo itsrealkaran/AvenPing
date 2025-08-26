@@ -57,6 +57,12 @@ enum SubscriptionStatus {
   CANCELLED
 }
 
+enum SignupStatus {
+  REGISTERED
+  PAID
+  COMPLETED
+}
+
 // Unified User Model
 model User {
   id          String    @id @default(cuid())
@@ -69,6 +75,8 @@ model User {
 
   maxContacts Int @default(0)
   maxFlows    Int @default(0)
+
+  signupStatus SignupStatus @default(REGISTERED)
 
   whatsAppAccount WhatsAppAccount? @relation("UserWhatsAppAccount", fields: [whatsAppAccountId], references: [id])
   whatsAppAccountId String? @unique

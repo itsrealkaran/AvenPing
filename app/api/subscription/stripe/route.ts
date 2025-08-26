@@ -18,13 +18,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
-    const { planName, planPeriod, region, isAddon, months, quantity }: { 
+    const { planName, planPeriod, region, isAddon, months, quantity, redirectUrl }: { 
       planName: string; 
       planPeriod: string; 
       region: string;
       isAddon?: boolean;
       months?: number;
       quantity?: number;
+      redirectUrl?: string;
     } = await request.json()
     
     // Get the session to get user email
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: isAddon ? "payment" : "subscription",
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}${redirectUrl ? `${redirectUrl}?status=registered&success=true&session_id={CHECKOUT_SESSION_ID}` : "/settings?success=true&session_id={CHECKOUT_SESSION_ID}"}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?canceled=true`,
       customer_email: user.email,
       metadata: {

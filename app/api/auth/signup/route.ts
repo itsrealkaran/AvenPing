@@ -57,6 +57,7 @@ export async function POST(request: Request) {
       name: user.name,
       whatsAppAccountId: null,
       hasWhatsAppAccount: false,
+      signupStatus: user.signupStatus,
       plan: null,
       expiresAt: null,
     });

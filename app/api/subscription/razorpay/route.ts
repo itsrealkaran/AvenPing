@@ -186,10 +186,13 @@ export async function GET(request: NextRequest) {
         const userPlans = await prisma.user.findUnique({
           where: { id: userId },
           select: {
+            signupStatus: true,
             plans: true,
           },
         })
   
+        const signupStatus = userPlans?.signupStatus === "COMPLETED" ? "COMPLETED" : "PAID"
+
         const existingPlans = (userPlans?.plans as any[]) || []
         
         if (isAddon) {
@@ -227,8 +230,6 @@ export async function GET(request: NextRequest) {
               ...(addonMaxLimit || {}),
             },
           })
-          
-          console.log(`Payment captured for user ${userId}, addon ${planName || 'Unknown'} for ${quantity.toString()} × ${months.toString()} months`)
         } else {
           // For regular plans, remove existing BASIC, PREMIUM, ENTERPRISE plans
           const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
@@ -260,6 +261,7 @@ export async function GET(request: NextRequest) {
             data: {
               plans: newPlans,
               expiresAt: endDate,
+              signupStatus: signupStatus,
             },
           })
   
@@ -275,8 +277,6 @@ export async function GET(request: NextRequest) {
               endDate: endDate,
             },
           })
-  
-          console.log(`Payment captured for user ${userId}, plan ${planId}`)
         }
       }
 
