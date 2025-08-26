@@ -354,7 +354,7 @@ export function CreateTemplateModal({
     target: "header" | "body"
   ) => {
     let textToFormat = selectedText;
-    let currentText = target === "header" ? headerText : bodyText;
+    const currentText = target === "header" ? headerText : bodyText;
 
     if (!textToFormat && !currentText.trim()) {
       toast.error("Please enter some text first.");

@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    let campaignStats: {
+    const campaignStats: {
       id: string;
       name: string;
       phoneNumber: string;

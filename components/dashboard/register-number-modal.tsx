@@ -72,10 +72,13 @@ export default function RegisterNumberModal({
       setError("PIN must contain only numbers");
       return;
     }
-    onRegister(
-      pin,
-      userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId!
-    );
+    const phoneNumberId =
+      userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId;
+    if (!phoneNumberId) {
+      setError("Active phone number is unavailable");
+      return;
+    }
+    onRegister(pin, phoneNumberId);
     onClose();
   };
 

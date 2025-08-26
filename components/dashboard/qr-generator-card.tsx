@@ -83,7 +83,6 @@ export default function QrGeneratorCardContent() {
       return;
     }
 
-    let textToFormat = selectedText || message;
     let newMessage = message;
 
     if (selectedText) {

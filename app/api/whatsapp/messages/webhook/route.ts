@@ -190,7 +190,7 @@ export async function POST(req: NextRequest) {
                 }
                 let newMessage;
 
-                let messageText = message?.text?.body || message?.interactive?.button_reply?.title;
+                const messageText = message?.text?.body || message?.interactive?.button_reply?.title;
 
                 if (recipient) {
                   if (

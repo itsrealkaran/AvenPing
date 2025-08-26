@@ -37,14 +37,14 @@ const industries = [
   { id: "7", label: "Real Estate", value: "Real Estate" },
   { id: "8", label: "Marketing", value: "Marketing" },
   { id: "9", label: "Consulting", value: "Consulting" },
-  { id: "10", label: "Other", value: "Other" }
+  { id: "10", label: "Other", value: "Other" },
 ];
 
 const customerSizes = [
   "1-50 customers",
-  "51-200 customers", 
+  "51-200 customers",
   "201-1000 customers",
-  "1000+ customers"
+  "1000+ customers",
 ];
 
 export default function Signup() {
@@ -61,13 +61,17 @@ export default function Signup() {
     size: "",
     email: "",
     password: "",
-    confirm_password: ""
+    confirm_password: "",
   });
 
-  const [selectedIndustry, setSelectedIndustry] = useState<{ id: string; label: string; value: string } | null>(null);
+  const [selectedIndustry, setSelectedIndustry] = useState<{
+    id: string;
+    label: string;
+    value: string;
+  } | null>(null);
 
   const updateFormData = (field: keyof SignupData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const nextStep = () => {
@@ -84,7 +88,7 @@ export default function Signup() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirm_password) {
       toast.error("Passwords do not match");
       return;
@@ -117,13 +121,13 @@ export default function Signup() {
 
   const handleConnectWhatsApp = async () => {
     setIsConnectingWhatsApp(true);
-    
-    //@ts-ignore
+
+    //@ts-expect-error - Facebook SDK
     FB.login(
       (response: any) => {
         if (response.authResponse) {
           console.log("Logged in as:", response.authResponse);
-          //@ts-ignore
+          //@ts-expect-error - Facebook SDK
           FB.api("/me", { fields: "name, email" }, (userInfo) => {
             console.log(
               "Logged in as:",
@@ -163,7 +167,7 @@ export default function Signup() {
     );
   };
 
-    const renderStep = () => {
+  const renderStep = () => {
     switch (currentStep) {
       case 1:
         return (
@@ -172,7 +176,7 @@ export default function Signup() {
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 What Should We Call You?
               </h1>
-              <p className="text-gray-600">Let's Start with your Name</p>
+              <p className="text-gray-600">Let&apos;s Start with your Name</p>
             </div>
             <div>
               <input
@@ -192,7 +196,7 @@ export default function Signup() {
           <div className="min-h-[260px] flex flex-col space-y-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                What's your industry?
+                What&apos;s your industry?
               </h1>
               <p className="text-gray-600">Help us customize your experience</p>
             </div>
@@ -219,7 +223,9 @@ export default function Signup() {
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 How many customers do you serve?
               </h1>
-              <p className="text-gray-600">This helps us recommend the right plan</p>
+              <p className="text-gray-600">
+                This helps us recommend the right plan
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {customerSizes.map((size) => (
@@ -245,9 +251,11 @@ export default function Signup() {
           <div className="min-h-[260px] flex flex-col space-y-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                What's your email?
+                What&apos;s your email?
               </h1>
-              <p className="text-gray-600">We'll use this to create your account</p>
+              <p className="text-gray-600">
+                We&apos;ll use this to create your account
+              </p>
             </div>
             <div>
               <input
@@ -269,7 +277,9 @@ export default function Signup() {
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 Create a password
               </h1>
-              <p className="text-gray-600">Choose a strong password for your account</p>
+              <p className="text-gray-600">
+                Choose a strong password for your account
+              </p>
             </div>
             <div className="space-y-4">
               <div className="relative">
@@ -289,13 +299,17 @@ export default function Signup() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              <p className="text-xs text-red-500">* Password should be at least 8 characters long</p>
-              
+              <p className="text-xs text-red-500">
+                * Password should be at least 8 characters long
+              </p>
+
               <div className="relative">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   value={formData.confirm_password}
-                  onChange={(e) => updateFormData("confirm_password", e.target.value)}
+                  onChange={(e) =>
+                    updateFormData("confirm_password", e.target.value)
+                  }
                   className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#43A2C9] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400 pr-12"
                   placeholder="Confirm your password"
                   required
@@ -305,7 +319,11 @@ export default function Signup() {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showConfirmPassword ? (
+                    <EyeOff size={20} />
+                  ) : (
+                    <Eye size={20} />
+                  )}
                 </button>
               </div>
             </div>
@@ -317,15 +335,19 @@ export default function Signup() {
           <div className="min-h-[260px] flex flex-col justify-center space-y-6">
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-cyan-100 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-cyan-600" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                <svg
+                  className="w-8 h-8 text-cyan-600"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
                 </svg>
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 Connect your WhatsApp
               </h1>
             </div>
-            
+
             <div className="space-y-4">
               <button
                 type="button"
@@ -342,7 +364,7 @@ export default function Signup() {
                   "Connect to WhatsApp"
                 )}
               </button>
-              
+
               <button
                 type="button"
                 onClick={handleSkipWhatsApp}
@@ -369,9 +391,11 @@ export default function Signup() {
       case 3:
         return formData.size.length > 0;
       case 4:
-        return formData.email.trim().length > 0 && formData.email.includes('@');
+        return formData.email.trim().length > 0 && formData.email.includes("@");
       case 5:
-        return formData.password.length >= 8 && formData.confirm_password.length >= 8;
+        return (
+          formData.password.length >= 8 && formData.confirm_password.length >= 8
+        );
       case 6:
         return true; // WhatsApp step doesn't need validation
       default:
@@ -406,52 +430,55 @@ export default function Signup() {
                 Back
               </button>
 
-                             {currentStep < 5 ? (
-                 <button
-                   type="button"
-                   onClick={nextStep}
-                   disabled={!canProceed()}
-                   className="px-6 py-2 bg-[#43A2C9] text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                 >
-                   Next
-                 </button>
-               ) : currentStep === 5 ? (
-                 <button
-                   type="submit"
-                   disabled={!canProceed() || isLoading}
-                   className="px-6 py-2 bg-[#43A2C9] text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                 >
-                   {isLoading ? (
-                     <div className="flex items-center gap-2">
-                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                       Creating account...
-                     </div>
-                   ) : (
-                     "Create Account"
-                   )}
-                 </button>
-               ) : null}
+              {currentStep < 5 ? (
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={!canProceed()}
+                  className="px-6 py-2 bg-[#43A2C9] text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              ) : currentStep === 5 ? (
+                <button
+                  type="submit"
+                  disabled={!canProceed() || isLoading}
+                  className="px-6 py-2 bg-[#43A2C9] text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Creating account...
+                    </div>
+                  ) : (
+                    "Create Account"
+                  )}
+                </button>
+              ) : null}
             </div>
           </form>
 
-                     {/* Progress Indicator */}
-           <div className="flex items-center justify-center gap-2 mt-6">
-             {[1, 2, 3, 4, 5, 6].map((step) => (
-               <div
-                 key={step}
-                 className={`w-2 h-2 rounded-full transition-colors ${
-                   step <= currentStep ? "bg-[#43A2C9]" : "bg-gray-300"
-                 }`}
-               />
-             ))}
-           </div>
+          {/* Progress Indicator */}
+          <div className="flex items-center justify-center gap-2 mt-6">
+            {[1, 2, 3, 4, 5, 6].map((step) => (
+              <div
+                key={step}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  step <= currentStep ? "bg-[#43A2C9]" : "bg-gray-300"
+                }`}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Footer */}
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Already have an account?{" "}
-            <Link href="/login" className="text-[#43A2C9] hover:text-cyan-600 font-medium">
+            <Link
+              href="/login"
+              className="text-[#43A2C9] hover:text-cyan-600 font-medium"
+            >
               Sign in
             </Link>
           </p>
@@ -459,4 +486,4 @@ export default function Signup() {
       </div>
     </div>
   );
-} 
+}

@@ -38,12 +38,12 @@ export function WhatsAppAccountRequired() {
   }
 
   const handleConnectAccount = async () => {
-    //@ts-ignore
+    //@ts-expect-error - Facebook SDK
     FB.login(
       (response: any) => {
         if (response.authResponse) {
           console.log("Logged in as:", response.authResponse);
-          //@ts-ignore
+          //@ts-expect-error - Facebook SDK
           FB.api("/me", { fields: "name, email" }, (userInfo) => {
             console.log(
               "Logged in as:",
@@ -95,7 +95,7 @@ export function WhatsAppAccountRequired() {
           <div className="space-y-4">
             <div className="space-y-2">
               <p className="text-sm text-gray-600">
-                To get started, you'll need to:
+                To get started, you&apos;ll need to:
               </p>
               <ul className="text-sm space-y-1">
                 <li className="flex items-center gap-2">

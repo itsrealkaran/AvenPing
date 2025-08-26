@@ -195,7 +195,7 @@ export default function Pricing() {
 
         <div className="text-center mt-12">
           <p className="text-gray-600 mb-4">
-            Need a custom solution? We're here to help.
+            Need a custom solution? We&apos;re here to help.
           </p>
           <Button variant="secondary" className="px-8">
             Contact Sales

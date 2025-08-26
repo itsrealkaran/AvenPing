@@ -19,22 +19,25 @@ interface NodeDetailsSidebarProps {
 const MAX_REPLY_BUTTONS = 3;
 
 // WhatsApp file upload utility
-async function uploadFileToWhatsApp(file: File, phoneNumberId: string): Promise<string> {
+async function uploadFileToWhatsApp(
+  file: File,
+  phoneNumberId: string
+): Promise<string> {
   try {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('phoneNumberId', phoneNumberId);
-    
-    const response = await axios.post('/api/whatsapp/upload-file', formData, {
+    formData.append("file", file);
+    formData.append("phoneNumberId", phoneNumberId);
+
+    const response = await axios.post("/api/whatsapp/upload-file", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
-    
+
     return response.data.mediaId;
   } catch (error) {
-    console.error('Error uploading file to WhatsApp:', error);
-    throw new Error('Failed to upload file to WhatsApp');
+    console.error("Error uploading file to WhatsApp:", error);
+    throw new Error("Failed to upload file to WhatsApp");
   }
 }
 
@@ -95,9 +98,9 @@ const KeywordChips: React.FC<{
 const renderNodeDetails = (
   selectedNode: Node,
   onUpdateNodeData: (key: string, value: any) => void,
-  flows: any[]
+  flows: any[],
+  userInfo: any
 ) => {
-  const { userInfo } = useUser();
   const nodeType = selectedNode.data.nodeType;
 
   // Message Action Node
@@ -308,18 +311,24 @@ const renderNodeDetails = (
               const file = e.target.files?.[0];
               if (file) {
                 try {
-                  const phoneNumberId = userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId;
-                  
+                  const phoneNumberId =
+                    userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId;
+
                   if (!phoneNumberId) {
-                    alert('No WhatsApp phone number configured. Please set up your WhatsApp account first.');
+                    alert(
+                      "No WhatsApp phone number configured. Please set up your WhatsApp account first."
+                    );
                     return;
                   }
-                  
-                  const mediaId = await uploadFileToWhatsApp(file, phoneNumberId);
+
+                  const mediaId = await uploadFileToWhatsApp(
+                    file,
+                    phoneNumberId
+                  );
                   onUpdateNodeData("file", mediaId);
                 } catch (error) {
-                  console.error('Upload failed:', error);
-                  alert('File upload failed. Please try again.');
+                  console.error("Upload failed:", error);
+                  alert("File upload failed. Please try again.");
                 }
               }
             }}
@@ -359,6 +368,7 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({
   onUpdateNodeData,
   flows = [],
 }) => {
+  const { userInfo } = useUser();
   if (!selectedNode) return null;
 
   return (
@@ -373,7 +383,7 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({
       </div>
       <div className="space-y-4 overflow-auto px-2">
         {/* Render node-specific details */}
-        {renderNodeDetails(selectedNode, onUpdateNodeData, flows)}
+        {renderNodeDetails(selectedNode, onUpdateNodeData, flows, userInfo)}
 
         {/* Node Type and Node ID are always shown */}
         <div>

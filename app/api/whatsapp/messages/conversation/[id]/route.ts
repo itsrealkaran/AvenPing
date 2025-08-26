@@ -93,7 +93,7 @@ export async function GET(
 
         // Check if there are more results
         const hasMore = conversation.messages.length > take;
-        let messages = hasMore ? conversation.messages.slice(0, take) : conversation.messages;
+        const messages = hasMore ? conversation.messages.slice(0, take) : conversation.messages;
 
         // Get the cursor for the next page (use the oldest message ID from current page)
         const nextCursor = hasMore && messages.length > 0 ? messages[messages.length - 1].id : null;

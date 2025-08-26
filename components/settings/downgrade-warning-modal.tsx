@@ -34,7 +34,7 @@ const DowngradeWarningModal: React.FC<DowngradeWarningModalProps> = ({
           <div className="flex-1">
             <h2 className="text-lg font-bold text-gray-900">Plan Downgrade Warning</h2>
             <p className="text-sm text-gray-600 mt-1">
-              You're about to downgrade from {currentPlanName} to {planName}
+              You&apos;re about to downgrade from {currentPlanName} to {planName}
             </p>
           </div>
           <button
@@ -57,7 +57,7 @@ const DowngradeWarningModal: React.FC<DowngradeWarningModalProps> = ({
                 <ul className="text-sm text-orange-700 space-y-1">
                   <li>• Your current plan features will be reduced</li>
                   <li>• Some functionality may become unavailable</li>
-                  <li>• You'll need to upgrade again to restore features</li>
+                  <li>• You&apos;ll need to upgrade again to restore features</li>
                 </ul>
               </div>
             </div>
