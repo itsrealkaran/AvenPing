@@ -47,7 +47,6 @@ export default function WAButtonCardContent() {
   const isCustom = !PALETTE.includes(buttonColor);
   const textColor = getContrastingTextColor(buttonColor);
   const previewBorder = `${buttonColor}40`;
-  const previewBg = "#F5F5F5";
 
   useEffect(() => {
     if (phoneNumbers.length > 0 && !selectedPhone) {
@@ -203,7 +202,7 @@ export default function WAButtonCardContent() {
           <div
             className="flex p-8 items-center justify-center rounded-xl"
             style={{
-              background: `url('/message-bg.png'), ${previewBg}`,
+              background: `url('/message-bg.png'), #FFFFD5`,
               backgroundRepeat: "no-repeat",
               backgroundPosition: "center",
               backgroundSize: "cover",

@@ -503,7 +503,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
           backgroundImage: 'url("/message-bg.png")',
           backgroundRepeat: "repeat",
           backgroundSize: "500px auto",
-          backgroundColor: "#f0f2f5",
+          backgroundColor: "#FFFFD5",
         }}
       >
         <MessageList
