@@ -41,7 +41,9 @@ export default function ProfilePage() {
     if (profileDetails) {
       setProfile((prev) => {
         return {
-          displayName: prev.displayName,
+          displayName:
+            userInfo?.whatsappAccount?.activePhoneNumber?.name ||
+            prev.displayName,
           phoneNumber:
             userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId ||
             prev.phoneNumber,
@@ -234,8 +236,12 @@ export default function ProfilePage() {
               <div className="flex gap-4">
                 <div className="flex flex-col p-4 items-center justify-center">
                   <div
-                    className="relative size-24 rounded-full bg-gray-100 cursor-pointer flex items-center justify-center mb-2 border-2 border-primary hover:border-primary/80 transition-all"
-                    onClick={handleProfilePictureClick}
+                    className={`relative size-24 rounded-full bg-gray-100 flex items-center justify-center mb-2 border-2 border-primary hover:border-primary/80 transition-all ${
+                      !isEditing
+                        ? "opacity-50 cursor-not-allowed"
+                        : "cursor-pointer"
+                    }`}
+                    onClick={!isEditing ? handleProfilePictureClick : undefined}
                   >
                     {profile.profile_picture_url ? (
                       <>
@@ -272,7 +278,7 @@ export default function ProfilePage() {
                       value={profile.displayName}
                       onChange={handleChange}
                       className="w-full"
-                      disabled={!isEditing}
+                      disabled={true}
                     />
                   </div>
 
@@ -463,7 +469,7 @@ export default function ProfilePage() {
                   htmlFor="website2"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Website 2
+                  Website
                 </label>
                 <Input
                   id="website2"
