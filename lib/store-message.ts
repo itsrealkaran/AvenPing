@@ -12,17 +12,28 @@ export async function storeWhatsAppMessage({
   timestamp,
   status = "PENDING",
   whatsAppPhoneNumberId,
+  errorMessage,
 }: {
   recipientId: string;
   phoneNumber: string;
   mediaIds?: string[];
   wamid?: string;
   isOutbound?: boolean;
-  templateData?: any;
+  templateData?: Array<{
+    type: "HEADER" | "BODY" | "FOOTER" | "BUTTON";
+    text?: string;
+    mediaUrl?: string;
+    mediaId?: string;
+    format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
+    buttonText?: string;
+    buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+    buttonValue?: string;
+  }>;
   message: string;
   timestamp: number;
   status?: "PENDING" | "SENT" | "DELIVERED" | "READ" | "FAILED";
   whatsAppPhoneNumberId: string;
+  errorMessage?: string;
 }) {
   try {
     const newMessage = await prisma.whatsAppMessage.create({
@@ -37,6 +48,7 @@ export async function storeWhatsAppMessage({
         sentAt: new Date(timestamp * 1000),
         status,
         whatsAppPhoneNumberId,
+        errorMessage,
       },
     });
     

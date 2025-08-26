@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/jwt";
 import type { Prisma, WhatsAppMessage } from "@prisma/client";
 import axios from "axios";
+import { storeWhatsAppMessage } from "@/lib/store-message";
 
 // Get all messages for an account with pagination
 export async function GET(request: Request) {
@@ -254,29 +255,28 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create message in database
-    const newMessage = await prisma.whatsAppMessage.create({
-      data: {
-        message,
-        isOutbound: true,
-        status: "PENDING",
-        phoneNumber: recipient.phoneNumber,
-        whatsAppPhoneNumberId: phoneNumberId,
-        recipientId,
-        mediaIds: media ? media.map((m: any) => m.mediaId) : [],
-        templateData: templateId ? [
-          {
-            text: `Template: ${templateId}`,
-            type: "HEADER",
-            format: "TEXT"
-          },
-          ...(templateParams ? templateParams.map((param: any, index: number) => ({
-            text: param.text || `Parameter ${index + 1}`,
-            type: "BODY",
-            format: "TEXT"
-          })) : [])
-        ] : undefined,
-      },
+    // Create message in database using storeWhatsAppMessage
+    const newMessage = await storeWhatsAppMessage({
+      message,
+      isOutbound: true,
+      status: "PENDING",
+      phoneNumber: recipient.phoneNumber,
+      whatsAppPhoneNumberId: phoneNumberId,
+      recipientId,
+      mediaIds: media ? media.map((m: any) => m.mediaId) : [],
+      timestamp: Math.floor(Date.now() / 1000),
+      templateData: templateId ? [
+        {
+          text: `Template: ${templateId}`,
+          type: "HEADER" as const,
+          format: "TEXT" as const
+        },
+        ...(templateParams ? templateParams.map((param: any, index: number) => ({
+          text: param.text || `Parameter ${index + 1}`,
+          type: "BODY" as const,
+          format: "TEXT" as const
+        })) : [])
+      ] : undefined,
     });
 
     // Send message via WhatsApp API
