@@ -11,7 +11,6 @@ import {
   Image as ImageIcon,
   Clock,
   AlertCircle,
-  Bot,
   Reply,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -36,6 +35,68 @@ const MessageBubble = ({
   const time = format(new Date(message.createdAt), "h:mm a");
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Function to get media preview from WhatsApp API
+  const getMediaPreview = async (mediaId: string, mediaType: string) => {
+    try {
+      console.log(`Fetching preview for ${mediaType} with ID: ${mediaId}`);
+
+      // Call our API route to get media preview
+      const response = await fetch(`/api/whatsapp/media/${mediaId}/preview`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        // Get the media blob from the response
+        const mediaBlob = await response.blob();
+
+        // Create a URL for the blob
+        const mediaUrl = URL.createObjectURL(mediaBlob);
+
+        console.log(`Media preview loaded for ${mediaType}:`, mediaUrl);
+
+        // Update the UI to show the actual media
+        // You can implement state management here to replace the fallback
+        // For now, we'll log the success and could trigger a re-render
+
+        // Example: You could update a state variable to trigger re-render
+        // setMediaPreview({ mediaId, mediaUrl, mediaType });
+
+        // For immediate display, you could also replace the DOM element
+        // This is a simple approach - in a real app you'd use React state
+        const mediaElement = document.querySelector(
+          `[data-media-id="${mediaId}"]`
+        );
+        if (mediaElement) {
+          if (mediaType === "IMAGE") {
+            const img = document.createElement("img");
+            img.src = mediaUrl;
+            img.className =
+              "max-w-full max-h-40 w-auto object-cover rounded-lg";
+            img.alt = "Media Preview";
+            mediaElement.innerHTML = "";
+            mediaElement.appendChild(img);
+          } else if (mediaType === "VIDEO") {
+            const video = document.createElement("video");
+            video.src = mediaUrl;
+            video.controls = true;
+            video.className = "max-w-full max-h-40 w-auto rounded-lg";
+            mediaElement.innerHTML = "";
+            mediaElement.appendChild(video);
+          }
+        }
+      } else {
+        console.error("Failed to get media preview:", response.statusText);
+        // You could show an error message to the user here
+      }
+    } catch (error) {
+      console.error("Error fetching media preview:", error);
+      // You could show an error message to the user here
+    }
+  };
 
   const renderStatus = () => {
     switch (message.status) {
@@ -163,8 +224,8 @@ const MessageBubble = ({
     );
   };
 
-  // Render template message
-  const renderTemplate = () => {
+  // Render template message as normal message content
+  const renderTemplateContent = () => {
     if (
       !message.templateData ||
       !Array.isArray(message.templateData) ||
@@ -172,128 +233,235 @@ const MessageBubble = ({
     )
       return null;
 
-    // Use appropriate background colors based on message direction
-    const templateBg = isMe ? "bg-white/20" : "bg-gray-100";
-    const templateBorder = isMe ? "border-white/10" : "border-gray-200";
-    const textColor = isMe ? "text-white" : "text-gray-800";
-    const textColorSecondary = isMe ? "text-white/90" : "text-gray-600";
-    const textColorTertiary = isMe ? "text-white/70" : "text-gray-500";
-    const textColorQuaternary = isMe ? "text-white/60" : "text-gray-400";
-    const separatorBorder = isMe ? "border-white/10" : "border-gray-200";
-
     return (
-      <div
-        className={`mt-2 p-4 ${templateBg} rounded-lg border ${templateBorder}`}
-      >
-        <div className={`flex items-center gap-2 mb-3`}>
-          <Bot size={16} className={textColor} />
-          <span className={`text-sm font-medium ${textColor}`}>
-            Template Message
-          </span>
-        </div>
-
-        <div className="space-y-3">
-          {message.templateData.map((section, index) => {
-            if (!section.text) return null;
-
-            let sectionClasses = "text-sm";
-
-            // Style different template sections
-            switch (section.type) {
-              case "HEADER":
-                sectionClasses += ` font-semibold ${textColor} text-base leading-tight`;
-                break;
-              case "BODY":
-                sectionClasses += ` ${textColorSecondary} leading-relaxed`;
-                break;
-              case "FOOTER":
-                sectionClasses += ` ${textColorTertiary} text-xs italic pt-2 border-t ${separatorBorder}`;
-                break;
-              default:
-                sectionClasses += ` ${textColorSecondary}`;
-            }
-
-            // Handle different formats
-            if (section.format === "IMAGE" && section.text) {
-              return (
-                <div key={index} className="mb-3">
-                  <div
-                    className={`relative rounded-lg overflow-hidden ${
-                      isMe ? "bg-white/10" : "bg-gray-200"
-                    }`}
-                  >
-                    <img
-                      src={section.text}
-                      alt="Template Image"
-                      className="max-w-full max-h-40 w-auto object-cover"
-                      onError={(e) => {
-                        console.error(
-                          "Failed to load template image:",
-                          section.text
-                        );
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
+      <div className="space-y-2">
+        {message.templateData.map((section, index) => {
+          // HEADER: Media (IMAGE, VIDEO, AUDIO, DOCUMENT)
+          if (
+            section.type === "HEADER" &&
+            section.format &&
+            section.format !== "TEXT"
+          ) {
+            const hasUrl = section.mediaUrl && section.mediaUrl.trim() !== "";
+            const label =
+              section.format.charAt(0) + section.format.slice(1).toLowerCase();
+            if (section.format === "IMAGE") {
+              return hasUrl ? (
+                <div key={index} className="mb-2">
+                  <img
+                    src={section.mediaUrl}
+                    alt="Message Image"
+                    className="max-w-full max-h-40 w-auto object-cover rounded-lg"
+                    onError={(e) => (e.currentTarget.style.display = "none")}
+                  />
+                </div>
+              ) : (
+                <div
+                  key={index}
+                  className="mb-2 cursor-pointer hover:bg-white/30 transition-colors duration-200 rounded-lg"
+                  onClick={() =>
+                    section.mediaId && getMediaPreview(section.mediaId, "IMAGE")
+                  }
+                  data-media-id={section.mediaId}
+                >
+                  <div className="flex items-center gap-3 p-3 bg-white/20 rounded-lg">
+                    <ImageIcon size={20} className="text-white/80" />
+                    <div>
+                      <div className="text-sm font-medium text-white truncate">
+                        Media Message
+                      </div>
+                      <div className="text-xs text-white/70">
+                        Image - Click to load
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
             }
-
-            // Handle text format
-            if (section.format === "TEXT" || !section.format) {
-              return (
-                <div key={index} className={sectionClasses}>
-                  {section.text}
+            if (section.format === "VIDEO") {
+              return hasUrl ? (
+                <div key={index} className="mb-2 cursor-pointer">
+                  <video
+                    src={section.mediaUrl}
+                    controls
+                    className="max-w-full max-h-40 w-auto rounded-lg"
+                    onError={(e) => (e.currentTarget.style.display = "none")}
+                  />
+                </div>
+              ) : (
+                <div
+                  key={index}
+                  className="mb-2 cursor-pointer hover:bg-white/30 transition-colors duration-200 rounded-lg"
+                  onClick={() =>
+                    section.mediaId && getMediaPreview(section.mediaId, "VIDEO")
+                  }
+                  data-media-id={section.mediaId}
+                >
+                  <div className="flex items-center gap-3 p-3 bg-white/20 rounded-lg">
+                    <ImageIcon size={20} className="text-white/80" />
+                    <div>
+                      <div className="text-sm font-medium text-white truncate">
+                        Media Message
+                      </div>
+                      <div className="text-xs text-white/70">
+                        Video - Click to load
+                      </div>
+                    </div>
+                  </div>
                 </div>
               );
             }
-
-            // Handle document format
-            if (section.format === "DOCUMENT" && section.text) {
+            if (section.format === "AUDIO") {
+              return (
+                <div key={index} className="mb-2 cursor-pointer">
+                  <div className="flex items-center gap-3 p-3 bg-white/20 rounded-lg">
+                    {hasUrl ? (
+                      <button
+                        onClick={() => new Audio(section.mediaUrl).play()}
+                        className="p-2 rounded-full bg-white/30 hover:bg-white/40 text-[#00BCD4] transition-colors duration-200"
+                      >
+                        <Play size={16} />
+                      </button>
+                    ) : (
+                      <ImageIcon
+                        size={20}
+                        className="text-white/80 cursor-pointer"
+                        onClick={() =>
+                          section.mediaId &&
+                          getMediaPreview(section.mediaId, "AUDIO")
+                        }
+                      />
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Music size={16} className="text-white/80" />
+                        <span className="text-sm font-medium text-white">
+                          Audio Message
+                        </span>
+                      </div>
+                      <div className="text-xs text-white/70 mt-1">
+                        {hasUrl ? "Tap to play" : "Audio - Click icon to load"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            if (section.format === "DOCUMENT") {
               return (
                 <div
                   key={index}
-                  className={`flex items-center gap-2 p-2 ${
-                    isMe ? "bg-white/10" : "bg-gray-200"
-                  } rounded`}
+                  className="mb-2 cursor-pointer hover:bg-white/30 transition-colors duration-200 rounded-lg"
+                  onClick={() =>
+                    !hasUrl &&
+                    section.mediaId &&
+                    getMediaPreview(section.mediaId, "DOCUMENT")
+                  }
+                  data-media-id={section.mediaId}
                 >
-                  <FileText size={16} className={textColorQuaternary} />
-                  <span className={`text-sm ${textColorSecondary} truncate`}>
-                    {section.text}
-                  </span>
-                </div>
-              );
-            }
-
-            // Handle video format
-            if (section.format === "VIDEO" && section.text) {
-              return (
-                <div key={index} className="mb-3">
-                  <div
-                    className={`relative rounded-lg overflow-hidden ${
-                      isMe ? "bg-white/10" : "bg-gray-200"
-                    }`}
-                  >
-                    <video
-                      src={section.text}
-                      controls
-                      className="max-w-full max-h-40 w-auto"
-                      onError={(e) => {
-                        console.error(
-                          "Failed to load template video:",
-                          section.text
-                        );
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
+                  <div className="flex items-center gap-3 p-3 bg-white/20 rounded-lg">
+                    <FileText size={20} className="text-white/80" />
+                    <div>
+                      <div className="text-sm font-medium text-white truncate">
+                        {hasUrl ? section.mediaUrl : "Media Message"}
+                      </div>
+                      <div className="text-xs text-white/70">
+                        {hasUrl ? "Document" : "Document - Click to load"}
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
             }
+            // Default media fallback
+            return (
+              <div
+                key={index}
+                className="mb-2 cursor-pointer hover:bg-white/30 transition-colors duration-200 rounded-lg"
+                onClick={() =>
+                  !hasUrl &&
+                  section.mediaId &&
+                  getMediaPreview(section.mediaId, "MEDIA")
+                }
+                data-media-id={section.mediaId}
+              >
+                <div className="flex items-center gap-3 p-3 bg-white/20 rounded-lg">
+                  <ImageIcon size={20} className="text-white/80" />
+                  <div>
+                    <div className="text-sm font-medium text-white truncate">
+                      {hasUrl ? section.mediaUrl : "Media Message"}
+                    </div>
+                    <div className="text-xs text-white/70">
+                      {hasUrl ? "Media" : "Media - Click to load"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }
 
-            return null;
-          })}
-        </div>
+          // HEADER: Text
+          if (section.type === "HEADER" && section.text) {
+            return (
+              <div
+                key={index}
+                className="text-base font-semibold leading-tight"
+              >
+                {section.text}
+              </div>
+            );
+          }
+
+          // BODY
+          if (section.type === "BODY" && section.text) {
+            return (
+              <div key={index} className="leading-relaxed">
+                {renderFormattedMessage(section.text, searchQuery)}
+              </div>
+            );
+          }
+
+          // FOOTER
+          if (section.type === "FOOTER" && section.text) {
+            return (
+              <div key={index} className="text-sm italic opacity-70">
+                {section.text}
+              </div>
+            );
+          }
+
+          // BUTTON
+          if (section.type === "BUTTON" && section.buttonText) {
+            return (
+              <div key={index} className="mt-2">
+                <button
+                  className={`px-3 py-2 rounded-lg text-sm transition-colors duration-200 ${
+                    isMe
+                      ? "bg-white/30 hover:bg-white/40 text-white border border-white/20"
+                      : "bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-300"
+                  }`}
+                  onClick={() => {
+                    if (section.buttonType === "URL" && section.buttonValue) {
+                      window.open(section.buttonValue, "_blank");
+                    } else if (
+                      section.buttonType === "PHONE_NUMBER" &&
+                      section.buttonValue
+                    ) {
+                      window.open(`tel:${section.buttonValue}`);
+                    }
+                  }}
+                >
+                  <span className="flex items-center gap-2 justify-center">
+                    <Reply size={16} />
+                    {section.buttonText}
+                  </span>
+                </button>
+              </div>
+            );
+          }
+
+          return null;
+        })}
       </div>
     );
   };
@@ -309,7 +477,11 @@ const MessageBubble = ({
         case "image/gif":
         case "image/webp":
           return (
-            <div key={index} className="mb-2 cursor-pointer">
+            <div
+              key={index}
+              className="mb-2 cursor-pointer"
+              data-media-id={media.mediaId}
+            >
               <div className="relative rounded-lg overflow-hidden bg-gray-100">
                 <img
                   src={
@@ -323,6 +495,12 @@ const MessageBubble = ({
                     console.error("Failed to load image:", media.mediaId);
                     e.currentTarget.style.display = "none";
                   }}
+                  onClick={() => {
+                    // If mediaId is not a data URL, try to get preview
+                    if (!media.mediaId.startsWith("data:")) {
+                      getMediaPreview(media.mediaId, "IMAGE");
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -330,7 +508,11 @@ const MessageBubble = ({
 
         case "video":
           return (
-            <div key={index} className="mb-2 cursor-pointer">
+            <div
+              key={index}
+              className="mb-2 cursor-pointer"
+              data-media-id={media.mediaId}
+            >
               <div className="relative rounded-lg overflow-hidden bg-gray-100">
                 <video
                   src={
@@ -343,6 +525,12 @@ const MessageBubble = ({
                   onError={(e) => {
                     console.error("Failed to load video:", media.mediaId);
                     e.currentTarget.style.display = "none";
+                  }}
+                  onClick={() => {
+                    // If mediaId is not a data URL, try to get preview
+                    if (!media.mediaId.startsWith("data:")) {
+                      getMediaPreview(media.mediaId, "VIDEO");
+                    }
                   }}
                 />
               </div>
@@ -389,14 +577,26 @@ const MessageBubble = ({
 
         default:
           return (
-            <div key={index} className="mb-2 cursor-pointer">
+            <div
+              key={index}
+              className="mb-2 cursor-pointer hover:bg-white/30 transition-colors duration-200 rounded-lg"
+              onClick={() => {
+                // If mediaId is not a data URL, try to get preview
+                if (!media.mediaId.startsWith("data:")) {
+                  getMediaPreview(media.mediaId, "DOCUMENT");
+                }
+              }}
+              data-media-id={media.mediaId}
+            >
               <div className="flex items-center gap-3 p-3 bg-white/20 rounded-lg">
                 <FileText size={20} className="text-white/80" />
                 <div className="flex-1">
                   <div className="text-sm font-medium text-white truncate">
                     {media.mediaId}
                   </div>
-                  <div className="text-xs text-white/70">Document</div>
+                  <div className="text-xs text-white/70">
+                    Document - Click to load preview
+                  </div>
                 </div>
               </div>
             </div>
@@ -409,7 +609,16 @@ const MessageBubble = ({
   const renderMediaOnly = () => {
     if (message.mediaIds && message.mediaIds.length > 0 && !message.message) {
       return (
-        <div className="mb-2 cursor-pointer">
+        <div
+          className="mb-2 cursor-pointer hover:bg-white/30 transition-colors duration-200 rounded-lg"
+          onClick={() => {
+            // Try to get preview for the first mediaId
+            if (message.mediaIds && message.mediaIds.length > 0) {
+              getMediaPreview(message.mediaIds[0], "MEDIA");
+            }
+          }}
+          data-media-id={message.mediaIds?.[0]}
+        >
           <div className="flex items-center gap-3 p-3 bg-white/20 rounded-lg">
             <ImageIcon size={20} className="text-white/80" />
             <div className="flex-1">
@@ -418,7 +627,7 @@ const MessageBubble = ({
               </div>
               <div className="text-xs text-white/70">
                 {message.mediaIds.length} media file
-                {message.mediaIds.length > 1 ? "s" : ""}
+                {message.mediaIds.length > 1 ? "s" : ""} - Click to load preview
               </div>
             </div>
           </div>
@@ -449,12 +658,12 @@ const MessageBubble = ({
       <div
         className={`relative max-w-[70%] px-3 py-2 rounded-2xl ${
           isMe
-            ? "bg-[#00BCD4] text-white rounded-br-md shadow-sm"
-            : "bg-white text-gray-800 rounded-bl-md border border-gray-200 shadow-sm"
+            ? "bg-[#00BCD4] text-white rounded-br-none shadow-sm"
+            : "bg-white text-gray-800 rounded-bl-none border border-gray-200 shadow-sm"
         }`}
       >
-        {/* Render template message */}
-        {renderTemplate()}
+        {/* Render template content as normal message */}
+        {renderTemplateContent()}
 
         {/* Render media-only message */}
         {renderMediaOnly()}
