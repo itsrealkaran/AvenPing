@@ -167,13 +167,6 @@ export const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
                 <p className="text-sm text-gray-600 mb-2">
                   Preview as received message:
                 </p>
-                <div className="text-xs text-gray-500">
-                  Template: <span className="font-medium">{template.name}</span>
-                  <span className="mx-2">•</span>
-                  <span className="capitalize">
-                    {template.category.toLowerCase()}
-                  </span>
-                </div>
               </div>
               {/* Message Bubble Preview */}
               <MessageBubble

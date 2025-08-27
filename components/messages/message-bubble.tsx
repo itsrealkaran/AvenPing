@@ -115,10 +115,12 @@ const MessageBubble = ({
         <div className="relative group">
           {statusIcon}
           {/* Tooltip */}
-          <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 max-w-xs">
-            <div className="break-words">{message.errorMessage}</div>
+          <div className="absolute bottom-full right-0 mb-2 py-2 min-w-[260px] max-w-xs text-gray-600 bg-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-pre-line break-words z-50">
+            <div className="break-words whitespace-pre-line">
+              {message.errorMessage}
+            </div>
             {/* Arrow pointing down */}
-            <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
+            <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white"></div>
           </div>
         </div>
       );
@@ -268,12 +270,17 @@ const MessageBubble = ({
               if (hasUrl || hasLoadedPreview) {
                 return (
                   <div key={index} className="mb-2">
-                    <img
-                      src={hasUrl ? section.mediaUrl : previewUrl}
-                      alt="Message Image"
-                      className="max-w-full max-h-40 w-auto object-cover rounded-lg"
-                      onError={(e) => (e.currentTarget.style.display = "none")}
-                    />
+                    <div className="w-full h-60 flex items-center justify-center bg-black/10 rounded-lg overflow-hidden">
+                      <img
+                        src={hasUrl ? section.mediaUrl : previewUrl}
+                        alt="Message Image"
+                        className="w-full h-full object-cover rounded-lg"
+                        style={{ objectFit: "cover" }}
+                        onError={(e) =>
+                          (e.currentTarget.style.display = "none")
+                        }
+                      />
+                    </div>
                   </div>
                 );
               } else {
@@ -574,7 +581,7 @@ const MessageBubble = ({
               className="mb-2 cursor-pointer"
               data-media-id={media.mediaId}
             >
-              <div className="relative rounded-lg overflow-hidden bg-gray-100">
+              <div className="relative rounded-lg overflow-hidden bg-gray-100 w-full h-60 flex items-center justify-center">
                 <img
                   src={
                     media.mediaId.startsWith("data:")
@@ -584,7 +591,7 @@ const MessageBubble = ({
                       : media.mediaId
                   }
                   alt="Image"
-                  className="max-w-full max-h-60 w-auto object-cover"
+                  className="w-full h-full object-cover"
                   onError={(e) => {
                     console.error("Failed to load image:", media.mediaId);
                     e.currentTarget.style.display = "none";
