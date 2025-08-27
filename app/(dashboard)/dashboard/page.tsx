@@ -27,6 +27,9 @@ export default function DashboardPage() {
   const registerNumberCardRef = useRef<HTMLDivElement>(null);
   const businessVerificationCardRef = useRef<HTMLDivElement>(null);
 
+  // Ref for the scrollable body container
+  const bodyScrollRef = useRef<HTMLDivElement>(null);
+
   const { userInfo, hasWhatsAppAccount, refreshUser } = useUser();
   const { data: analyticsData, isLoading: analyticsLoading } = useAnalytics();
 
@@ -101,37 +104,45 @@ export default function DashboardPage() {
     return "z-10";
   };
 
-  // Function to scroll to priority card
+  // Function to scroll to priority card within the body container
   const scrollToPriorityCard = () => {
+    if (!bodyScrollRef.current) return;
+
+    let targetCard: HTMLDivElement | null = null;
+
     if (!isConnected && whatsappNumbersCardRef.current) {
-      // WhatsApp Numbers card is priority
-      whatsappNumbersCardRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-        inline: "nearest",
-      });
-      console.log("Dashboard: Scrolled to WhatsApp Numbers card");
+      targetCard = whatsappNumbersCardRef.current;
+      console.log("Dashboard: Scrolling to WhatsApp Numbers card");
     } else if (isConnected && !isRegistered && registerNumberCardRef.current) {
-      // Register Number card is priority
-      registerNumberCardRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-        inline: "nearest",
-      });
-      console.log("Dashboard: Scrolled to Register Number card");
+      targetCard = registerNumberCardRef.current;
+      console.log("Dashboard: Scrolling to Register Number card");
     } else if (
       isConnected &&
       isRegistered &&
       !isVerified &&
       businessVerificationCardRef.current
     ) {
-      // Business Verification card is priority
-      businessVerificationCardRef.current.scrollIntoView({
+      targetCard = businessVerificationCardRef.current;
+      console.log("Dashboard: Scrolling to Business Verification card");
+    }
+
+    if (targetCard) {
+      const bodyContainer = bodyScrollRef.current;
+      const targetRect = targetCard.getBoundingClientRect();
+      const bodyRect = bodyContainer.getBoundingClientRect();
+
+      // Calculate the position to scroll to within the body container
+      const scrollTop =
+        bodyContainer.scrollTop +
+        targetRect.top -
+        bodyRect.top -
+        bodyRect.height / 2 +
+        targetRect.height / 2;
+
+      bodyContainer.scrollTo({
+        top: scrollTop,
         behavior: "smooth",
-        block: "center",
-        inline: "nearest",
       });
-      console.log("Dashboard: Scrolled to Business Verification card");
     }
   };
 
@@ -397,6 +408,7 @@ export default function DashboardPage() {
           ? "relative overflow-hidden"
           : ""
       )}
+      ref={bodyScrollRef}
     >
       {/* WhatsApp Connection Overlay - Only covers dashboard body */}
       {(!hasWhatsAppAccount || !isConnected || !isRegistered) && (

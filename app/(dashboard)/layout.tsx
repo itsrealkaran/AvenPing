@@ -16,7 +16,7 @@ function LoadingScreen() {
             className="w-24 h-24"
           />
         </div>
-        <div className="text-gray-600 text-sm font-medium">Loading...</div>
+        {/* <div className="text-gray-600 text-sm font-medium">Loading...</div> */}
       </div>
     </div>
   );
