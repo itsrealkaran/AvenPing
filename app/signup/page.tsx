@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
@@ -51,7 +51,7 @@ const customerSizes = [
   "1000+ customers",
 ];
 
-export default function Signup() {
+function SignupContent() {
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -700,5 +700,22 @@ export default function Signup() {
         />
       )}
     </div>
+  );
+}
+
+export default function Signup() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-r from-[#43A2C9]/20 to-cyan-100 rounded-full flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 border-3 border-[#43A2C9] border-t-transparent rounded-full animate-spin" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">Loading...</h1>
+        </div>
+      </div>
+    }>
+      <SignupContent />
+    </Suspense>
   );
 }

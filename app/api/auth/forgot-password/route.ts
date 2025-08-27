@@ -38,9 +38,9 @@ export async function POST(request: NextRequest) {
 
     // Email content
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: "forgot-password <forgot-password@avenping.com>",
       to: email,
-      subject: "Password Reset OTP - AvenPing",
+      subject: "[No Reply] Password Reset OTP - AvenPing",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center;">
