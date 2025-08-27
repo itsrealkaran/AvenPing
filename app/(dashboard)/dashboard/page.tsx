@@ -326,77 +326,45 @@ export default function DashboardPage() {
   // Loading skeleton component
   const MetricCards = () => (
     <>
-      {analyticsLoading ? (
-        <>
-          {/* Metrics Grid with Loading State */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-3">
-            {[1, 2, 3, 4].map((index) => (
-              <div
-                key={index}
-                className="border-3 border-[#E0E0E0] rounded-2xl bg-white p-4 flex flex-col animate-pulse"
-              >
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="flex justify-between gap-4">
-                  <div className="flex flex-col">
-                    <div className="h-8 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                  </div>
-                  <div className="w-28 h-16 bg-gray-200 rounded"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mb-6 mx-2 px-1 flex justify-end border-b-3 border-gray-200 pb-1">
-            <Link
-              href="/analytics"
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              {`View All Analytics >>`}
-            </Link>
-          </div>
-        </>
-      ) : (
-        <>
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-3">
-            {analyticsData?.metrics?.map((metric, index) => (
-              <MetricCard key={index} {...metric} />
-            )) ||
-              // Fallback to sample metrics if no analytics data
-              [
-                {
-                  title: "Sent Messages",
-                  value: "0",
-                  change: 0,
-                },
-                {
-                  title: "Delivery Rate",
-                  value: "0%",
-                  change: 0,
-                },
-                {
-                  title: "Active Contacts",
-                  value: "0",
-                  change: 0,
-                },
-                {
-                  title: "Response Rate",
-                  value: "0%",
-                  change: 0,
-                },
-              ].map((metric, index) => <MetricCard key={index} {...metric} />)}
-          </div>
-          <div className="mb-6 mx-2 px-1 flex justify-end border-b-3 border-gray-200 pb-1">
-            <Link
-              href="/analytics"
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              {`View All Analytics >>`}
-            </Link>
-          </div>
-        </>
-      )}
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-3">
+        {analyticsData?.metrics?.map((metric, index) => (
+          <MetricCard key={index} {...metric} isLoading={!analyticsLoading} />
+        )) ||
+          // Fallback to sample metrics if no analytics data
+          [
+            {
+              title: "Sent Messages",
+              value: "0",
+              change: 0,
+            },
+            {
+              title: "Delivery Rate",
+              value: "0%",
+              change: 0,
+            },
+            {
+              title: "Active Contacts",
+              value: "0",
+              change: 0,
+            },
+            {
+              title: "Response Rate",
+              value: "0%",
+              change: 0,
+            },
+          ].map((metric, index) => (
+            <MetricCard key={index} {...metric} isLoading={analyticsLoading} />
+          ))}
+      </div>
+      <div className="mb-6 mx-2 px-1 flex justify-end border-b-3 border-gray-200 pb-1">
+        <Link
+          href="/analytics"
+          className="text-sm text-gray-500 hover:text-gray-700"
+        >
+          {`View All Analytics >>`}
+        </Link>
+      </div>
     </>
   );
 
