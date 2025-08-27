@@ -1294,20 +1294,10 @@ export function CreateCampaignModal({
                                     </span>
                                     {variable.mediaId && (
                                       <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                                        ✓ Uploaded
+                                        Uploaded
                                       </span>
                                     )}
                                   </div>
-                                  {variable.format === "IMAGE" &&
-                                    variable.mediaPreview && (
-                                      <div className="mt-2">
-                                        <img
-                                          src={variable.mediaPreview}
-                                          alt="Preview"
-                                          className="max-w-full h-32 object-contain rounded border"
-                                        />
-                                      </div>
-                                    )}
                                 </div>
                               )}
 
@@ -1330,84 +1320,51 @@ export function CreateCampaignModal({
                         Message Preview
                       </Label>
 
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Eye className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm font-medium text-gray-700">
-                            WhatsApp Preview
-                          </span>
-                        </div>
+                      {/* Chat Background Container */}
+                      <div
+                        className="relative rounded-lg overflow-hidden shadow-lg border-2 border-gray-300"
+                        style={{
+                          backgroundImage: "url(/message-bg.png)",
+                          backgroundSize: "200px",
+                          backgroundPosition: "center",
+                          backgroundRepeat: "repeat",
+                          minHeight: "400px",
+                        }}
+                      >
+                        {/* Chat Messages Area */}
+                        <div className="relative p-4 space-y-4 min-h-[300px]">
+                          {/* Preview Message using MessageBubble */}
+                          {selectedTemplate ? (
+                            (() => {
+                              // Create a proper message object for preview
+                              const previewMessage = {
+                                id: "preview",
+                                message: "", // Empty message since we're using templateData
+                                isOutbound: true,
+                                status: "SENT" as const,
+                                createdAt: new Date().toISOString(),
+                                phoneNumber: "+1234567890",
+                                whatsAppPhoneNumberId: "preview",
+                                recipientId: "preview",
+                                updatedAt: new Date().toISOString(),
+                                // media: generatePreviewMedia(),
+                                mediaIds: [],
+                                templateData: generatePreviewTemplateData(),
+                                interactiveJson: [],
+                              };
 
-                        {/* Chat Background Container */}
-                        <div
-                          className="relative rounded-lg overflow-hidden shadow-lg border-2 border-gray-300"
-                          style={{
-                            backgroundImage: "url(/message-bg.png)",
-                            backgroundSize: "200px",
-                            backgroundPosition: "center",
-                            backgroundRepeat: "repeat",
-                            minHeight: "400px",
-                          }}
-                        >
-                          {/* Background Overlay for better readability */}
-                          <div className="absolute inset-0 bg-white/20 pointer-events-none"></div>
-
-                          {/* Chat Header */}
-                          <div className="relative bg-white/90 backdrop-blur-sm border-b border-gray-200 p-3 shadow-sm">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
-                                <span className="text-white text-sm font-bold">
-                                  W
-                                </span>
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">
-                                  Your Business
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  Template Message
-                                </div>
+                              return <MessageBubble message={previewMessage} />;
+                            })()
+                          ) : (
+                            <div className="flex items-center justify-center h-64 text-gray-500">
+                              <div className="text-center">
+                                <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                <p className="text-sm">
+                                  Select a template to see preview
+                                </p>
                               </div>
                             </div>
-                          </div>
-
-                          {/* Chat Messages Area */}
-                          <div className="relative p-4 space-y-4 min-h-[300px]">
-                            {/* Preview Message using MessageBubble */}
-                            {selectedTemplate ? (
-                              (() => {
-                                // Create a proper message object for preview
-                                const previewMessage = {
-                                  id: "preview",
-                                  message: "", // Empty message since we're using templateData
-                                  isOutbound: true,
-                                  status: "SENT" as const,
-                                  createdAt: new Date().toISOString(),
-                                  phoneNumber: "+1234567890",
-                                  whatsAppPhoneNumberId: "preview",
-                                  recipientId: "preview",
-                                  updatedAt: new Date().toISOString(),
-                                  // media: generatePreviewMedia(),
-                                  mediaIds: [],
-                                  templateData: generatePreviewTemplateData(),
-                                  interactiveJson: [],
-                                };
-
-                                return (
-                                  <MessageBubble message={previewMessage} />
-                                );
-                              })()
-                            ) : (
-                              <div className="flex items-center justify-center h-64 text-gray-500">
-                                <div className="text-center">
-                                  <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                  <p className="text-sm">
-                                    Select a template to see preview
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                          )}
                         </div>
                       </div>
 
