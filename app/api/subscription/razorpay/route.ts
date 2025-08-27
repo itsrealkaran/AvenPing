@@ -21,13 +21,14 @@ const instance = new Razorpay({
 
 export async function POST(request: NextRequest) {
   try {
-    const { planName, planPeriod, region, isAddon, months, quantity }: { 
+    const { planName, planPeriod, region, isAddon, months, quantity, redirectUrl }: { 
       planName: string; 
       planPeriod: string; 
       region: string;
       isAddon?: boolean;
       months?: number;
       quantity?: number;
+      redirectUrl?: string;
     } = await request.json()
 
     if (!planName || !planPeriod || !region) {
@@ -133,6 +134,7 @@ export async function POST(request: NextRequest) {
       currency: order.currency,
       keyId: process.env.RAZORPAY_KEY_ID,
       subscriptionId: subscription.id,
+      redirectUrl: redirectUrl,
     })
   } catch (error) {
     console.error("Razorpay error:", error)

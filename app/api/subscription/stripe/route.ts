@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: isAddon ? "payment" : "subscription",
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}${redirectUrl ? `${redirectUrl}?status=registered&success=true&session_id={CHECKOUT_SESSION_ID}` : "/settings?success=true&session_id={CHECKOUT_SESSION_ID}"}`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}${redirectUrl ? `${redirectUrl}?status=${isAddon ? "paid" : "registered"}&success=true&isAddon=${isAddon}&session_id={CHECKOUT_SESSION_ID}` : "/settings?success=true&session_id={CHECKOUT_SESSION_ID}"}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?canceled=true`,
       customer_email: user.email,
       metadata: {

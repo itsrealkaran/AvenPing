@@ -30,6 +30,8 @@ interface AddonModalProps {
   region: "US" | "IND" | "ASIA"
   quantity?: number
   onQuantityChange?: (quantity: number) => void
+  onProceedToPayment?: (addon: Addon, months: number, quantity: number) => void
+  isFromSignup?: boolean
 }
 
 const AddonModal: React.FC<AddonModalProps> = ({
@@ -40,7 +42,9 @@ const AddonModal: React.FC<AddonModalProps> = ({
   onMonthsChange,
   region,
   quantity = 1,
-  onQuantityChange
+  onQuantityChange,
+  onProceedToPayment,
+  isFromSignup = false
 }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [localQuantity, setLocalQuantity] = useState(() => {
@@ -255,7 +259,13 @@ const AddonModal: React.FC<AddonModalProps> = ({
           </Button>
           <Button
             onClick={() => {
-              setShowPaymentModal(true)
+              if (onProceedToPayment) {
+                // If onProceedToPayment is provided, use it
+                onProceedToPayment(addon, months, localQuantity)
+              } else {
+                // Fallback to the original behavior
+                setShowPaymentModal(true)
+              }
             }}
             className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
           >
@@ -264,19 +274,22 @@ const AddonModal: React.FC<AddonModalProps> = ({
         </div>
       </div>
       
-      {/* Payment Gateway Modal */}
-      <PaymentGatewayModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        planName={addon.name}
-        planPeriod="month"
-        region={region}
-        price={totalPrice}
-        currency={currencySymbol}
-        isAddon={true}
-        months={months}
-        quantity={localQuantity}
-      />
+      {/* Payment Gateway Modal - only show if onProceedToPayment is not provided */}
+      {!onProceedToPayment && (
+        <PaymentGatewayModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          planName={addon.name}
+          planPeriod="month"
+          region={region}
+          price={totalPrice}
+          currency={currencySymbol}
+          isAddon={true}
+          months={months}
+          quantity={localQuantity}
+          isFromSignup={true}
+        />
+      )}
     </div>
   )
 }

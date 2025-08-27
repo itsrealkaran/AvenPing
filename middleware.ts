@@ -71,8 +71,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    if (pathname.startsWith('/api')) return NextResponse.next();
     console.log(session, "session from middleware");
+    if (pathname.startsWith('/api')) return NextResponse.next();
     
     if (session && session.signupStatus === 'REGISTERED' && !pathname.startsWith('/signup') ) {
       const url = new URL('/signup?status=registered', request.url);

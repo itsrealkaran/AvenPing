@@ -40,7 +40,7 @@ export const loadRazorpayScript = async (): Promise<void> => {
   await loadScript("https://checkout.razorpay.com/v1/checkout.js")
 }
 
-export const createRazorpayOrder = async (planName: string, planPeriod: string, region: string, isAddon?: boolean, months?: number, quantity?: number) => {
+export const createRazorpayOrder = async (planName: string, planPeriod: string, region: string, isAddon?: boolean, months?: number, quantity?: number, redirectUrl?: string) => {
   try {
     const response = await fetch("/api/subscription/razorpay", {
       method: "POST",
@@ -54,6 +54,7 @@ export const createRazorpayOrder = async (planName: string, planPeriod: string, 
         isAddon,
         months,
         quantity,
+        redirectUrl,
       }),
     })
 
@@ -79,14 +80,15 @@ export const initiateRazorpayPayment = async (
   onError: (error: any) => void,
   isAddon?: boolean,
   months?: number,
-  quantity?: number
+  quantity?: number,
+  redirectUrl?: string
 ) => {
   try {
     // Load Razorpay script
     await loadRazorpayScript()
 
     // Create order
-    const orderData = await createRazorpayOrder(planName, planPeriod, region, isAddon, months, quantity)
+    const orderData = await createRazorpayOrder(planName, planPeriod, region, isAddon, months, quantity, redirectUrl)
 
     const options: RazorpayOptions = {
       key: orderData.keyId,

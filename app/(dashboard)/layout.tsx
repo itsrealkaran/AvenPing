@@ -8,8 +8,6 @@ import Header from "@/components/layout/header";
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { userInfo, setActivePhoneNumber } = useUser();
 
-  console.log(userInfo, "userInfo");
-
   // Define navigation items with typed icon names
   const navigationItems = [
     {

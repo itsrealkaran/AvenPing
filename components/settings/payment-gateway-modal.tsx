@@ -46,8 +46,6 @@ const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   const [selectedGateway, setSelectedGateway] = useState<"stripe" | "razorpay" | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
 
-  console.log(price, currency)
-
   const paymentGateways: PaymentGateway[] = [
     {
       id: "stripe",
@@ -113,7 +111,7 @@ const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
         }
       } else if (selectedGateway === "razorpay") {
         const razorpayPlanPeriod = planPeriod === "month" ? "MONTHLY" : "YEARLY"
-        
+        const redirectUrl = isFromSignup ? `/signup?success=true&status=${isAddon ? "paid" : "registered"}` : undefined
         await initiateRazorpayPayment(
           planName,
           razorpayPlanPeriod,
@@ -131,7 +129,11 @@ const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
               })
             }).then(() => {
               toast.success("Payment successful")
-              window.location.reload()
+              if (isFromSignup) {
+                window.location.href = `${redirectUrl}&isAddon=${isAddon}` || "/settings"
+              } else {
+                window.location.reload()
+              }
             }).catch((error) => {
               console.error("Payment verification failed:", error)
               toast.error("Payment verification failed. Please try again.")
@@ -144,7 +146,8 @@ const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
           },
           isAddon,
           months,
-          quantity
+          quantity,
+          redirectUrl
         )
       }
     } catch (error) {

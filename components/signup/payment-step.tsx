@@ -22,9 +22,10 @@ interface PaymentStepProps {
   onNext: () => void;
   onBack: () => void;
   onShowPaymentModal: (plan: Plan, period: "month" | "year", region: "US" | "IND" | "ASIA") => void;
+  isAddon?: boolean;
 }
 
-export default function PaymentStep({ onNext, onBack, onShowPaymentModal }: PaymentStepProps) {
+export default function PaymentStep({ onNext, onBack, onShowPaymentModal, isAddon = false }: PaymentStepProps) {
   // Plan selection state
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [planPeriod, setPlanPeriod] = useState<"month" | "year">("year");
@@ -89,13 +90,11 @@ export default function PaymentStep({ onNext, onBack, onShowPaymentModal }: Paym
 
   // Check for payment success from URL parameters
   useEffect(() => {
-    console.log("useEffect from payment-step");
     const urlParams = new URLSearchParams(window.location.search);
     const paymentSuccess = urlParams.get('success');
     const paymentCanceled = urlParams.get('canceled');
-
-    console.log(paymentSuccess, paymentCanceled, "paymentSuccess, paymentCanceled");
     
+
     if (paymentSuccess === 'true') {
       // Start polling for payment confirmation
       pollPaymentStatus();
@@ -113,10 +112,7 @@ export default function PaymentStep({ onNext, onBack, onShowPaymentModal }: Paym
       const paymentSuccess = urlParams.get('success');
       const paymentCanceled = urlParams.get('canceled');
 
-      console.log("Checking URL params on render:", paymentSuccess, paymentCanceled);
-      
       if (paymentSuccess === 'true' && !isCheckingPayment) {
-        console.log("Payment success detected on render, starting polling...");
         pollPaymentStatus();
       }
     };
@@ -152,9 +148,19 @@ export default function PaymentStep({ onNext, onBack, onShowPaymentModal }: Paym
           if (data.signupStatus === 'PAID') {
             // Payment confirmed, update session and proceed
             setIsCheckingPayment(false);
-            toast.success('Payment confirmed! Proceeding to WhatsApp connection...');
-            // window.history.replaceState({}, document.title, window.location.pathname);
-            onNext();
+            toast.success('Payment confirmed! Proceeding to next step...');
+            // Check if this is an addon payment
+            const urlParams = new URLSearchParams(window.location.search);
+            const isAddonPayment = urlParams.get('isAddon') === 'true' || isAddon;
+            
+            if (isAddonPayment) {
+              // For addon payments, navigate to addons step (step 8)
+              // We need to use window.location to ensure proper navigation
+              window.location.href = '/signup?status=paid&isAddon=true';
+            } else {
+              // For regular plan payments, proceed to WhatsApp connection (step 7)
+              onNext();
+            }
             return;
           }
         }
@@ -171,7 +177,6 @@ export default function PaymentStep({ onNext, onBack, onShowPaymentModal }: Paym
         // Max attempts reached, show error
         setIsCheckingPayment(false);
         toast.error('Payment verification timeout. Please contact support.');
-        // window.history.replaceState({}, document.title, window.location.pathname);
       }
     };
 

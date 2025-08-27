@@ -11,6 +11,8 @@ import Navbar from "@/components/landing/navbar";
 import SearchableDropdown from "@/components/landing/ui/searchable-dropdown";
 import PaymentStep from "@/components/signup/payment-step";
 import PaymentGatewayModal from "@/components/settings/payment-gateway-modal";
+import AddonsStep from "@/components/signup/addons-step";
+import AddonModal from "@/components/settings/addon-modal";
 
 // Facebook SDK types
 declare global {
@@ -55,12 +57,32 @@ export default function Signup() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isConnectingWhatsApp, setIsConnectingWhatsApp] = useState(false);
+  const [whatsappStatus, setWhatsappStatus] = useState<{
+    isConnected: boolean;
+    isLoading: boolean;
+    error: string | null;
+  }>({
+    isConnected: false,
+    isLoading: true,
+    error: null
+  });
   
   // Payment modal state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<any>(null);
   const [planPeriodForPayment, setPlanPeriodForPayment] = useState<"month" | "year">("year");
   const [regionForPayment, setRegionForPayment] = useState<"US" | "IND" | "ASIA">("US");
+  const [monthsForPayment, setMonthsForPayment] = useState(1);
+  const [quantityForPayment, setQuantityForPayment] = useState(1);
+  const [isAddonPayment, setIsAddonPayment] = useState(false);
+  
+  // Addon modal state
+  const [showAddonModal, setShowAddonModal] = useState(false);
+  const [selectedAddonForModal, setSelectedAddonForModal] = useState<any>(null);
+  const [addonMonths, setAddonMonths] = useState(1);
+  const [addonQuantity, setAddonQuantity] = useState(1);
+  const [addonRegion, setAddonRegion] = useState<"US" | "IND" | "ASIA">("US");
+  
   const router = useRouter();
 
 
@@ -79,14 +101,17 @@ export default function Signup() {
   // get the status from the url 
   const searchParams = useSearchParams();
   const status = searchParams.get("status");
+  const isAddon = searchParams.get("isAddon");
 
   useEffect(() => {
-    if (status === "registered") {
+    if (isAddon === "true" && status === "paid") {
+      setCurrentStep(8);
+    } else if (status === "registered") {
       setCurrentStep(6);
     } else if (status === "paid") {
       setCurrentStep(7);
     }
-  }, [status]);
+  }, [status, isAddon]);
 
   const updateFormData = (field: keyof SignupData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -114,32 +139,29 @@ export default function Signup() {
 
     setCurrentStep(6);
 
-    // try {
-    //   setIsLoading(true);
-    //   const response = await axios.post("/api/auth/signup", formData);
+    try {
+      setIsLoading(true);
+      const response = await axios.post("/api/auth/signup", formData);
 
-    //   if (response.status === 200) {
-    //     toast.success("Account created successfully!");
-    //     // Move to plan selection step
-    //     setCurrentStep(6);
-    //   }
-    // } catch (error: any) {
-    //   console.error(error);
-    //   if (error.response?.data?.error) {
-    //     toast.error(error.response.data.error);
-    //   } else {
-    //     toast.error("An error occurred during signup");
-    //   }
-    // } finally {
-    //   setIsLoading(false);
-    // }
+      if (response.status === 200) {
+        toast.success("Account created successfully!");
+        // Move to plan selection step
+        setCurrentStep(6);
+      }
+    } catch (error: any) {
+      console.error(error);
+      if (error.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else {
+        toast.error("An error occurred during signup");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-
-
-
   const handleSkipWhatsApp = () => {
-    router.push("/dashboard");
+    setCurrentStep(8);
   };
 
   const handleShowPaymentModal = (plan: any, period: "month" | "year", region: "US" | "IND" | "ASIA") => {
@@ -149,10 +171,69 @@ export default function Signup() {
     setShowPaymentModal(true);
   };
 
+  const handleShowAddonPaymentModal = (addon: any, period: "month" | "year", region: "US" | "IND" | "ASIA", months: number, quantity: number) => {
+    setSelectedAddonForModal(addon);
+    setAddonMonths(months);
+    setAddonQuantity(quantity);
+    setAddonRegion(region);
+    setShowAddonModal(true);
+  };
+
+  // Handle proceeding from addon modal to payment
+  const handleProceedToPayment = (addon: any, months: number, quantity: number) => {
+    setShowAddonModal(false);
+    
+    // Now open the payment gateway modal
+    setSelectedPlanForPayment(addon);
+    setPlanPeriodForPayment("month"); // Addons are always monthly
+    setRegionForPayment(addonRegion);
+    setMonthsForPayment(months);
+    setQuantityForPayment(quantity);
+    setIsAddonPayment(true);
+    setShowPaymentModal(true);
+  };
+
+  const checkWhatsAppStatus = async () => {
+    try {
+      setWhatsappStatus(prev => ({ ...prev, isLoading: true, error: null }));
+      
+      const response = await fetch('/api/get-info', {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const isConnected = data.userData?.whatsappAccount?.phoneNumbers?.length > 0;
+        
+        setWhatsappStatus({
+          isConnected,
+          isLoading: false,
+          error: null
+        });
+      } else {
+        throw new Error('Failed to fetch WhatsApp status');
+      }
+    } catch (error) {
+      console.error('Error checking WhatsApp status:', error);
+      setWhatsappStatus({
+        isConnected: false,
+        isLoading: false,
+        error: 'Failed to check WhatsApp status'
+      });
+    }
+  };
+
   const getPlanPrice = (plan: any, period: "month" | "year", region: "US" | "IND" | "ASIA") => {
     if (!plan) return 0;
     const priceJson = period === "month" ? plan.monthlyPriceJson : plan.yearlyPriceJson;
-    return priceJson?.[region] || 0;
+    const basePrice = priceJson?.[region] || 0;
+    
+    // For addons, multiply by months and quantity
+    if (isAddonPayment) {
+      return basePrice * monthsForPayment * quantityForPayment;
+    }
+    
+    return basePrice;
   };
 
   const getCurrencySymbol = (region: "US" | "IND" | "ASIA") => {
@@ -164,27 +245,25 @@ export default function Signup() {
     }
   };
 
-
-
   // Check for payment success from URL parameters
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentSuccess = urlParams.get('success');
     const paymentCanceled = urlParams.get('canceled');
     
-    console.log("Signup page - URL params:", paymentSuccess, paymentCanceled);
-    
     if (paymentSuccess === 'true') {
-      console.log("Payment success detected in signup page, setting step to 6");
-      // Set current step to 6 (payment step) so PaymentStep component can handle it
       setCurrentStep(6);
-      // Don't proceed automatically, let PaymentStep handle the polling
     } else if (paymentCanceled === 'true') {
       toast.error('Payment was canceled. Please try again.');
-      // Clear the URL parameters
-      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
+
+  // Check WhatsApp status when reaching step 7
+  useEffect(() => {
+    if (currentStep === 7) {
+      checkWhatsAppStatus();
+    }
+  }, [currentStep]);
 
   const handleConnectWhatsApp = async () => {
     setIsConnectingWhatsApp(true);
@@ -389,6 +468,7 @@ export default function Signup() {
             onNext={nextStep}
             onBack={prevStep}
             onShowPaymentModal={handleShowPaymentModal}
+            isAddon={searchParams.get("isAddon") === "true"}
           />
         );
 
@@ -402,8 +482,19 @@ export default function Signup() {
                 </svg>
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Connect your WhatsApp
+                {whatsappStatus.isLoading 
+                  ? "Checking WhatsApp status..." 
+                  : whatsappStatus.isConnected 
+                    ? "WhatsApp Already Connected!" 
+                    : "Connect your WhatsApp"
+                }
               </h1>
+              
+              {whatsappStatus.isConnected && (
+                <p className="text-gray-600">
+                  Great! Your WhatsApp is already connected. You can proceed to the dashboard.
+                </p>
+              )}
             </div>
             
             <div className="space-y-4">
@@ -429,11 +520,20 @@ export default function Signup() {
                 disabled={isConnectingWhatsApp}
                 className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Skip for now
+                {whatsappStatus.isConnected ? "Go to Dashboard" : "Skip for now"}
               </button>
             </div>
           </div>
         );
+
+        case 8:
+          return (
+            <AddonsStep 
+              onNext={nextStep}
+              onBack={prevStep}
+              onShowPaymentModal={handleShowAddonPaymentModal}
+            />
+          );
 
       default:
         return null;
@@ -454,6 +554,10 @@ export default function Signup() {
         return formData.password.length >= 8 && formData.confirm_password.length >= 8;
       case 6:
         return true; // Payment step is handled by the PaymentStep component
+      case 7:
+        return true; // WhatsApp connection step
+      case 8:
+        return true; // Addons step is handled by the AddonsStep component
       default:
         return false;
     }
@@ -516,7 +620,7 @@ export default function Signup() {
 
                      {/* Progress Indicator */}
            <div className="flex items-center justify-center gap-2 mt-6">
-             {[1, 2, 3, 4, 5, 6, 7].map((step) => (
+             {[1, 2, 3, 4, 5, 6, 7, 8].map((step) => (
                <div
                  key={step}
                  className={`w-2 h-2 rounded-full transition-colors ${
@@ -547,11 +651,27 @@ export default function Signup() {
         region={regionForPayment}
         price={getPlanPrice(selectedPlanForPayment, planPeriodForPayment, regionForPayment)}
         currency={getCurrencySymbol(regionForPayment)}
-        isAddon={false}
-        months={1}
-        quantity={1}
+        isAddon={isAddonPayment}
+        months={monthsForPayment}
+        quantity={quantityForPayment}
         isFromSignup={true}
       />
+
+      {/* Addon Modal */}
+      {selectedAddonForModal && (
+        <AddonModal
+          isOpen={showAddonModal}
+          onClose={() => setShowAddonModal(false)}
+          addon={selectedAddonForModal}
+          months={addonMonths}
+          onMonthsChange={setAddonMonths}
+          region={addonRegion}
+          quantity={addonQuantity}
+          onQuantityChange={setAddonQuantity}
+          onProceedToPayment={handleProceedToPayment}
+          isFromSignup={true}
+        />
+      )}
     </div>
   );
 } 
