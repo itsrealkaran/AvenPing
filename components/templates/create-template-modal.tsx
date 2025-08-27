@@ -92,7 +92,8 @@ export function CreateTemplateModal({
 
   // Button state
   const [buttons, setButtons] = useState<any[]>(
-    editingTemplate?.components?.find((c: any) => c.type === "BUTTONS")?.buttons || []
+    editingTemplate?.components?.find((c: any) => c.type === "BUTTONS")
+      ?.buttons || []
   );
 
   // Preview mode states
@@ -281,18 +282,25 @@ export function CreateTemplateModal({
             type: "FOOTER",
             text: "Sent using AvenPing. Reply STOP to opt-out.",
           },
-          ...(buttons.length > 0 ? [{
-            type: "BUTTONS",
-            buttons: buttons.map(button => {
-              const buttonData: any = { type: button.type, text: button.text };
-              if (button.type === "URL") {
-                buttonData.url = button.url;
-              } else if (button.type === "PHONE_NUMBER") {
-                buttonData.phone_number = button.phone_number;
-              }
-              return buttonData;
-            })
-          }] : []),
+          ...(buttons.length > 0
+            ? [
+                {
+                  type: "BUTTONS",
+                  buttons: buttons.map((button) => {
+                    const buttonData: any = {
+                      type: button.type,
+                      text: button.text,
+                    };
+                    if (button.type === "URL") {
+                      buttonData.url = button.url;
+                    } else if (button.type === "PHONE_NUMBER") {
+                      buttonData.phone_number = button.phone_number;
+                    }
+                    return buttonData;
+                  }),
+                },
+              ]
+            : []),
         ],
       };
 
@@ -355,7 +363,10 @@ export function CreateTemplateModal({
       toast.error("Maximum 3 buttons allowed per template");
       return;
     }
-    setButtons([...buttons, { type: "QUICK_REPLY", text: "", url: "", phone_number: "" }]);
+    setButtons([
+      ...buttons,
+      { type: "QUICK_REPLY", text: "", url: "", phone_number: "" },
+    ]);
   };
 
   const removeButton = (index: number) => {
@@ -370,11 +381,11 @@ export function CreateTemplateModal({
 
   const updateButtonType = (index: number, type: string) => {
     const newButtons = [...buttons];
-    newButtons[index] = { 
-      type, 
-      text: "", 
-      url: type === "URL" ? "" : undefined, 
-      phone_number: type === "PHONE_NUMBER" ? "" : undefined 
+    newButtons[index] = {
+      type,
+      text: "",
+      url: type === "URL" ? "" : undefined,
+      phone_number: type === "PHONE_NUMBER" ? "" : undefined,
     };
     setButtons(newButtons);
   };
@@ -1292,7 +1303,7 @@ export function CreateTemplateModal({
                             </Button>
                             {headerMediaId && (
                               <span className="text-sm text-green-600">
-                                ✓ Uploaded
+                                Uploaded
                               </span>
                             )}
                           </div>
@@ -1495,7 +1506,8 @@ export function CreateTemplateModal({
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>
-                              Add up to 3 buttons to your template. Choose from Quick Reply, URL, or Phone Number buttons.
+                              Add up to 3 buttons to your template. Choose from
+                              Quick Reply, URL, or Phone Number buttons.
                             </p>
                           </TooltipContent>
                         </Tooltip>
@@ -1517,12 +1529,17 @@ export function CreateTemplateModal({
                   {buttons.length === 0 && (
                     <div className="text-center py-6 text-gray-500">
                       <p className="text-sm">No buttons added yet</p>
-                      <p className="text-xs mt-1">Click "Add Button" to get started</p>
+                      <p className="text-xs mt-1">
+                        Click &quot;Add Button&quot; to get started
+                      </p>
                     </div>
                   )}
 
                   {buttons.map((button, index) => (
-                    <div key={index} className="p-4 bg-white rounded-lg border border-gray-200 space-y-3">
+                    <div
+                      key={index}
+                      className="p-4 bg-white rounded-lg border border-gray-200 space-y-3"
+                    >
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-gray-700">
                           Button {index + 1}
@@ -1540,7 +1557,10 @@ export function CreateTemplateModal({
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="space-y-2">
-                          <Label className="text-sm text-gray-600">Button Type</Label><br />
+                          <Label className="text-sm text-gray-600">
+                            Button Type
+                          </Label>
+                          <br />
                           <DropdownButton
                             options={[
                               { value: "QUICK_REPLY", label: "Quick Reply" },
@@ -1563,10 +1583,14 @@ export function CreateTemplateModal({
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-sm text-gray-600">Button Text</Label>
+                          <Label className="text-sm text-gray-600">
+                            Button Text
+                          </Label>
                           <Input
                             value={button.text}
-                            onChange={(e) => updateButton(index, "text", e.target.value)}
+                            onChange={(e) =>
+                              updateButton(index, "text", e.target.value)
+                            }
                             placeholder="e.g., Shop Now, Call Us, Learn More"
                             maxLength={25}
                           />
@@ -1578,7 +1602,9 @@ export function CreateTemplateModal({
                           <Label className="text-sm text-gray-600">URL</Label>
                           <Input
                             value={button.url}
-                            onChange={(e) => updateButton(index, "url", e.target.value)}
+                            onChange={(e) =>
+                              updateButton(index, "url", e.target.value)
+                            }
                             placeholder="https://example.com"
                             type="url"
                           />
@@ -1587,15 +1613,23 @@ export function CreateTemplateModal({
 
                       {button.type === "PHONE_NUMBER" && (
                         <div className="space-y-2">
-                          <Label className="text-sm text-gray-600">Phone Number</Label>
+                          <Label className="text-sm text-gray-600">
+                            Phone Number
+                          </Label>
                           <Input
                             value={button.phone_number}
-                            onChange={(e) => updateButton(index, "phone_number", e.target.value)}
+                            onChange={(e) =>
+                              updateButton(
+                                index,
+                                "phone_number",
+                                e.target.value
+                              )
+                            }
                             placeholder="+1234567890"
                             type="tel"
                           />
                         </div>
-                        )}
+                      )}
                     </div>
                   ))}
 
@@ -1606,9 +1640,18 @@ export function CreateTemplateModal({
                         <div className="text-sm text-blue-800">
                           <p className="font-medium mb-1">Button Guidelines:</p>
                           <ul className="space-y-1 text-xs">
-                            <li>• <strong>Quick Reply:</strong> Simple text button (max 25 characters)</li>
-                            <li>• <strong>URL:</strong> Links to websites (must be HTTPS)</li>
-                            <li>• <strong>Phone Number:</strong> International format recommended</li>
+                            <li>
+                              • <strong>Quick Reply:</strong> Simple text button
+                              (max 25 characters)
+                            </li>
+                            <li>
+                              • <strong>URL:</strong> Links to websites (must be
+                              HTTPS)
+                            </li>
+                            <li>
+                              • <strong>Phone Number:</strong> International
+                              format recommended
+                            </li>
                             <li>• Maximum 3 buttons per template</li>
                           </ul>
                         </div>
@@ -1628,8 +1671,8 @@ export function CreateTemplateModal({
             <Button onClick={handleSubmit} disabled={isLoading}>
               {isLoading
                 ? editingTemplate
-                  ? "Updating..."
-                  : "Creating..."
+                  ? "Updating"
+                  : "Creating"
                 : editingTemplate
                 ? "Update Template"
                 : "Create Template"}
