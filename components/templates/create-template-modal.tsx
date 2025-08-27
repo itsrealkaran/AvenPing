@@ -90,6 +90,11 @@ export function CreateTemplateModal({
   );
   const [showRules, setShowRules] = useState(false);
 
+  // Button state
+  const [buttons, setButtons] = useState<any[]>(
+    editingTemplate?.components?.find((c: any) => c.type === "BUTTONS")?.buttons || []
+  );
+
   // Preview mode states
   const [isHeaderPreviewMode, setIsHeaderPreviewMode] = useState(false);
   const [isBodyPreviewMode, setIsBodyPreviewMode] = useState(false);
@@ -276,6 +281,18 @@ export function CreateTemplateModal({
             type: "FOOTER",
             text: "Sent using AvenPing. Reply STOP to opt-out.",
           },
+          ...(buttons.length > 0 ? [{
+            type: "BUTTONS",
+            buttons: buttons.map(button => {
+              const buttonData: any = { type: button.type, text: button.text };
+              if (button.type === "URL") {
+                buttonData.url = button.url;
+              } else if (button.type === "PHONE_NUMBER") {
+                buttonData.phone_number = button.phone_number;
+              }
+              return buttonData;
+            })
+          }] : []),
         ],
       };
 
@@ -330,6 +347,36 @@ export function CreateTemplateModal({
 
   const removeBodyExample = (index: number) => {
     setBodyExamples(bodyExamples.filter((_, i) => i !== index));
+  };
+
+  // Button management functions
+  const addButton = () => {
+    if (buttons.length >= 3) {
+      toast.error("Maximum 3 buttons allowed per template");
+      return;
+    }
+    setButtons([...buttons, { type: "QUICK_REPLY", text: "", url: "", phone_number: "" }]);
+  };
+
+  const removeButton = (index: number) => {
+    setButtons(buttons.filter((_, i) => i !== index));
+  };
+
+  const updateButton = (index: number, field: string, value: string) => {
+    const newButtons = [...buttons];
+    newButtons[index] = { ...newButtons[index], [field]: value };
+    setButtons(newButtons);
+  };
+
+  const updateButtonType = (index: number, type: string) => {
+    const newButtons = [...buttons];
+    newButtons[index] = { 
+      type, 
+      text: "", 
+      url: type === "URL" ? "" : undefined, 
+      phone_number: type === "PHONE_NUMBER" ? "" : undefined 
+    };
+    setButtons(newButtons);
   };
 
   // WhatsApp formatting functions
@@ -441,6 +488,7 @@ export function CreateTemplateModal({
       setHeaderMediaId("");
       setBodyText("");
       setBodyExamples([]);
+      setButtons([]);
     }
   }, [open, editingTemplate]);
 
@@ -1431,6 +1479,142 @@ export function CreateTemplateModal({
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* Buttons Section */}
+                <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-sm font-medium text-gray-700">
+                        Buttons (Optional)
+                      </Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-gray-400" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              Add up to 3 buttons to your template. Choose from Quick Reply, URL, or Phone Number buttons.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addButton}
+                      disabled={buttons.length >= 3}
+                      className="h-8"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Button
+                    </Button>
+                  </div>
+
+                  {buttons.length === 0 && (
+                    <div className="text-center py-6 text-gray-500">
+                      <p className="text-sm">No buttons added yet</p>
+                      <p className="text-xs mt-1">Click "Add Button" to get started</p>
+                    </div>
+                  )}
+
+                  {buttons.map((button, index) => (
+                    <div key={index} className="p-4 bg-white rounded-lg border border-gray-200 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700">
+                          Button {index + 1}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeButton(index)}
+                          className="h-8 w-8 text-red-500 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm text-gray-600">Button Type</Label><br />
+                          <DropdownButton
+                            options={[
+                              { value: "QUICK_REPLY", label: "Quick Reply" },
+                              { value: "URL", label: "URL" },
+                              { value: "PHONE_NUMBER", label: "Phone Number" },
+                            ]}
+                            variant="outline"
+                            selected={button.type}
+                            onChange={(value) => updateButtonType(index, value)}
+                            className="w-full justify-between"
+                          >
+                            {button.type === "QUICK_REPLY"
+                              ? "Quick Reply"
+                              : button.type === "URL"
+                              ? "URL"
+                              : button.type === "PHONE_NUMBER"
+                              ? "Phone Number"
+                              : "Select Type"}
+                          </DropdownButton>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm text-gray-600">Button Text</Label>
+                          <Input
+                            value={button.text}
+                            onChange={(e) => updateButton(index, "text", e.target.value)}
+                            placeholder="e.g., Shop Now, Call Us, Learn More"
+                            maxLength={25}
+                          />
+                        </div>
+                      </div>
+
+                      {button.type === "URL" && (
+                        <div className="space-y-2">
+                          <Label className="text-sm text-gray-600">URL</Label>
+                          <Input
+                            value={button.url}
+                            onChange={(e) => updateButton(index, "url", e.target.value)}
+                            placeholder="https://example.com"
+                            type="url"
+                          />
+                        </div>
+                      )}
+
+                      {button.type === "PHONE_NUMBER" && (
+                        <div className="space-y-2">
+                          <Label className="text-sm text-gray-600">Phone Number</Label>
+                          <Input
+                            value={button.phone_number}
+                            onChange={(e) => updateButton(index, "phone_number", e.target.value)}
+                            placeholder="+1234567890"
+                            type="tel"
+                          />
+                        </div>
+                        )}
+                    </div>
+                  ))}
+
+                  {buttons.length > 0 && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-blue-800">
+                          <p className="font-medium mb-1">Button Guidelines:</p>
+                          <ul className="space-y-1 text-xs">
+                            <li>• <strong>Quick Reply:</strong> Simple text button (max 25 characters)</li>
+                            <li>• <strong>URL:</strong> Links to websites (must be HTTPS)</li>
+                            <li>• <strong>Phone Number:</strong> International format recommended</li>
+                            <li>• Maximum 3 buttons per template</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

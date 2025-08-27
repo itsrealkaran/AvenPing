@@ -117,6 +117,7 @@ export function CreateCampaignModal({
     variables: [],
     scheduleType: "immediate",
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const { contacts: allContactsRaw, attributes } = useContacts();
   const { templates, selectedWhatsAppAccountId, setSelectedWhatsAppAccountId } =
@@ -402,6 +403,7 @@ export function CreateCampaignModal({
     }
 
     try {
+      setIsLoading(true);
       // Include the full template data in the campaign data
       const campaignDataWithTemplate = {
         ...campaignData,
@@ -418,9 +420,11 @@ export function CreateCampaignModal({
         variables: [],
         scheduleType: "immediate",
       });
+      setIsLoading(false);
     } catch (error) {
       console.error("Error creating campaign:", error);
       toast.error("Failed to create campaign");
+      setIsLoading(false);
     }
   };
 
@@ -1501,7 +1505,16 @@ export function CreateCampaignModal({
                   <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
               ) : (
-                <Button onClick={handleSubmit}>Create Campaign</Button>
+                <Button onClick={handleSubmit} disabled={isLoading}>
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Creating...
+                    </div>
+                  ) : (
+                    "Create Campaign"
+                  )}
+                </Button>
               )}
             </div>
           </div>
