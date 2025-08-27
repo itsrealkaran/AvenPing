@@ -14,7 +14,23 @@ interface TemplatePreviewModalProps {
     language: string;
     category: string;
     status: string;
-    components: any[];
+    parameter_format: string;
+    components: Array<{
+      type: "HEADER" | "BODY" | "FOOTER" | "BUTTONS";
+      format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT";
+      text?: string;
+      buttons?: Array<{
+        type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+        text: string;
+        url?: string;
+        phone_number?: string;
+      }>;
+      example?: {
+        header_text?: string[];
+        body_text?: string[][];
+        header_handle?: string[];
+      };
+    }>;
     created_at?: string;
     updated_at?: string;
   } | null;
@@ -30,9 +46,78 @@ export const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
   // Convert template components to message format for preview
   const createPreviewMessage = (): Message => {
     const now = new Date().toISOString();
+
+    // Process template components to create proper templateData
+    const templateData =
+      template.components
+        ?.map((component) => {
+          if (component.type === "HEADER") {
+            if (component.format === "TEXT" && component.text) {
+              // Text header - replace variables with example values
+              let headerText = component.text;
+              if (component.example?.header_text) {
+                component.example.header_text.forEach((exampleText, index) => {
+                  const placeholder = `{{${index + 1}}}`;
+                  headerText = headerText.replace(placeholder, exampleText);
+                });
+              }
+              return {
+                type: "HEADER" as const,
+                format: "TEXT" as const,
+                text: headerText,
+              };
+            } else if (component.format && component.format !== "TEXT") {
+              // Media header - use header_handle for media URLs
+              const mediaUrl =
+                component.example?.header_handle?.[0] || undefined;
+              return {
+                type: "HEADER" as const,
+                format: component.format as "IMAGE" | "VIDEO" | "DOCUMENT",
+                mediaUrl: mediaUrl,
+                mediaId: undefined,
+              };
+            }
+          }
+
+          if (component.type === "BODY" && component.text) {
+            // Body text - replace variables with example values
+            let bodyText = component.text;
+            if (component.example?.body_text) {
+              component.example.body_text.forEach((exampleArray, index) => {
+                if (exampleArray && exampleArray.length > 0) {
+                  const placeholder = `{{${index + 1}}}`;
+                  bodyText = bodyText.replace(placeholder, exampleArray[0]);
+                }
+              });
+            }
+            return {
+              type: "BODY" as const,
+              text: bodyText,
+            };
+          }
+
+          if (component.type === "FOOTER" && component.text) {
+            return {
+              type: "FOOTER" as const,
+              text: component.text,
+            };
+          }
+
+          if (component.type === "BUTTONS" && component.buttons) {
+            return {
+              type: "BUTTONS" as const,
+              buttons: component.buttons,
+            };
+          }
+
+          return null;
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null) ||
+      [];
+
     const message: Message = {
       id: `preview-${template.id}`,
-      message: "",
+      message: "", // Empty message since we're using templateData
       isOutbound: false, // Show as inbound for better preview
       status: "DELIVERED",
       createdAt: now,
@@ -43,15 +128,7 @@ export const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
       media: [],
       mediaIds: [],
       interactiveJson: [],
-      templateData:
-        template.components?.map((component: any) => ({
-          type: component.type,
-          text:
-            component.text ||
-            component.example ||
-            `Sample ${component.type?.toLowerCase?.() || "component"} text`,
-          format: component.format || "TEXT",
-        })) || [],
+      templateData: templateData,
     };
 
     return message;
@@ -90,6 +167,13 @@ export const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
                 <p className="text-sm text-gray-600 mb-2">
                   Preview as received message:
                 </p>
+                <div className="text-xs text-gray-500">
+                  Template: <span className="font-medium">{template.name}</span>
+                  <span className="mx-2">•</span>
+                  <span className="capitalize">
+                    {template.category.toLowerCase()}
+                  </span>
+                </div>
               </div>
               {/* Message Bubble Preview */}
               <MessageBubble
