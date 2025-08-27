@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
           
           // Create structured templateData for error case
           const errorTemplateData: Array<{
-            type: "HEADER" | "BODY" | "FOOTER" | "BUTTON";
+            type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
             text?: string;
             mediaUrl?: string;
             mediaId?: string;
@@ -258,6 +258,12 @@ export async function POST(request: NextRequest) {
             buttonText?: string;
             buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
             buttonValue?: string;
+            buttons?: Array<{
+              type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+              text: string;
+              url?: string;
+              phone_number?: string;
+            }>;
           }> = [];
           
           // Add components from replacedTemplateData
@@ -286,6 +292,22 @@ export async function POST(request: NextRequest) {
                 text: item.text,
                 buttonText: item.text,
                 buttonType: "QUICK_REPLY" as const
+              });
+            }
+          });
+
+          // Add BUTTONS components from templateData
+          const buttonsComponents = templateData.components.filter((comp: any) => comp.type === "BUTTONS");
+          buttonsComponents.forEach((buttonsComp: any) => {
+            if (buttonsComp.buttons && Array.isArray(buttonsComp.buttons)) {
+              errorTemplateData.push({
+                type: "BUTTONS" as const,
+                buttons: buttonsComp.buttons.map((button: any) => ({
+                  type: button.type,
+                  text: button.text,
+                  url: button.url,
+                  phone_number: button.phone_number
+                }))
               });
             }
           });
@@ -327,7 +349,7 @@ export async function POST(request: NextRequest) {
 
         // Create structured templateData with replaced values
         const structuredTemplateData: Array<{
-          type: "HEADER" | "BODY" | "FOOTER" | "BUTTON";
+          type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
           text?: string;
           mediaUrl?: string;
           mediaId?: string;
@@ -335,6 +357,12 @@ export async function POST(request: NextRequest) {
           buttonText?: string;
           buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
           buttonValue?: string;
+          buttons?: Array<{
+            type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+            text: string;
+            url?: string;
+            phone_number?: string;
+          }>;
         }> = [];
         
         // Add header component if exists
@@ -403,7 +431,7 @@ export async function POST(request: NextRequest) {
           });
         }
         
-        // Add button components if exist
+        // Add button components if exist (legacy single BUTTON)
         const buttonComponents = templateData.components.filter((comp: any) => comp.type === "BUTTON");
         buttonComponents.forEach((buttonComp: any, index: number) => {
           const buttonVariable = variables.find((v: any) => 
@@ -421,6 +449,22 @@ export async function POST(request: NextRequest) {
               buttonText: buttonText,
               buttonType: (buttonComp.sub_type || "QUICK_REPLY") as "QUICK_REPLY" | "URL" | "PHONE_NUMBER",
               buttonValue: buttonComp.variable_index ? buttonText : undefined
+            });
+          }
+        });
+
+        // Add BUTTONS components if exist (new structure)
+        const buttonsComponents = templateData.components.filter((comp: any) => comp.type === "BUTTONS");
+        buttonsComponents.forEach((buttonsComp: any) => {
+          if (buttonsComp.buttons && Array.isArray(buttonsComp.buttons)) {
+            structuredTemplateData.push({
+              type: "BUTTONS" as const,
+              buttons: buttonsComp.buttons.map((button: any) => ({
+                type: button.type,
+                text: button.text,
+                url: button.url,
+                phone_number: button.phone_number
+              }))
             });
           }
         });

@@ -12,6 +12,8 @@ import {
   Clock,
   AlertCircle,
   Reply,
+  ExternalLink,
+  Phone,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useRef } from "react";
@@ -430,7 +432,7 @@ const MessageBubble = ({
             );
           }
 
-          // BUTTON
+          // BUTTON (legacy single button)
           if (section.type === "BUTTON" && section.buttonText) {
             return (
               <div key={index} className="mt-2">
@@ -456,6 +458,48 @@ const MessageBubble = ({
                     {section.buttonText}
                   </span>
                 </button>
+              </div>
+            );
+          }
+
+          // BUTTONS (new structure with buttons array)
+          if (
+            section.type === "BUTTONS" &&
+            section.buttons &&
+            Array.isArray(section.buttons)
+          ) {
+            return (
+              <div key={index} className="mt-2 space-y-1">
+                {section.buttons.map((button, buttonIndex) => (
+                  <button
+                    key={buttonIndex}
+                    className={`w-full px-3 py-2 rounded-lg text-sm transition-colors duration-200 ${
+                      isMe
+                        ? "bg-white/30 hover:bg-white/40 text-white border border-white/20"
+                        : "bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-300"
+                    }`}
+                    onClick={() => {
+                      if (button.type === "URL" && button.url) {
+                        window.open(button.url, "_blank");
+                      } else if (
+                        button.type === "PHONE_NUMBER" &&
+                        button.phone_number
+                      ) {
+                        window.open(`tel:${button.phone_number}`);
+                      } else if (button.type === "QUICK_REPLY") {
+                        // Handle quick reply - you can implement the logic here
+                        console.log("Quick reply clicked:", button.text);
+                      }
+                    }}
+                  >
+                    <span className="flex items-center gap-2 justify-center">
+                      {button.type === "URL" && <ExternalLink size={16} />}
+                      {button.type === "PHONE_NUMBER" && <Phone size={16} />}
+                      {button.type === "QUICK_REPLY" && <Reply size={16} />}
+                      {button.text}
+                    </span>
+                  </button>
+                ))}
               </div>
             );
           }

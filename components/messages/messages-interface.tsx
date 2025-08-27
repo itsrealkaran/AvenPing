@@ -27,7 +27,7 @@ export type Message = {
   message: string;
   mediaIds?: string[];
   templateData?: Array<{
-    type: "HEADER" | "BODY" | "FOOTER" | "BUTTON";
+    type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
     text?: string;
     mediaUrl?: string;
     mediaId?: string;
@@ -35,6 +35,13 @@ export type Message = {
     buttonText?: string;
     buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
     buttonValue?: string;
+    // New fields for BUTTONS structure
+    buttons?: Array<{
+      type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+      text: string;
+      url?: string;
+      phone_number?: string;
+    }>;
   }> | null;
   interactiveJson?: Array<{
     type: string;

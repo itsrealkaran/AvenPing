@@ -1627,7 +1627,9 @@ export function CreateTemplateModal({
             </Button>
             <Button onClick={handleSubmit} disabled={isLoading}>
               {isLoading
-                ? "Creating..."
+                ? editingTemplate
+                  ? "Updating..."
+                  : "Creating..."
                 : editingTemplate
                 ? "Update Template"
                 : "Create Template"}
