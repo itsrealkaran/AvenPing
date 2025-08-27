@@ -1,11 +1,12 @@
 "use client";
 
 import Body from "@/components/layout/body";
-import { FileText, Edit, Trash, Copy, Plus } from "lucide-react";
+import { Trash, Eye } from "lucide-react";
 import React, { useState, useEffect } from "react";
-import Table, { ActionMenuItem, ToolbarAction } from "@/components/ui/table";
+import Table, { ActionMenuItem } from "@/components/ui/table";
 import { MRT_ColumnDef } from "material-react-table";
 import { CreateTemplateModal } from "@/components/templates/create-template-modal";
+import { TemplatePreviewModal } from "@/components/templates/template-preview-modal";
 import { useTemplates } from "@/context/template-provider";
 import { useUser } from "@/context/user-context";
 
@@ -23,6 +24,10 @@ type Template = {
 export default function TemplatesPage() {
   const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] =
     useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(
+    null
+  );
   const { userInfo } = useUser();
   const {
     templates,
@@ -30,7 +35,6 @@ export default function TemplatesPage() {
     error,
     selectedWhatsAppAccountId,
     setSelectedWhatsAppAccountId,
-    createTemplate,
     deleteTemplate,
   } = useTemplates();
 
@@ -41,13 +45,17 @@ export default function TemplatesPage() {
     }
   }, [userInfo, setSelectedWhatsAppAccountId]);
 
-  const handleDeleteTemplate = async (templatesToDelete: Template | Template[]) => {
+  const handleDeleteTemplate = async (
+    templatesToDelete: Template | Template[]
+  ) => {
     if (!selectedWhatsAppAccountId) {
       console.error("No WhatsApp account selected");
       return;
     }
-    const templateArray = Array.isArray(templatesToDelete) ? templatesToDelete : [templatesToDelete];
-    const names = templateArray.map(t => t.name);
+    const templateArray = Array.isArray(templatesToDelete)
+      ? templatesToDelete
+      : [templatesToDelete];
+    const names = templateArray.map((t) => t.name);
     await deleteTemplate(selectedWhatsAppAccountId, names);
   };
 
@@ -55,27 +63,14 @@ export default function TemplatesPage() {
     setIsCreateTemplateModalOpen(true);
   };
 
-  const handleEditTemplate = (template: Template) => {
-    console.log("Edit template", template);
-    // Note: WhatsApp API doesn't support template updates
-    // This would typically involve creating a new template
+  const handlePreviewTemplate = (template: Template) => {
+    setSelectedTemplate(template);
+    setIsPreviewModalOpen(true);
   };
 
-  const handleDuplicateTemplate = async (template: Template) => {
-    if (!selectedWhatsAppAccountId) {
-      console.error("No WhatsApp account selected");
-      return;
-    }
-
-    // Create a new template based on the existing one
-    const newTemplateData = {
-      name: `${template.name}_copy`,
-      language: template.language,
-      category: template.category,
-      components: template.components,
-    };
-
-    await createTemplate(selectedWhatsAppAccountId, newTemplateData);
+  const handleClosePreview = () => {
+    setIsPreviewModalOpen(false);
+    setSelectedTemplate(null);
   };
 
   const columns: MRT_ColumnDef<Template>[] = [
@@ -125,7 +120,7 @@ export default function TemplatesPage() {
                 key={index}
                 className={`px-2 py-0.5 text-xs bg-gray-50 rounded-full ${
                   component.type === "HEADER"
-                    ? "bg-sky-50 text-sky-700" 
+                    ? "bg-sky-50 text-sky-700"
                     : component.type === "BODY"
                     ? "bg-emerald-50 text-emerald-700"
                     : component.type === "FOOTER"
@@ -144,6 +139,16 @@ export default function TemplatesPage() {
 
   const actionMenuItems: ActionMenuItem[] = [
     {
+      key: "preview",
+      label: "Preview",
+      icon: <Eye className="text-blue-600 size-4" />,
+      onClick: async (template, closeMenu) => {
+        handlePreviewTemplate(template);
+        closeMenu();
+      },
+      className: "text-blue-600",
+    },
+    {
       key: "delete",
       label: "Delete",
       icon: <Trash className="text-red-600 size-4" />,
@@ -160,9 +165,12 @@ export default function TemplatesPage() {
       console.error("No WhatsApp account selected");
       return;
     }
-
-    // The template data will be passed from the modal
     setIsCreateTemplateModalOpen(false);
+  };
+
+  // New: handle row click to preview template
+  const handleRowClick = (template: Template) => {
+    handlePreviewTemplate(template);
   };
 
   return (
@@ -183,12 +191,20 @@ export default function TemplatesPage() {
         searchPlaceholder="Search templates..."
         deleteButtonLabel="Delete Template"
         onDelete={handleDeleteTemplate}
+        // Pass the row click handler to Table
+        onRowClick={handleRowClick}
       />
 
       <CreateTemplateModal
         open={isCreateTemplateModalOpen}
         onClose={() => setIsCreateTemplateModalOpen(false)}
         onCreateTemplate={handleCreateTemplate}
+      />
+
+      <TemplatePreviewModal
+        open={isPreviewModalOpen}
+        onClose={handleClosePreview}
+        template={selectedTemplate}
       />
     </Body>
   );

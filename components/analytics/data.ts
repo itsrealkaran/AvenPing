@@ -98,7 +98,7 @@ export function generateCampaignData({
     const opened = delivered - Math.floor(Math.random() * 200);
 
     // Calculate date for label
-    let date = new Date(startDate);
+    const date = new Date(startDate);
     if (checkpoint === "monthly") date.setMonth(date.getMonth() - (checkpoints - 1 - i));
     else if (checkpoint === "semiweekly") date.setDate(date.getDate() - (checkpoints - 1 - i) * 3);
     else date.setDate(date.getDate() - (checkpoints - 1 - i));
@@ -161,7 +161,7 @@ export function generateContactGrowthData({
   let baseContacts = 5000; // Starting with 5000 contacts
   for (let i = 0; i < checkpoints; i++) {
     // Calculate date for label
-    let date = new Date(startDate);
+    const date = new Date(startDate);
     if (checkpoint === "monthly") date.setMonth(date.getMonth() - (checkpoints - 1 - i));
     else if (checkpoint === "semiweekly") date.setDate(date.getDate() - (checkpoints - 1 - i) * 3);
     else date.setDate(date.getDate() - (checkpoints - 1 - i));

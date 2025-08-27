@@ -48,7 +48,7 @@ export default function AnalyticsPage() {
                 Processing Analytics Data
               </h3>
               <p className="text-gray-600 max-w-md mx-auto leading-relaxed">
-                We're gathering your campaign performance, message delivery rates, and contact growth data to provide you with comprehensive insights.
+                We&apos;re gathering your campaign performance, message delivery rates, and contact growth data to provide you with comprehensive insights.
               </p>
               
               {/* Progress Bar */}

@@ -172,12 +172,12 @@ export default function DashboardPage() {
   };
 
   const handleConnectAccount = async () => {
-    //@ts-ignore
+    //@ts-expect-error - Facebook SDK - Facebook SDK
     FB.login(
       (response: any) => {
         if (response.authResponse) {
           console.log("Logged in as:", response.authResponse, response);
-          //@ts-ignore
+          //@ts-expect-error - Facebook SDK - Facebook SDK
           FB.api("/me", { fields: "name, email" }, (userInfo) => {
             console.log(
               "Logged in as:",

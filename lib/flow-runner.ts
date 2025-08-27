@@ -375,7 +375,7 @@ export class FlowRunner {
       }
 
       // Check for existing flow session
-      let session = await this.getFlowSession(userId, recipientId);
+      const session = await this.getFlowSession(userId, recipientId);
       
       if (session) {
         // Continue existing flow
@@ -461,7 +461,7 @@ export class FlowRunner {
         return;
       }
 
-      //@ts-ignore
+      //@ts-expect-error - Facebook SDK
       const flowSteps = (flow.automationJson[0]?.steps as unknown) as FlowStep[];
       const currentStep = flowSteps.find(step => step.id === session.currentStepId);
 
@@ -520,7 +520,7 @@ export class FlowRunner {
 
       if (!flow) return;
 
-      //@ts-ignore
+      //@ts-expect-error - Facebook SDK
       const flowSteps = (flow.automationJson[0]?.steps as unknown) as FlowStep[];
       
       while (session.currentStepId) {

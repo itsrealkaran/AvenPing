@@ -267,7 +267,7 @@ export default function FlowBuilder({
       };
 
       // Get appropriate label and node type based on the dragged component
-      let label = nodeType.replace(/([A-Z])/g, " $1").trim(); // Convert camelCase to spaces
+      const label = nodeType.replace(/([A-Z])/g, " $1").trim(); // Convert camelCase to spaces
 
       // Determine category based on node type naming pattern
       let category = "";

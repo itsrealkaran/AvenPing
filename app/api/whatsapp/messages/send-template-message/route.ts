@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { storeWhatsAppMessage } from "@/lib/store-message";
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    let campaignStats: {
+    const campaignStats: {
       id: string;
       name: string;
       phoneNumber: string;
@@ -199,7 +200,7 @@ export async function POST(request: NextRequest) {
                     type: "header",
                     parameters: [{ 
                       type: mediaParam.type, 
-                      id: mediaParam.id 
+                      [mediaParam.type]: { id: mediaParam.id }
                     }]
                   });
                   console.log(`Added media header component for ${contact.phoneNumber}:`, {
@@ -247,34 +248,59 @@ export async function POST(request: NextRequest) {
           const errorText = await response.text();
           console.error(`Error response body:`, errorText);
           
-          // Create message with error status
-          const message = await prisma.whatsAppMessage.create({
-            data: {
-              templateData: {
-                components: replacedTemplateData,
-                campaignId: campaignId,
-                campaignName: campaignName || "Template Campaign",
-                templateName: templateName,
-                variables: variables,
-                replacedValues: replacedTemplateData.map(item => ({
-                  variableIndex: item.variableIndex,
-                  attributeName: item.attributeName,
-                  useAttribute: item.useAttribute,
-                  replacedValue: item.replacedValue,
-                  originalText: item.originalText,
-                  finalText: item.text
-                }))
-              },
-              recipientId: contact.id,
-              whatsAppPhoneNumberId: account.phoneNumbers[0].id,
-              isOutbound: true,
-              message: "",
-              phoneNumber: contact.phoneNumber,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-              status: "FAILED",
-              errorMessage: `HTTP ${response.status}: ${response.statusText}`,
-            },
+          // Create structured templateData for error case
+          const errorTemplateData: Array<{
+            type: "HEADER" | "BODY" | "FOOTER" | "BUTTON";
+            text?: string;
+            mediaUrl?: string;
+            mediaId?: string;
+            format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
+            buttonText?: string;
+            buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+            buttonValue?: string;
+          }> = [];
+          
+          // Add components from replacedTemplateData
+          replacedTemplateData.forEach((item: any) => {
+            if (item.type === "HEADER") {
+              errorTemplateData.push({
+                type: "HEADER" as const,
+                text: item.text,
+                format: item.format || "TEXT" as const
+              });
+            } else if (item.type === "BODY") {
+              errorTemplateData.push({
+                type: "BODY" as const,
+                text: item.text,
+                format: "TEXT" as const
+              });
+            } else if (item.type === "FOOTER") {
+              errorTemplateData.push({
+                type: "FOOTER" as const,
+                text: item.text,
+                format: "TEXT" as const
+              });
+            } else if (item.type === "BUTTON") {
+              errorTemplateData.push({
+                type: "BUTTON" as const,
+                text: item.text,
+                buttonText: item.text,
+                buttonType: "QUICK_REPLY" as const
+              });
+            }
+          });
+
+          // Create message with error status using storeWhatsAppMessage
+          const message = await storeWhatsAppMessage({
+            recipientId: contact.id,
+            phoneNumber: contact.phoneNumber,
+            whatsAppPhoneNumberId: account.phoneNumbers[0].id,
+            isOutbound: true,
+            message: "",
+            timestamp: Math.floor(Date.now() / 1000),
+            status: "FAILED",
+            errorMessage: `HTTP ${response.status}: ${response.statusText}`,
+            templateData: errorTemplateData,
           });
 
           await prisma.whatsAppRecipient.update({
@@ -299,35 +325,116 @@ export async function POST(request: NextRequest) {
         
         console.log(`WhatsApp API response for ${contact.phoneNumber}:`, JSON.stringify(result, null, 2));
 
-        // Create message with campaign data and replaced values first
-        const message = await prisma.whatsAppMessage.create({
-          data: {
-            templateData: {
-              // Store the replaced template data
-              components: replacedTemplateData,
-              // Store campaign metadata
-              campaignId: campaignId,
-              campaignName: campaignName || "Template Campaign",
-              templateName: templateName,
-              variables: variables, // Store the original variables configuration
-              replacedValues: replacedTemplateData.map(item => ({
-                variableIndex: item.variableIndex,
-                attributeName: item.attributeName,
-                useAttribute: item.useAttribute,
-                replacedValue: item.replacedValue,
-                originalText: item.originalText,
-                finalText: item.text
-              }))
-            },
-            recipientId: contact.id,
-            whatsAppPhoneNumberId: account.phoneNumbers[0].id,
-            isOutbound: true,  // Template messages are sent by business
-            message: "",  // Template messages don't have regular text
-            phoneNumber: contact.phoneNumber,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            status: "PENDING", // Initial status
-          },
+        // Create structured templateData with replaced values
+        const structuredTemplateData: Array<{
+          type: "HEADER" | "BODY" | "FOOTER" | "BUTTON";
+          text?: string;
+          mediaUrl?: string;
+          mediaId?: string;
+          format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
+          buttonText?: string;
+          buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+          buttonValue?: string;
+        }> = [];
+        
+        // Add header component if exists
+        const headerComponent = templateData.components.find((comp: any) => comp.type === "HEADER");
+        if (headerComponent) {
+          const headerVariable = variables.find((v: any) => v.componentType === "HEADER");
+          if (headerVariable) {
+            if (headerVariable.format === "TEXT") {
+              // Text header
+              const headerText = headerComponent.text?.replace(
+                `{{${headerVariable.variableIndex}}}`,
+                headerVariable.useAttribute && headerVariable.attributeName
+                  ? (contact[headerVariable.attributeName] || headerVariable.fallbackValue || "")
+                  : (headerVariable.value || headerVariable.fallbackValue || "")
+              ) || headerComponent.text || "";
+              
+              structuredTemplateData.push({
+                type: "HEADER" as const,
+                text: headerText,
+                format: "TEXT" as const
+              });
+            } else if (headerVariable.mediaId) {
+              // Media header
+              structuredTemplateData.push({
+                type: "HEADER" as const,
+                mediaId: headerVariable.mediaId,
+                format: headerVariable.format as "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO",
+                mediaUrl: headerVariable.mediaUrl
+              });
+            }
+          }
+        }
+        
+        // Add body component if exists
+        const bodyComponent = templateData.components.find((comp: any) => comp.type === "BODY");
+        if (bodyComponent) {
+          let bodyText = bodyComponent.text || "";
+          
+          // Replace all body variables
+          variables.forEach((variable: any) => {
+            if (variable.componentType === "BODY" && variable.format === "TEXT") {
+              const replacementValue = variable.useAttribute && variable.attributeName
+                ? (contact[variable.attributeName] || variable.fallbackValue || "")
+                : (variable.value || variable.fallbackValue || "");
+              
+              bodyText = bodyText.replace(`{{${variable.variableIndex}}}`, replacementValue);
+            }
+          });
+          
+          if (bodyText) {
+            structuredTemplateData.push({
+              type: "BODY" as const,
+              text: bodyText,
+              format: "TEXT" as const
+            });
+          }
+        }
+        
+        // Add footer component if exists
+        const footerComponent = templateData.components.find((comp: any) => comp.type === "FOOTER");
+        if (footerComponent) {
+          structuredTemplateData.push({
+            type: "FOOTER" as const,
+            text: footerComponent.text || "",
+            format: "TEXT" as const
+          });
+        }
+        
+        // Add button components if exist
+        const buttonComponents = templateData.components.filter((comp: any) => comp.type === "BUTTON");
+        buttonComponents.forEach((buttonComp: any, index: number) => {
+          const buttonVariable = variables.find((v: any) => 
+            v.componentType === "BUTTON" && v.variableIndex === buttonComp.variable_index
+          );
+          
+          if (buttonVariable) {
+            const buttonText = buttonVariable.useAttribute && buttonVariable.attributeName
+              ? (contact[buttonVariable.attributeName] || buttonVariable.fallbackValue || "")
+              : (buttonVariable.value || buttonVariable.fallbackValue || "");
+            
+            structuredTemplateData.push({
+              type: "BUTTON" as const,
+              text: buttonText,
+              buttonText: buttonText,
+              buttonType: (buttonComp.sub_type || "QUICK_REPLY") as "QUICK_REPLY" | "URL" | "PHONE_NUMBER",
+              buttonValue: buttonComp.variable_index ? buttonText : undefined
+            });
+          }
+        });
+
+        // Create message with structured templateData using storeWhatsAppMessage
+        const message = await storeWhatsAppMessage({
+          recipientId: contact.id,
+          phoneNumber: contact.phoneNumber,
+          whatsAppPhoneNumberId: account.phoneNumbers[0].id,
+          isOutbound: true,  // Template messages are sent by business
+          message: "",  // Template messages don't have regular text
+          timestamp: Math.floor(Date.now() / 1000),
+          status: "PENDING", // Initial status
+          templateData: structuredTemplateData,
         });
 
         // Check for WhatsApp API errors

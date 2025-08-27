@@ -46,11 +46,15 @@ export async function getPricingDetails(planName: string, planPeriod: "month" | 
       throw new Error(`Plan ${planName} not found`)
     }
 
+    // Safely derive price values
+    const monthlyPrice = plan?.monthlyPriceJson?.[region] ?? 0
+    const yearlyPrice = plan?.yearlyPriceJson?.[region] ?? 0
+
     if (isAddon) {
       const addonPlan = userPlans.find((plan: any) => plan.planName === planName)
       
       if (addonPlan && new Date(addonPlan.endDate) < new Date()) {
-        const addonPricePerDay = plan?.monthlyPriceJson?.[region]! / 30
+        const addonPricePerDay = monthlyPrice / 30
         const addonPrice = addonPricePerDay * (new Date(addonPlan.endDate).getDate() - new Date().getDate())
 
         return {
@@ -67,7 +71,7 @@ export async function getPricingDetails(planName: string, planPeriod: "month" | 
         period: planPeriod,
         isAddOn: true,
         endDate: new Date(Date.now() + (months || 1) * 30 * 24 * 60 * 60 * 1000),
-        price: plan?.monthlyPriceJson?.[region]! * (months || 1)
+        price: monthlyPrice * (months || 1)
       }
     }
 
@@ -77,7 +81,7 @@ export async function getPricingDetails(planName: string, planPeriod: "month" | 
         period: planPeriod,
         isAddOn: false,
         endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        price: planPeriod === 'month' ? plan?.monthlyPriceJson?.[region] : plan?.yearlyPriceJson?.[region]! * 12
+        price: planPeriod === 'month' ? monthlyPrice : yearlyPrice * 12
       }
     }
 
@@ -87,7 +91,7 @@ export async function getPricingDetails(planName: string, planPeriod: "month" | 
         period: planPeriod,
         isAddOn: plan?.isAddOn,
         endDate: planPeriod === 'month' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        price: planPeriod === 'month' ? plan?.monthlyPriceJson?.[region] : plan?.yearlyPriceJson?.[region]! * 12
+        price: planPeriod === 'month' ? monthlyPrice : yearlyPrice * 12
       }
     } else if (planPeriod === 'year') {
       const isPlanDownGrade = isPlanDowngrade(primaryPlan.name, planName)
@@ -103,13 +107,13 @@ export async function getPricingDetails(planName: string, planPeriod: "month" | 
         }
       }
 
-      const calculatedPrice = plan?.monthlyPriceJson?.[region]
+      const calculatedPrice = monthlyPrice
       console.log("calculatedPrice", calculatedPrice)
 
       // if the user's primary plan is active and the plan is a upgrade then calculate the price for the remaining months of the year
       if (new Date(primaryPlan.endDate) > new Date()) {
         const remainingMonths = 12 - new Date(primaryPlan.endDate).getMonth()
-        const price = calculatedPrice! * remainingMonths
+        const price = calculatedPrice * remainingMonths
         return {
           planName: planName,
           period: planPeriod,
@@ -121,7 +125,7 @@ export async function getPricingDetails(planName: string, planPeriod: "month" | 
       
       // calculate the price for the remaining months of the year
       const remainingMonths = 12 - new Date(primaryPlan.endDate).getMonth()
-      const price = calculatedPrice! * remainingMonths
+      const price = calculatedPrice * remainingMonths
 
       return {
         planName: planName,

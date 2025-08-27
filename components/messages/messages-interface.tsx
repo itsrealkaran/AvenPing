@@ -27,9 +27,14 @@ export type Message = {
   message: string;
   mediaIds?: string[];
   templateData?: Array<{
-    text: string;
-    type: "HEADER" | "BODY" | "FOOTER";
-    format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT";
+    type: "HEADER" | "BODY" | "FOOTER" | "BUTTON";
+    text?: string;
+    mediaUrl?: string;
+    mediaId?: string;
+    format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
+    buttonText?: string;
+    buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+    buttonValue?: string;
   }> | null;
   interactiveJson?: Array<{
     type: string;
