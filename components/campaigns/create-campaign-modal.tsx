@@ -55,6 +55,26 @@ interface TemplateComponent {
   };
 }
 
+// Extended interface for preview generation
+interface PreviewTemplateComponent {
+  type: "HEADER" | "BODY" | "FOOTER" | "BUTTONS";
+  format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT";
+  text?: string;
+  mediaUrl?: string;
+  mediaId?: string;
+  buttons?: Array<{
+    type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+    text: string;
+    url?: string;
+    phone_number?: string;
+  }>;
+  example?: {
+    header_text?: string[];
+    body_text?: string[][];
+    header_media?: string[];
+  };
+}
+
 interface CreateCampaignModalProps {
   open: boolean;
   onClose: () => void;
@@ -556,6 +576,148 @@ export function CreateCampaignModal({
     }
 
     return previewText;
+  };
+
+  // Generate proper template data for preview
+  const generatePreviewTemplateData = (): PreviewTemplateComponent[] => {
+    if (!selectedTemplate) return [];
+
+    return selectedTemplate.components
+      .map((comp) => {
+        if (comp.type === "HEADER") {
+          if (comp.format === "TEXT" && comp.text) {
+            // Text header with variables replaced
+            let headerText = comp.text;
+            campaignData.variables
+              .filter(
+                (variable) =>
+                  variable.componentType === "HEADER" &&
+                  variable.format === "TEXT"
+              )
+              .forEach((variable) => {
+                const placeholder = `{{${variable.variableIndex}}}`;
+                let value = "";
+
+                if (variable.useAttribute && variable.attributeName) {
+                  if (variable.attributeName === "name") {
+                    value = "[Name]";
+                  } else if (variable.attributeName === "phoneNumber") {
+                    value = "[Phone Number]";
+                  } else {
+                    // Custom attribute
+                    const attr = attributes?.find(
+                      (attr) => attr.name === variable.attributeName
+                    );
+                    value = `[${attr?.name || variable.attributeName}]`;
+                  }
+                } else {
+                  value =
+                    variable.value ||
+                    variable.fallbackValue ||
+                    `Variable ${variable.variableIndex}`;
+                }
+
+                headerText = headerText.replace(placeholder, value);
+              });
+
+            return {
+              type: "HEADER" as const,
+              format: "TEXT" as const,
+              text: headerText,
+            };
+          } else if (comp.format && comp.format !== "TEXT") {
+            // Media header
+            const mediaVariable = campaignData.variables.find(
+              (v) => v.componentType === "HEADER" && v.format === comp.format
+            );
+
+            return {
+              type: "HEADER" as const,
+              format: comp.format as "IMAGE" | "VIDEO" | "DOCUMENT",
+              mediaUrl: mediaVariable?.mediaPreview || undefined,
+              mediaId: mediaVariable?.mediaId || undefined,
+            };
+          }
+        }
+
+        if (comp.type === "BODY" && comp.text) {
+          // Body with variables replaced
+          let bodyText = comp.text;
+          campaignData.variables
+            .filter(
+              (variable) =>
+                variable.componentType === "BODY" && variable.format === "TEXT"
+            )
+            .forEach((variable) => {
+              const placeholder = `{{${variable.variableIndex}}}`;
+              let value = "";
+
+              if (variable.useAttribute && variable.attributeName) {
+                if (variable.attributeName === "name") {
+                  value = "[Contact Name]";
+                } else if (variable.attributeName === "phoneNumber") {
+                  value = "[Phone Number]";
+                } else {
+                  // Custom attribute
+                  const attr = attributes?.find(
+                    (attr) => attr.name === variable.attributeName
+                  );
+                  value = `[${attr?.name || variable.attributeName}]`;
+                }
+              } else {
+                value =
+                  variable.value ||
+                  variable.fallbackValue ||
+                  `Variable ${variable.variableIndex}`;
+              }
+
+              bodyText = bodyText.replace(placeholder, value);
+            });
+
+          return {
+            type: "BODY" as const,
+            text: bodyText,
+          };
+        }
+
+        if (comp.type === "FOOTER" && comp.text) {
+          return {
+            type: "FOOTER" as const,
+            text: comp.text,
+          };
+        }
+
+        return null;
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+  };
+
+  // Generate media array for preview with proper blob URL handling
+  const generatePreviewMedia = () => {
+    const mediaArray: Array<{
+      type: string;
+      mediaId: string;
+    }> = [];
+
+    campaignData.variables
+      .filter((v) => v.format && v.format !== "TEXT")
+      .forEach((variable) => {
+        if (variable.mediaId || variable.mediaPreview) {
+          let mediaType = "image/jpeg";
+          if (variable.format === "VIDEO") mediaType = "video/mp4";
+          if (variable.format === "DOCUMENT") mediaType = "application/pdf";
+
+          // Use mediaPreview (blob URL) if available, otherwise use mediaId
+          const mediaId = variable.mediaPreview || variable.mediaId || "";
+
+          mediaArray.push({
+            type: mediaType,
+            mediaId: mediaId,
+          });
+        }
+      });
+
+    return mediaArray;
   };
 
   const contacts: Contact[] = categorizedContacts[activeFilter] || [];
@@ -1214,10 +1376,10 @@ export function CreateCampaignModal({
                             {/* Preview Message using MessageBubble */}
                             {selectedTemplate ? (
                               (() => {
-                                // Create a mock message object for preview
+                                // Create a proper message object for preview
                                 const previewMessage = {
                                   id: "preview",
-                                  message: generatePreviewMessage(),
+                                  message: "", // Empty message since we're using templateData
                                   isOutbound: true,
                                   status: "SENT" as const,
                                   createdAt: new Date().toISOString(),
@@ -1225,47 +1387,9 @@ export function CreateCampaignModal({
                                   whatsAppPhoneNumberId: "preview",
                                   recipientId: "preview",
                                   updatedAt: new Date().toISOString(),
-                                  media: (() => {
-                                    // Create media array for media variables
-                                    const mediaArray: Array<{
-                                      type: string;
-                                      mediaId: string;
-                                    }> = [];
-                                    campaignData.variables
-                                      .filter(
-                                        (v) => v.format && v.format !== "TEXT"
-                                      )
-                                      .forEach((variable) => {
-                                        if (
-                                          variable.mediaId ||
-                                          variable.mediaPreview
-                                        ) {
-                                          let mediaType = "image/jpeg";
-                                          if (variable.format === "VIDEO")
-                                            mediaType = "video/mp4";
-                                          if (variable.format === "DOCUMENT")
-                                            mediaType = "application/pdf";
-
-                                          mediaArray.push({
-                                            type: mediaType,
-                                            mediaId:
-                                              variable.mediaId ||
-                                              variable.mediaPreview ||
-                                              "",
-                                          });
-                                        }
-                                      });
-                                    return mediaArray;
-                                  })(),
+                                  // media: generatePreviewMedia(),
                                   mediaIds: [],
-                                  templateData:
-                                    selectedTemplate?.components
-                                      .filter((comp) => comp.text)
-                                      .map((comp) => ({
-                                        text: comp.text || "",
-                                        type: comp.type,
-                                        format: comp.format,
-                                      })) || [],
+                                  templateData: generatePreviewTemplateData(),
                                   interactiveJson: [],
                                 };
 
@@ -1299,7 +1423,8 @@ export function CreateCampaignModal({
                                   return (
                                     !variable.attributeName ||
                                     (variable.attributeName !== "name" &&
-                                      variable.attributeName !== "phoneNumber" &&
+                                      variable.attributeName !==
+                                        "phoneNumber" &&
                                       !variable.fallbackValue)
                                   );
                                 }
@@ -1491,9 +1616,7 @@ export function CreateCampaignModal({
                                 !variable.fallbackValue)
                             );
                           }
-                          return (
-                            !variable.value && !variable.fallbackValue
-                          );
+                          return !variable.value && !variable.fallbackValue;
                         } else {
                           // Media variables - only need uploaded media
                           return !variable.mediaId;
