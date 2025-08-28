@@ -55,6 +55,26 @@ interface TemplateComponent {
   };
 }
 
+// Extended interface for preview generation
+interface PreviewTemplateComponent {
+  type: "HEADER" | "BODY" | "FOOTER" | "BUTTONS";
+  format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT";
+  text?: string;
+  mediaUrl?: string;
+  mediaId?: string;
+  buttons?: Array<{
+    type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+    text: string;
+    url?: string;
+    phone_number?: string;
+  }>;
+  example?: {
+    header_text?: string[];
+    body_text?: string[][];
+    header_media?: string[];
+  };
+}
+
 interface CreateCampaignModalProps {
   open: boolean;
   onClose: () => void;
@@ -556,6 +576,148 @@ export function CreateCampaignModal({
     }
 
     return previewText;
+  };
+
+  // Generate proper template data for preview
+  const generatePreviewTemplateData = (): PreviewTemplateComponent[] => {
+    if (!selectedTemplate) return [];
+
+    return selectedTemplate.components
+      .map((comp) => {
+        if (comp.type === "HEADER") {
+          if (comp.format === "TEXT" && comp.text) {
+            // Text header with variables replaced
+            let headerText = comp.text;
+            campaignData.variables
+              .filter(
+                (variable) =>
+                  variable.componentType === "HEADER" &&
+                  variable.format === "TEXT"
+              )
+              .forEach((variable) => {
+                const placeholder = `{{${variable.variableIndex}}}`;
+                let value = "";
+
+                if (variable.useAttribute && variable.attributeName) {
+                  if (variable.attributeName === "name") {
+                    value = "[Name]";
+                  } else if (variable.attributeName === "phoneNumber") {
+                    value = "[Phone Number]";
+                  } else {
+                    // Custom attribute
+                    const attr = attributes?.find(
+                      (attr) => attr.name === variable.attributeName
+                    );
+                    value = `[${attr?.name || variable.attributeName}]`;
+                  }
+                } else {
+                  value =
+                    variable.value ||
+                    variable.fallbackValue ||
+                    `Variable ${variable.variableIndex}`;
+                }
+
+                headerText = headerText.replace(placeholder, value);
+              });
+
+            return {
+              type: "HEADER" as const,
+              format: "TEXT" as const,
+              text: headerText,
+            };
+          } else if (comp.format && comp.format !== "TEXT") {
+            // Media header
+            const mediaVariable = campaignData.variables.find(
+              (v) => v.componentType === "HEADER" && v.format === comp.format
+            );
+
+            return {
+              type: "HEADER" as const,
+              format: comp.format as "IMAGE" | "VIDEO" | "DOCUMENT",
+              mediaUrl: mediaVariable?.mediaPreview || undefined,
+              mediaId: mediaVariable?.mediaId || undefined,
+            };
+          }
+        }
+
+        if (comp.type === "BODY" && comp.text) {
+          // Body with variables replaced
+          let bodyText = comp.text;
+          campaignData.variables
+            .filter(
+              (variable) =>
+                variable.componentType === "BODY" && variable.format === "TEXT"
+            )
+            .forEach((variable) => {
+              const placeholder = `{{${variable.variableIndex}}}`;
+              let value = "";
+
+              if (variable.useAttribute && variable.attributeName) {
+                if (variable.attributeName === "name") {
+                  value = "[Contact Name]";
+                } else if (variable.attributeName === "phoneNumber") {
+                  value = "[Phone Number]";
+                } else {
+                  // Custom attribute
+                  const attr = attributes?.find(
+                    (attr) => attr.name === variable.attributeName
+                  );
+                  value = `[${attr?.name || variable.attributeName}]`;
+                }
+              } else {
+                value =
+                  variable.value ||
+                  variable.fallbackValue ||
+                  `Variable ${variable.variableIndex}`;
+              }
+
+              bodyText = bodyText.replace(placeholder, value);
+            });
+
+          return {
+            type: "BODY" as const,
+            text: bodyText,
+          };
+        }
+
+        if (comp.type === "FOOTER" && comp.text) {
+          return {
+            type: "FOOTER" as const,
+            text: comp.text,
+          };
+        }
+
+        return null;
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+  };
+
+  // Generate media array for preview with proper blob URL handling
+  const generatePreviewMedia = () => {
+    const mediaArray: Array<{
+      type: string;
+      mediaId: string;
+    }> = [];
+
+    campaignData.variables
+      .filter((v) => v.format && v.format !== "TEXT")
+      .forEach((variable) => {
+        if (variable.mediaId || variable.mediaPreview) {
+          let mediaType = "image/jpeg";
+          if (variable.format === "VIDEO") mediaType = "video/mp4";
+          if (variable.format === "DOCUMENT") mediaType = "application/pdf";
+
+          // Use mediaPreview (blob URL) if available, otherwise use mediaId
+          const mediaId = variable.mediaPreview || variable.mediaId || "";
+
+          mediaArray.push({
+            type: mediaType,
+            mediaId: mediaId,
+          });
+        }
+      });
+
+    return mediaArray;
   };
 
   const contacts: Contact[] = categorizedContacts[activeFilter] || [];
@@ -1132,20 +1294,10 @@ export function CreateCampaignModal({
                                     </span>
                                     {variable.mediaId && (
                                       <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                                        ✓ Uploaded
+                                        Uploaded
                                       </span>
                                     )}
                                   </div>
-                                  {variable.format === "IMAGE" &&
-                                    variable.mediaPreview && (
-                                      <div className="mt-2">
-                                        <img
-                                          src={variable.mediaPreview}
-                                          alt="Preview"
-                                          className="max-w-full h-32 object-contain rounded border"
-                                        />
-                                      </div>
-                                    )}
                                 </div>
                               )}
 
@@ -1168,122 +1320,51 @@ export function CreateCampaignModal({
                         Message Preview
                       </Label>
 
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Eye className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm font-medium text-gray-700">
-                            WhatsApp Preview
-                          </span>
-                        </div>
+                      {/* Chat Background Container */}
+                      <div
+                        className="relative rounded-lg overflow-hidden shadow-lg border-2 border-gray-300"
+                        style={{
+                          backgroundImage: "url(/message-bg.png)",
+                          backgroundSize: "200px",
+                          backgroundPosition: "center",
+                          backgroundRepeat: "repeat",
+                          minHeight: "400px",
+                        }}
+                      >
+                        {/* Chat Messages Area */}
+                        <div className="relative p-4 space-y-4 min-h-[300px]">
+                          {/* Preview Message using MessageBubble */}
+                          {selectedTemplate ? (
+                            (() => {
+                              // Create a proper message object for preview
+                              const previewMessage = {
+                                id: "preview",
+                                message: "", // Empty message since we're using templateData
+                                isOutbound: true,
+                                status: "SENT" as const,
+                                createdAt: new Date().toISOString(),
+                                phoneNumber: "+1234567890",
+                                whatsAppPhoneNumberId: "preview",
+                                recipientId: "preview",
+                                updatedAt: new Date().toISOString(),
+                                // media: generatePreviewMedia(),
+                                mediaIds: [],
+                                templateData: generatePreviewTemplateData(),
+                                interactiveJson: [],
+                              };
 
-                        {/* Chat Background Container */}
-                        <div
-                          className="relative rounded-lg overflow-hidden shadow-lg border-2 border-gray-300"
-                          style={{
-                            backgroundImage: "url(/message-bg.png)",
-                            backgroundSize: "200px",
-                            backgroundPosition: "center",
-                            backgroundRepeat: "repeat",
-                            minHeight: "400px",
-                          }}
-                        >
-                          {/* Background Overlay for better readability */}
-                          <div className="absolute inset-0 bg-white/20 pointer-events-none"></div>
-
-                          {/* Chat Header */}
-                          <div className="relative bg-white/90 backdrop-blur-sm border-b border-gray-200 p-3 shadow-sm">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
-                                <span className="text-white text-sm font-bold">
-                                  W
-                                </span>
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">
-                                  Your Business
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  Template Message
-                                </div>
+                              return <MessageBubble message={previewMessage} />;
+                            })()
+                          ) : (
+                            <div className="flex items-center justify-center h-64 text-gray-500">
+                              <div className="text-center">
+                                <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                <p className="text-sm">
+                                  Select a template to see preview
+                                </p>
                               </div>
                             </div>
-                          </div>
-
-                          {/* Chat Messages Area */}
-                          <div className="relative p-4 space-y-4 min-h-[300px]">
-                            {/* Preview Message using MessageBubble */}
-                            {selectedTemplate ? (
-                              (() => {
-                                // Create a mock message object for preview
-                                const previewMessage = {
-                                  id: "preview",
-                                  message: generatePreviewMessage(),
-                                  isOutbound: true,
-                                  status: "SENT" as const,
-                                  createdAt: new Date().toISOString(),
-                                  phoneNumber: "+1234567890",
-                                  whatsAppPhoneNumberId: "preview",
-                                  recipientId: "preview",
-                                  updatedAt: new Date().toISOString(),
-                                  media: (() => {
-                                    // Create media array for media variables
-                                    const mediaArray: Array<{
-                                      type: string;
-                                      mediaId: string;
-                                    }> = [];
-                                    campaignData.variables
-                                      .filter(
-                                        (v) => v.format && v.format !== "TEXT"
-                                      )
-                                      .forEach((variable) => {
-                                        if (
-                                          variable.mediaId ||
-                                          variable.mediaPreview
-                                        ) {
-                                          let mediaType = "image/jpeg";
-                                          if (variable.format === "VIDEO")
-                                            mediaType = "video/mp4";
-                                          if (variable.format === "DOCUMENT")
-                                            mediaType = "application/pdf";
-
-                                          mediaArray.push({
-                                            type: mediaType,
-                                            mediaId:
-                                              variable.mediaId ||
-                                              variable.mediaPreview ||
-                                              "",
-                                          });
-                                        }
-                                      });
-                                    return mediaArray;
-                                  })(),
-                                  mediaIds: [],
-                                  templateData:
-                                    selectedTemplate?.components
-                                      .filter((comp) => comp.text)
-                                      .map((comp) => ({
-                                        text: comp.text || "",
-                                        type: comp.type,
-                                        format: comp.format,
-                                      })) || [],
-                                  interactiveJson: [],
-                                };
-
-                                return (
-                                  <MessageBubble message={previewMessage} />
-                                );
-                              })()
-                            ) : (
-                              <div className="flex items-center justify-center h-64 text-gray-500">
-                                <div className="text-center">
-                                  <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                  <p className="text-sm">
-                                    Select a template to see preview
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                          )}
                         </div>
                       </div>
 
@@ -1299,7 +1380,8 @@ export function CreateCampaignModal({
                                   return (
                                     !variable.attributeName ||
                                     (variable.attributeName !== "name" &&
-                                      variable.attributeName !== "phoneNumber" &&
+                                      variable.attributeName !==
+                                        "phoneNumber" &&
                                       !variable.fallbackValue)
                                   );
                                 }
@@ -1491,9 +1573,7 @@ export function CreateCampaignModal({
                                 !variable.fallbackValue)
                             );
                           }
-                          return (
-                            !variable.value && !variable.fallbackValue
-                          );
+                          return !variable.value && !variable.fallbackValue;
                         } else {
                           // Media variables - only need uploaded media
                           return !variable.mediaId;

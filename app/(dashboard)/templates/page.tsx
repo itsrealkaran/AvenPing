@@ -16,7 +16,23 @@ type Template = {
   language: string;
   category: string;
   status: string;
-  components: any[];
+  parameter_format: string;
+  components: Array<{
+    type: "HEADER" | "BODY" | "FOOTER" | "BUTTONS";
+    format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT";
+    text?: string;
+    buttons?: Array<{
+      type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+      text: string;
+      url?: string;
+      phone_number?: string;
+    }>;
+    example?: {
+      header_text?: string[];
+      body_text?: string[][];
+      header_handle?: string[];
+    };
+  }>;
   created_at?: string;
   updated_at?: string;
 };
@@ -73,10 +89,34 @@ export default function TemplatesPage() {
     setSelectedTemplate(null);
   };
 
+  const getComponentTypeColor = (type: string) => {
+    switch (type) {
+      case "HEADER":
+        return "bg-sky-50 text-sky-700";
+      case "BODY":
+        return "bg-emerald-50 text-emerald-700";
+      case "FOOTER":
+        return "bg-violet-50 text-violet-700";
+      case "BUTTONS":
+        return "bg-orange-50 text-orange-700";
+      default:
+        return "bg-gray-50 text-gray-700";
+    }
+  };
+
   const columns: MRT_ColumnDef<Template>[] = [
     {
       accessorKey: "name",
       header: "Template Name",
+      Cell: ({ row }) => {
+        const template = row.original;
+        return (
+          <div>
+            <div className="font-medium text-gray-900">{template.name}</div>
+            <div className="text-xs text-gray-500">ID: {template.id}</div>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "language",
@@ -85,6 +125,14 @@ export default function TemplatesPage() {
     {
       accessorKey: "category",
       header: "Category",
+      Cell: ({ row }) => {
+        const category = row.original.category;
+        return (
+          <span className="capitalize text-sm text-gray-700">
+            {category.toLowerCase()}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "status",
@@ -118,17 +166,28 @@ export default function TemplatesPage() {
             {components?.map((component, index) => (
               <span
                 key={index}
-                className={`px-2 py-0.5 text-xs bg-gray-50 rounded-full ${
-                  component.type === "HEADER"
-                    ? "bg-sky-50 text-sky-700"
-                    : component.type === "BODY"
-                    ? "bg-emerald-50 text-emerald-700"
-                    : component.type === "FOOTER"
-                    ? "bg-violet-50 text-violet-700"
-                    : "bg-gray-50 text-gray-700"
+                className={`px-2 py-0.5 text-xs rounded-full flex items-center gap-1 ${getComponentTypeColor(
+                  component.type
+                )}`}
+                title={`${component.type}${
+                  component.format ? ` (${component.format})` : ""
+                }${
+                  component.buttons
+                    ? ` - ${component.buttons.length} buttons`
+                    : ""
                 }`}
               >
                 {component.type}
+                {component.format && component.format !== "TEXT" && (
+                  <span className="text-xs opacity-75">
+                    ({component.format})
+                  </span>
+                )}
+                {component.buttons && (
+                  <span className="text-xs opacity-75">
+                    ({component.buttons.length})
+                  </span>
+                )}
               </span>
             ))}
           </div>
@@ -182,7 +241,7 @@ export default function TemplatesPage() {
       )}
 
       <Table
-        data={templates}
+        data={templates as Template[]}
         columns={columns}
         isLoading={isLoading}
         actionMenuItems={actionMenuItems}

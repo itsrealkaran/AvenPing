@@ -20,7 +20,7 @@ export async function storeWhatsAppMessage({
   wamid?: string;
   isOutbound?: boolean;
   templateData?: Array<{
-    type: "HEADER" | "BODY" | "FOOTER" | "BUTTON";
+    type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
     text?: string;
     mediaUrl?: string;
     mediaId?: string;
@@ -28,6 +28,13 @@ export async function storeWhatsAppMessage({
     buttonText?: string;
     buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
     buttonValue?: string;
+    // New fields for BUTTONS structure
+    buttons?: Array<{
+      type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+      text: string;
+      url?: string;
+      phone_number?: string;
+    }>;
   }>;
   message: string;
   timestamp: number;

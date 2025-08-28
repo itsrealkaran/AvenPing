@@ -27,6 +27,9 @@ export default function DashboardPage() {
   const registerNumberCardRef = useRef<HTMLDivElement>(null);
   const businessVerificationCardRef = useRef<HTMLDivElement>(null);
 
+  // Ref for the scrollable body container
+  const bodyScrollRef = useRef<HTMLDivElement>(null);
+
   const { userInfo, hasWhatsAppAccount, refreshUser } = useUser();
   const { data: analyticsData, isLoading: analyticsLoading } = useAnalytics();
 
@@ -101,37 +104,45 @@ export default function DashboardPage() {
     return "z-10";
   };
 
-  // Function to scroll to priority card
+  // Function to scroll to priority card within the body container
   const scrollToPriorityCard = () => {
+    if (!bodyScrollRef.current) return;
+
+    let targetCard: HTMLDivElement | null = null;
+
     if (!isConnected && whatsappNumbersCardRef.current) {
-      // WhatsApp Numbers card is priority
-      whatsappNumbersCardRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-        inline: "nearest",
-      });
-      console.log("Dashboard: Scrolled to WhatsApp Numbers card");
+      targetCard = whatsappNumbersCardRef.current;
+      console.log("Dashboard: Scrolling to WhatsApp Numbers card");
     } else if (isConnected && !isRegistered && registerNumberCardRef.current) {
-      // Register Number card is priority
-      registerNumberCardRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-        inline: "nearest",
-      });
-      console.log("Dashboard: Scrolled to Register Number card");
+      targetCard = registerNumberCardRef.current;
+      console.log("Dashboard: Scrolling to Register Number card");
     } else if (
       isConnected &&
       isRegistered &&
       !isVerified &&
       businessVerificationCardRef.current
     ) {
-      // Business Verification card is priority
-      businessVerificationCardRef.current.scrollIntoView({
+      targetCard = businessVerificationCardRef.current;
+      console.log("Dashboard: Scrolling to Business Verification card");
+    }
+
+    if (targetCard) {
+      const bodyContainer = bodyScrollRef.current;
+      const targetRect = targetCard.getBoundingClientRect();
+      const bodyRect = bodyContainer.getBoundingClientRect();
+
+      // Calculate the position to scroll to within the body container
+      const scrollTop =
+        bodyContainer.scrollTop +
+        targetRect.top -
+        bodyRect.top -
+        bodyRect.height / 2 +
+        targetRect.height / 2;
+
+      bodyContainer.scrollTo({
+        top: scrollTop,
         behavior: "smooth",
-        block: "center",
-        inline: "nearest",
       });
-      console.log("Dashboard: Scrolled to Business Verification card");
     }
   };
 
@@ -315,77 +326,45 @@ export default function DashboardPage() {
   // Loading skeleton component
   const MetricCards = () => (
     <>
-      {analyticsLoading ? (
-        <>
-          {/* Metrics Grid with Loading State */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-3">
-            {[1, 2, 3, 4].map((index) => (
-              <div
-                key={index}
-                className="border-3 border-[#E0E0E0] rounded-2xl bg-white p-4 flex flex-col animate-pulse"
-              >
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="flex justify-between gap-4">
-                  <div className="flex flex-col">
-                    <div className="h-8 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                  </div>
-                  <div className="w-28 h-16 bg-gray-200 rounded"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mb-6 mx-2 px-1 flex justify-end border-b-3 border-gray-200 pb-1">
-            <Link
-              href="/analytics"
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              {`View All Analytics >>`}
-            </Link>
-          </div>
-        </>
-      ) : (
-        <>
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-3">
-            {analyticsData?.metrics?.map((metric, index) => (
-              <MetricCard key={index} {...metric} />
-            )) ||
-              // Fallback to sample metrics if no analytics data
-              [
-                {
-                  title: "Sent Messages",
-                  value: "0",
-                  change: 0,
-                },
-                {
-                  title: "Delivery Rate",
-                  value: "0%",
-                  change: 0,
-                },
-                {
-                  title: "Active Contacts",
-                  value: "0",
-                  change: 0,
-                },
-                {
-                  title: "Response Rate",
-                  value: "0%",
-                  change: 0,
-                },
-              ].map((metric, index) => <MetricCard key={index} {...metric} />)}
-          </div>
-          <div className="mb-6 mx-2 px-1 flex justify-end border-b-3 border-gray-200 pb-1">
-            <Link
-              href="/analytics"
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              {`View All Analytics >>`}
-            </Link>
-          </div>
-        </>
-      )}
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-3">
+        {analyticsData?.metrics?.map((metric, index) => (
+          <MetricCard key={index} {...metric} isLoading={analyticsLoading} />
+        )) ||
+          // Fallback to sample metrics if no analytics data
+          [
+            {
+              title: "Sent Messages",
+              value: "0",
+              change: 0,
+            },
+            {
+              title: "Delivery Rate",
+              value: "0%",
+              change: 0,
+            },
+            {
+              title: "Active Contacts",
+              value: "0",
+              change: 0,
+            },
+            {
+              title: "Response Rate",
+              value: "0%",
+              change: 0,
+            },
+          ].map((metric, index) => (
+            <MetricCard key={index} {...metric} isLoading={analyticsLoading} />
+          ))}
+      </div>
+      <div className="mb-6 mx-2 px-1 flex justify-end border-b-3 border-gray-200 pb-1">
+        <Link
+          href="/analytics"
+          className="text-sm text-gray-500 hover:text-gray-700"
+        >
+          {`View All Analytics >>`}
+        </Link>
+      </div>
     </>
   );
 
@@ -397,6 +376,7 @@ export default function DashboardPage() {
           ? "relative overflow-hidden"
           : ""
       )}
+      ref={bodyScrollRef}
     >
       {/* WhatsApp Connection Overlay - Only covers dashboard body */}
       {(!hasWhatsAppAccount || !isConnected || !isRegistered) && (
