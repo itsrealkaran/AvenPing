@@ -253,6 +253,7 @@ export default function NotificationsPage() {
             <Button
               variant="destructive"
               onClick={() => {
+                console.log(table.getSelectedRowModel().rows.map((r: any) => r.original), "table.getSelectedRowModel().rows.map((r: any) => r.original)");
                 handleDeleteNotification(
                   table.getSelectedRowModel().rows.map((r: any) => r.original)
                 );

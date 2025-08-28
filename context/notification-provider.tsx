@@ -54,18 +54,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get auth token from cookies
-  const getAuthToken = () => {
-    if (typeof window !== 'undefined') {
-      const cookies = document.cookie.split(';');
-      const authCookie = cookies.find(cookie => cookie.trim().startsWith('Authorization='));
-      if (authCookie) {
-        return authCookie.split('=')[1];
-      }
-    }
-    return '';
-  };
-
   // Load notifications from API on mount
   useEffect(() => {
     const loadNotifications = async () => {
@@ -100,7 +88,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const addNotification = async (notification: Omit<Notification, "id" | "timestamp" | "read" | "userId">) => {
     try {
-      const response = await fetch('/api/notifications', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -131,12 +119,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const markAsRead = async (id: string) => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        console.warn('No auth token found for marking notification as read');
-        return;
-      }
-
       const response = await fetch(`/api/notifications/${id}`, {
         method: 'PATCH',
         headers: {
@@ -161,12 +143,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const markAllAsRead = async () => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        console.warn('No auth token found for marking all notifications as read');
-        return;
-      }
-
       const response = await fetch('/api/notifications/bulk', {
         method: 'POST',
         headers: {
@@ -189,12 +165,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const deleteNotification = async (id: string) => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        console.warn('No auth token found for deleting notification');
-        return;
-      }
-
       const response = await fetch(`/api/notifications/${id}`, {
         method: 'DELETE',
       });
@@ -211,12 +181,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const clearAllNotifications = async () => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        console.warn('No auth token found for clearing all notifications');
-        return;
-      }
-
       const response = await fetch('/api/notifications/bulk', {
         method: 'POST',
         headers: {

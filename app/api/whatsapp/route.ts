@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/jwt';
 import { normalizePhoneNumber } from '@/lib/utils';
 import axios from 'axios';
+import { notify } from '@/lib/notification-utils';
 
 export async function GET() {
   try {
@@ -63,7 +64,10 @@ export async function POST(request: Request) {
     const userInfo = await getUserInfo(accessToken);
     console.log("userInfo", userInfo);
     const user = await prisma.user.findUnique({
-      where: { email: session.email as string }
+      where: { email: session.email as string },
+      include: {
+        settings: true,
+      },
     });
 
     if (!user) {
@@ -87,6 +91,10 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    if (user.settings?.notificationSettings?.some((setting: any) => setting.notificationType === 'systemUpdates' && setting.isEnabled)) {
+      await notify.whatsappConnected(user.id, userInfo.phoneNumberData.map((phoneNumber: any) => phoneNumber.phoneNumber));
+    }
 
     return NextResponse.json(whatsappAccount, { status: 201 });
   } catch (error) {

@@ -2,6 +2,7 @@ import { getSession } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { storeWhatsAppMessage } from "@/lib/store-message";
+import { notify } from "@/lib/notification-utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,6 +66,51 @@ export async function POST(request: NextRequest) {
       phoneNumber: string;
       status: string;
     }[] = [];
+
+    // Check user notification preferences for campaigns
+    const userSettings = await prisma.userSetting.findUnique({
+      where: { userId: session.userId as string },
+      select: { notificationSettings: true }
+    });
+
+    const campaignNotificationsEnabled = userSettings?.notificationSettings?.some(
+      (setting: any) => setting.notificationType === 'campaigns' && setting.isEnabled
+    ) ?? true; // Default to true if no settings found
+
+    console.log("userSettings", userSettings);
+    console.log("campaignNotificationsEnabled", campaignNotificationsEnabled);
+
+    // Helper function to send campaign notifications if enabled
+    const sendCampaignNotification = async (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string, metadata?: Record<string, any>) => {
+      console.log("campaignNotificationsEnabled", campaignNotificationsEnabled);
+      console.log("type", type);
+      console.log("title", title);
+      console.log("message", message);
+      console.log("metadata", metadata);
+      if (campaignNotificationsEnabled) {
+        try {
+          if (type === 'success') {
+            await notify.campaignSuccess(session.userId as string, title, message, metadata);
+          } else if (type === 'error') {
+            await notify.campaignError(session.userId as string, title, message, metadata);
+          } else if (type === 'warning') {
+            await notify.campaignWarning(session.userId as string, title, message, metadata);
+          } else if (type === 'info') {
+            await notify.campaignSuccess(session.userId as string, title, message, metadata); // Use success for info type
+          }
+        } catch (error) {
+          console.error('Failed to send campaign notification:', error);
+        }
+      }
+    };
+
+    // Send campaign start notification
+    await sendCampaignNotification(
+      'info',
+      'Campaign Started',
+      `Campaign "${campaignName}" has started sending messages to ${contacts.length} contacts`,
+      { campaignId, campaignName, contactCount: contacts.length }
+    );
 
     // Send messages to each contact
     for (const contact of contacts) {
@@ -572,6 +618,57 @@ export async function POST(request: NextRequest) {
         console.error(`Error sending message to ${contact.phoneNumber}:`, error);
       }
     }
+    // Calculate campaign statistics
+    const totalContacts = contacts.length;
+    const successfulMessages = campaignStats.filter(stat => stat.status === 'SENT').length;
+    const failedMessages = campaignStats.filter(stat => stat.status === 'UNDELIVERED').length;
+    const successRate = totalContacts > 0 ? Math.round((successfulMessages / totalContacts) * 100) : 0;
+
+    // Send campaign completion notification
+    if (successRate === 100) {
+      await sendCampaignNotification(
+        'success',
+        'Campaign Completed Successfully',
+        `Campaign "${campaignName}" completed successfully! All ${totalContacts} messages were delivered.`,
+        { 
+          campaignId, 
+          campaignName, 
+          totalContacts, 
+          successfulMessages, 
+          failedMessages, 
+          successRate 
+        }
+      );
+    } else if (successRate >= 80) {
+      await sendCampaignNotification(
+        'warning',
+        'Campaign Completed with Warnings',
+        `Campaign "${campaignName}" completed with ${successRate}% success rate. ${successfulMessages}/${totalContacts} messages delivered.`,
+        { 
+          campaignId, 
+          campaignName, 
+          totalContacts, 
+          successfulMessages, 
+          failedMessages, 
+          successRate 
+        }
+      );
+    } else {
+      await sendCampaignNotification(
+        'error',
+        'Campaign Completed with Errors',
+        `Campaign "${campaignName}" completed with ${successRate}% success rate. ${failedMessages}/${totalContacts} messages failed.`,
+        { 
+          campaignId, 
+          campaignName, 
+          totalContacts, 
+          successfulMessages, 
+          failedMessages, 
+          successRate 
+        }
+      );
+    }
+
     // Update campaign status to COMPLETED
     await prisma.whatsAppCampaign.update({
       where: { id: campaignId },
@@ -584,6 +681,36 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Messages sent successfully' }, { status: 200 });
   } catch (error) {
     console.error('Error sending template message:', error);
+    
+    // Send notification for overall campaign failure
+    try {
+      const session = await getSession();
+      if (session?.userId) {
+        // Check user notification preferences
+        const userSettings = await prisma.userSetting.findUnique({
+          where: { userId: session.userId as string },
+          select: { notificationSettings: true }
+        });
+
+        const campaignNotificationsEnabled = userSettings?.notificationSettings?.some(
+          (setting: any) => setting.notificationType === 'campaigns' && setting.isEnabled
+        ) ?? true;
+
+        if (campaignNotificationsEnabled) {
+          await notify.campaignError(
+            session.userId as string,
+            'Campaign Failed',
+            `Campaign failed to start due to a system error`,
+            { 
+              error: error instanceof Error ? error.message : 'Unknown error'
+            }
+          );
+        }
+      }
+    } catch (notificationError) {
+      console.error('Failed to send campaign failure notification:', notificationError);
+    }
+    
     return NextResponse.json({ error: 'Failed to send template message' }, { status: 500 });
   }
 }

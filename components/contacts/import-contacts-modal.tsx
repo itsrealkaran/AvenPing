@@ -18,6 +18,7 @@ import { useUser } from "@/context/user-context";
 import SearchableDropdown from "@/components/ui/searchable-dropdown";
 import Table from "@/components/ui/table";
 import * as XLSX from "xlsx";
+import { notify } from "@/lib/notification-utils";
 
 interface ImportContactsModalProps {
   isOpen: boolean;
@@ -40,10 +41,18 @@ const ImportContactsModal = ({ isOpen, onClose }: ImportContactsModalProps) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentBatch, setCurrentBatch] = useState(0);
+  const [totalBatches, setTotalBatches] = useState(0);
+  const [processedContacts, setProcessedContacts] = useState(0);
+  const [totalContacts, setTotalContacts] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { attributes, bulkImportContacts, isImporting } = useContacts();
   const { userInfo } = useUser();
+
+  // Batch size for processing contacts
+  const BATCH_SIZE = 50;
 
   // Database fields that can be mapped
   const databaseFields = [
@@ -229,9 +238,20 @@ const ImportContactsModal = ({ isOpen, onClose }: ImportContactsModalProps) => {
     setUploadProgress(0);
     setError("");
     setSuccess("");
+    setIsProcessing(true);
+    setCurrentBatch(0);
+    setProcessedContacts(0);
+    setTotalContacts(csvData.length);
+    setTotalBatches(Math.ceil(csvData.length / BATCH_SIZE));
+
+    // Show initial notification
+    if (csvData.length > BATCH_SIZE) {
+      setSuccess(`Starting import of ${csvData.length} contacts in ${Math.ceil(csvData.length / BATCH_SIZE)} batches...`);
+    }
 
     try {
-      const contactsToImport = csvData.map((row) => {
+      // Prepare all contacts data
+      const allContactsToImport = csvData.map((row) => {
         const contact: any = {
           phoneNumberId: userInfo?.whatsappAccount?.phoneNumbers[0].id,
           attributes: [],
@@ -263,28 +283,80 @@ const ImportContactsModal = ({ isOpen, onClose }: ImportContactsModalProps) => {
           }
         });
 
-        // Debug: Log each contact being processed
-        console.log("Processing contact:", contact);
         return contact;
       });
 
-      // Use the bulk import function from context
-      const result = await bulkImportContacts(contactsToImport);
+      // Clear the initial message and start processing
+      setSuccess("");
+      
+      // Process contacts in batches
+      let totalSuccess = 0;
+      let totalFailed = 0;
+      const allErrors: Array<{ index: number; error: string }> = [];
 
-      let message = `Successfully imported ${result.success} contacts`;
-      if (result.failed > 0) {
-        message += `, ${result.failed} failed`;
-        if (result.errors && result.errors.length > 0) {
-          message += ` (${result.errors.length} errors)`;
+      for (let i = 0; i < allContactsToImport.length; i += BATCH_SIZE) {
+        const batch = allContactsToImport.slice(i, i + BATCH_SIZE);
+        const batchIndex = Math.floor(i / BATCH_SIZE);
+        
+        setCurrentBatch(batchIndex + 1);
+        
+        try {
+          // Process this batch
+          const result = await bulkImportContacts(batch);
+          
+          // Update totals
+          totalSuccess += result.success;
+          totalFailed += result.failed;
+          if (result.errors) {
+            // Adjust error indices to account for batch offset
+            const adjustedErrors = result.errors.map(error => ({
+              ...error,
+              index: error.index + i
+            }));
+            allErrors.push(...adjustedErrors);
+          }
+          
+          // Update progress
+          const processed = Math.min(i + BATCH_SIZE, allContactsToImport.length);
+          setProcessedContacts(processed);
+          setUploadProgress((processed / allContactsToImport.length) * 100);
+          
+          // Small delay to show progress
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+        } catch (batchError) {
+          console.error(`Error processing batch ${batchIndex + 1}:`, batchError);
+          totalFailed += batch.length;
+          
+          // Add errors for this batch
+          for (let j = 0; j < batch.length; j++) {
+            allErrors.push({
+              index: i + j,
+              error: "Batch processing failed"
+            });
+          }
+        }
+      }
+
+      // Final success message
+      let message = `Successfully imported ${totalSuccess} contacts`;
+      if (totalFailed > 0) {
+        message += `, ${totalFailed} failed`;
+        if (allErrors.length > 0) {
+          message += ` (${allErrors.length} errors)`;
         }
       }
 
       setSuccess(message);
+      setIsProcessing(false);
+      
       setTimeout(() => {
         onClose();
-      }, 2000);
+      }, 3000);
     } catch (err) {
+      console.error("Import error:", err);
       setError("Error importing contacts. Please try again.");
+      setIsProcessing(false);
     }
   };
 
@@ -295,6 +367,11 @@ const ImportContactsModal = ({ isOpen, onClose }: ImportContactsModalProps) => {
     setError("");
     setSuccess("");
     setUploadProgress(0);
+    setIsProcessing(false);
+    setCurrentBatch(0);
+    setTotalBatches(0);
+    setProcessedContacts(0);
+    setTotalContacts(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -584,20 +661,46 @@ const ImportContactsModal = ({ isOpen, onClose }: ImportContactsModalProps) => {
               )}
 
               {/* Progress Bar */}
-              {isImporting && (
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Importing Contacts...
-                  </Label>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+              {(isImporting || isProcessing) && (
+                <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium text-blue-700">
+                      {isProcessing ? "Processing Contacts..." : "Importing Contacts..."}
+                    </Label>
+                    <span className="text-xs text-blue-600 font-medium">
+                      {currentBatch > 0 && totalBatches > 0 ? `Batch ${currentBatch} of ${totalBatches}` : ""}
+                    </span>
+                  </div>
+                  
+                  {/* Main Progress Bar */}
+                  <div className="w-full bg-blue-200 rounded-full h-3">
                     <div
-                      className="bg-[#30CFED] h-2 rounded-full transition-all duration-300"
+                      className="bg-[#30CFED] h-3 rounded-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     ></div>
                   </div>
-                  <p className="text-xs text-gray-600">
-                    {Math.round(uploadProgress)}% complete
-                  </p>
+                  
+                  {/* Progress Details */}
+                  <div className="flex items-center justify-between text-xs text-blue-600">
+                    <span>{Math.round(uploadProgress)}% complete</span>
+                    <span>{processedContacts} of {totalContacts} contacts processed</span>
+                  </div>
+                  
+                  {/* Batch Progress */}
+                  {isProcessing && totalBatches > 1 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-blue-600">
+                        <span>Batch Progress:</span>
+                        <span>{currentBatch} of {totalBatches}</span>
+                      </div>
+                      <div className="w-full bg-blue-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-400 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${(currentBatch / totalBatches) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -609,7 +712,7 @@ const ImportContactsModal = ({ isOpen, onClose }: ImportContactsModalProps) => {
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isImporting}
+              disabled={isImporting || isProcessing}
               className="flex-1"
             >
               Cancel
@@ -617,10 +720,12 @@ const ImportContactsModal = ({ isOpen, onClose }: ImportContactsModalProps) => {
             <Button
               type="button"
               onClick={handleImport}
-              disabled={csvData.length === 0 || isImporting}
+              disabled={csvData.length === 0 || isImporting || isProcessing}
               className="flex-1"
             >
-              {isImporting
+              {isProcessing
+                ? `Processing Batch ${currentBatch} of ${totalBatches}...`
+                : isImporting
                 ? "Importing..."
                 : `Import ${csvData.length} Contacts`}
             </Button>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/jwt'
+import { notify } from '@/lib/notification-utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,8 +16,15 @@ export async function POST(request: NextRequest) {
         data: {
           whatsAppAccount: undefined,
           whatsAppAccountId: null
-        }
+        },
+        include: {
+          settings: true,
+        },
     })
+
+    if (user.settings?.notificationSettings?.some((setting: any) => setting.notificationType === 'systemUpdates' && setting.isEnabled)) {
+      await notify.whatsappDisconnected(user.id);
+    }
 
     return NextResponse.json({message: 'WhatsApp account disconnected successfully'}, {status: 200})
   }

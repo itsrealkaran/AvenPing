@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { ChevronRight, Loader2, BellOff } from "lucide-react"
+import { ChevronRight, Loader2 } from "lucide-react"
 import { useSettings } from "@/context/settings-provider"
 import { toast } from "sonner"
 
@@ -102,7 +102,7 @@ export default function NotificationSettings() {
   if (error) {
     return (
       <div className="space-y-8">
-        <div className="flex items-center gap-2 text-sm text-sm text-gray-500 mb-6">
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
           <span>Settings</span>
           <ChevronRight className="h-4 w-4" />
           <span className="text-gray-900 font-medium">Notifications</span>

@@ -1,4 +1,4 @@
-import { NotificationCreateInput } from './notification-service';
+import { notificationService, NotificationCreateInput } from './notification-service';
 
 /**
  * Utility class for creating notifications easily from anywhere in the application
@@ -169,32 +169,9 @@ export class NotificationUtils {
    */
   private static async createNotification(input: NotificationCreateInput) {
     try {
-      // Get the auth token from cookies
-      let token = '';
-      
-      if (typeof window !== 'undefined') {
-        // Client-side: get token from cookies
-        const cookies = document.cookie.split(';');
-        const authCookie = cookies.find(cookie => cookie.trim().startsWith('Authorization='));
-        if (authCookie) {
-          token = authCookie.split('=')[1];
-        }
-      }
-
-      const response = await fetch('/api/notifications', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(input),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to create notification: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      return result.notification;
+      // Use the notification service directly instead of making an HTTP request
+      const notification = await notificationService.createNotification(input);
+      return notification;
     } catch (error) {
       console.error('Error creating notification:', error);
       return null;
@@ -244,11 +221,11 @@ export const notify = {
     NotificationUtils.systemUpdate(userId, 'System Update', message, 'info', { version }),
 
   // WhatsApp notifications
-  whatsappConnected: (userId: string, phoneNumber: string) =>
-    NotificationUtils.systemUpdate(userId, 'WhatsApp Connected', `WhatsApp Business account connected successfully with ${phoneNumber}`, 'success', { phoneNumber }),
+  whatsappConnected: (userId: string, phoneNumbers: string[]) =>
+    NotificationUtils.systemUpdate(userId, 'WhatsApp Connected', `WhatsApp Business account connected successfully with ${phoneNumbers.join(', ')}`, 'success', { phoneNumbers }),
   
-  whatsappDisconnected: (userId: string, phoneNumber: string) =>
-    NotificationUtils.systemUpdate(userId, 'WhatsApp Disconnected', `WhatsApp Business account disconnected from ${phoneNumber}`, 'warning', { phoneNumber }),
+  whatsappDisconnected: (userId: string) =>
+    NotificationUtils.systemUpdate(userId, 'WhatsApp Disconnected', `WhatsApp Business account disconnected from AvenPing`, 'warning', {}),
 
   // Contact notifications
   contactsImported: (userId: string, count: number, filename: string) =>

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendMessageToUserSafe } from "@/lib/websocket-utils";
 import { flowRunner } from "@/lib/flow-runner";
 import { storeWhatsAppMessage } from "@/lib/store-message";
+import { notify } from "@/lib/notification-utils";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -45,7 +46,11 @@ export async function POST(req: NextRequest) {
                 recipients: true,
                 account: {
                   include: {
-                    user: true,
+                    user: {
+                      include: {
+                        settings: true,
+                      },
+                    },
                   },
                 },
               },
@@ -266,6 +271,10 @@ export async function POST(req: NextRequest) {
                       whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
                       isOutbound: false,  // Explicitly set for incoming messages
                     });
+
+                    if (whatsAppPhoneNumber.account.user?.settings?.notificationSettings?.some((setting: any) => setting.notificationType === 'chats' && setting.isEnabled)) {
+                      await notify.chatReceived(whatsAppPhoneNumber.account.user.id, message.from, messageText);
+                    }
 
                   // newMessage = await prisma.whatsAppRecipient.update({
                   //   where: {
