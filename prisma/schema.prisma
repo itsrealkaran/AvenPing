@@ -45,6 +45,7 @@ enum RecipientSource {
 }
 
 enum PlanPeriod {
+  FREE_TRIAL
   MONTHLY
   YEARLY
 }

@@ -35,6 +35,7 @@ export default function PaymentStep({ onNext, onBack, onShowPaymentModal, isAddo
   const [plansError, setPlansError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  const [isFreeTrialLoading, setIsFreeTrialLoading] = useState(false);
 
   // Helper function to get currency symbol
   const getCurrencySymbol = (region: "US" | "IND" | "ASIA") => {
@@ -79,12 +80,90 @@ export default function PaymentStep({ onNext, onBack, onShowPaymentModal, isAddo
     }
   };
 
-  const handlePlanSelection = () => {
-    if (selectedPlan) {
-      // Call parent function to show payment gateway modal
-      onShowPaymentModal(selectedPlan, planPeriod, region);
-    } else {
+  const handlePlanSelection = async () => {
+    if (!selectedPlan) {
       toast.error("Please select a plan to continue");
+      return;
+    }
+
+    // Handle free trial selection
+    if (selectedPlan.id === 'free-trial') {
+      try {
+        setIsFreeTrialLoading(true);
+        
+        const response = await fetch('/api/subscription/free-trial', {
+          method: 'GET',
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.success) {
+            toast.success('Free trial activated successfully! Redirecting to dashboard...');
+            // Redirect to dashboard after a short delay
+            setTimeout(() => {
+              window.location.href = '/dashboard';
+            }, 1500);
+          } else {
+            toast.error(data.error || 'Failed to activate free trial');
+          }
+        } else {
+          const errorData = await response.json();
+          if (errorData.error === 'Free trial already redeemed') {
+            toast.error('You have already used your free trial. Please select a paid plan.');
+          } else {
+            toast.error(errorData.error || 'Failed to activate free trial');
+          }
+        }
+      } catch (error) {
+        console.error('Error activating free trial:', error);
+        toast.error('An error occurred while activating free trial');
+      } finally {
+        setIsFreeTrialLoading(false);
+      }
+      return;
+    }
+
+    // Handle paid plan selection
+    onShowPaymentModal(selectedPlan, planPeriod, region);
+  };
+
+  // Handle free trial selection
+  const handleFreeTrial = async () => {
+    try {
+      setIsFreeTrialLoading(true);
+      
+      const response = await fetch('/api/subscription/free-trial', {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success) {
+          toast.success('Free trial activated successfully! Redirecting to dashboard...');
+          // Redirect to dashboard after a short delay
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 1500);
+        } else {
+          toast.error(data.error || 'Failed to activate free trial');
+        }
+      } else {
+        const errorData = await response.json();
+        if (errorData.error === 'Free trial already redeemed') {
+          toast.error('You have already used your free trial. Please select a paid plan.');
+        } else {
+          toast.error(errorData.error || 'Failed to activate free trial');
+        }
+      }
+    } catch (error) {
+      console.error('Error activating free trial:', error);
+      toast.error('An error occurred while activating free trial');
+    } finally {
+      setIsFreeTrialLoading(false);
     }
   };
 
@@ -270,6 +349,45 @@ export default function PaymentStep({ onNext, onBack, onShowPaymentModal, isAddo
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+          {/* Free Trial Card */}
+          <div 
+            onClick={() => setSelectedPlan({ id: 'free-trial', name: 'Free Trial', monthlyPriceJson: { US: 0, IND: 0, ASIA: 0 }, yearlyPriceJson: { US: 0, IND: 0, ASIA: 0 }, features: ['Full access to all features', 'No credit card required', 'Cancel anytime'], isAddOn: false })}
+            className={`relative cursor-pointer rounded-lg p-4 border-2 transition-all duration-200 ${
+              selectedPlan?.id === 'free-trial'
+                ? "border-green-500 bg-green-100 shadow-lg"
+                : "border-green-200 bg-green-50 hover:border-green-300 hover:bg-green-100"
+            }`}
+          >
+            {/* Selection Indicator */}
+            {selectedPlan?.id === 'free-trial' && (
+              <div className="absolute top-3 right-3">
+                <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              {/* Plan Info */}
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Free Trial</h3>
+                <div className="text-2xl font-bold text-green-600 mb-2">
+                  $0
+                  <span className="text-lg font-normal text-gray-500"> 14 • days</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Trial Info */}
+            <div className="">
+              <p className="text-xs text-green-700 text-center">
+                Start your 14-day free trial today and explore all features risk-free!
+              </p>
+            </div>
+          </div>
+
           {plans.map((plan) => {
             const price = getPlanPrice(plan, planPeriod, region);
             const currencySymbol = getCurrencySymbol(region);
@@ -352,37 +470,49 @@ export default function PaymentStep({ onNext, onBack, onShowPaymentModal, isAddo
                 {selectedPlan.name}
               </div>
               <div className="text-xs text-gray-600 mb-2">
-                {planPeriod === "month" ? "Monthly" : "Yearly"} billing • {region} region
+                {selectedPlan.id === 'free-trial' ? '14 days • No billing' : `${planPeriod === "month" ? "Monthly" : "Yearly"} billing • ${region} region`}
               </div>
               <div className="text-xl font-bold text-[#43A2C9]">
-                {getCurrencySymbol(region)}
-                {getPlanPrice(selectedPlan, planPeriod, region)}
-                <span className="text-sm font-normal text-gray-500">/{planPeriod}</span>
-              </div>
-            </div>
-            
-            {/* Payment Information */}
-            <div className="bg-gray-50 rounded-lg p-3 mb-3">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <span className="text-sm font-medium text-gray-700">Payment Method:</span>
-                {region === 'IND' ? (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-medium">
-                    <span>💳</span>
-                    Razorpay
-                  </div>
+                {selectedPlan.id === 'free-trial' ? (
+                  <span className="text-green-600">$0 • 14 days</span>
                 ) : (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
-                    <span>💳</span>
-                    Stripe
-                  </div>
+                  <>
+                    {getCurrencySymbol(region)}
+                    {getPlanPrice(selectedPlan, planPeriod, region)}
+                    <span className="text-sm font-normal text-gray-500">/{planPeriod}</span>
+                  </>
                 )}
               </div>
-              <p className="text-xs text-gray-600">
-                Choose your preferred payment method to complete your subscription.
-              </p>
             </div>
             
-            {isCheckingPayment ? (
+            {/* Payment Information - Only show for paid plans */}
+            {selectedPlan.id !== 'free-trial' && (
+              <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="text-sm font-medium text-gray-700">Payment Method:</span>
+                  {region === 'IND' ? (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-medium">
+                      <span>💳</span>
+                      Razorpay
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                      <span>💳</span>
+                      Stripe
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-600">
+                  Choose your preferred payment method to complete your subscription.
+                </p>
+              </div>
+            )}
+            
+            {selectedPlan.id === 'free-trial' ? (
+              <p className="text-xs text-green-600 font-medium">
+                Ready to start your free trial
+              </p>
+            ) : isCheckingPayment ? (
               <div className="flex items-center justify-center gap-2">
                 <div className="w-4 h-4 border-2 border-[#43A2C9] border-t-transparent rounded-full animate-spin" />
                 <span className="text-xs text-[#43A2C9] font-medium">Verifying payment...</span>
@@ -401,14 +531,21 @@ export default function PaymentStep({ onNext, onBack, onShowPaymentModal, isAddo
         <button
           type="button"
           onClick={handlePlanSelection}
-          disabled={!canProceed()}
+          disabled={!canProceed() || isFreeTrialLoading}
           className="px-6 py-2 bg-[#43A2C9] text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {plansLoading ? (
+          {isFreeTrialLoading ? (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Activating Free Trial...
+            </div>
+          ) : plansLoading ? (
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               Loading...
             </div>
+          ) : selectedPlan?.id === 'free-trial' ? (
+            "Start Free Trial"
           ) : (
             "Choose Payment Method"
           )}

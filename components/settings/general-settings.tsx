@@ -121,14 +121,27 @@ export default function GeneralSettings({
       // Call API to disconnect WhatsApp account
       await disconnectWhatsappAccount();
       toast.success("WhatsApp disconnected successfully!");
+
       // Refresh the page to update the user context
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error("Error disconnecting WhatsApp:", error);
       toast.error("Failed to disconnect WhatsApp. Please try again.");
     } finally {
       setIsDisconnecting(false);
     }
+  };
+
+  const handleDeleteAccount = async () => {
+    await deleteAccount();
+    toast.success("Account deleted successfully!");
+
+    // Sign out the user
+    await axios.post("/api/auth/signout");
+
+    window.location.href = "/login";
   };
 
   const getWhatsAppStatus = () => {
@@ -359,7 +372,7 @@ export default function GeneralSettings({
               Permanently delete your account and all associated data
             </p>
           </div>
-          <Button variant="destructive" onClick={deleteAccount}>
+          <Button variant="destructive" onClick={handleDeleteAccount}>
             <Trash2 className="h-4 w-4 mr-2" />
             Delete My Account
           </Button>
