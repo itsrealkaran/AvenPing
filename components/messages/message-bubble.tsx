@@ -115,7 +115,7 @@ const MessageBubble = ({
         <div className="relative group">
           {statusIcon}
           {/* Tooltip */}
-          <div className="absolute bottom-full right-0 mb-2 py-2 min-w-[260px] max-w-xs text-gray-600 bg-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-pre-line break-words z-50">
+          <div className="absolute bottom-full right-0 mb-2 px-2 py-2 min-w-[260px] max-w-xs text-gray-600 bg-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-pre-line break-words z-50">
             <div className="break-words whitespace-pre-line">
               {message.errorMessage}
             </div>
