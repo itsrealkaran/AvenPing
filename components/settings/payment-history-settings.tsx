@@ -5,27 +5,18 @@ import { ChevronRight, Calendar, MoreVertical, ArrowUpDown, Filter, Menu, Downlo
 import { Button } from "@/components/ui/button"
 import Table from "@/components/ui/table"
 import { MRT_ColumnDef } from "material-react-table"
+import { useSettings } from "@/context/settings-provider"
 
 interface PaymentRecord {
   id: string
-  date: string
+  createdAt: string
   amount: string
-  method: string
-  status: "Paid" | "Pending" | "Failed"
+  planName: string
+  period: string
 }
 
 export default function PaymentHistorySettings() {
-  const [sortBy, setSortBy] = useState<string>("date")
-  const [filterStatus, setFilterStatus] = useState<string>("all")
-
-  // Dummy payment data
-  const payments: PaymentRecord[] = Array.from({ length: 10 }, (_, index) => ({
-    id: `payment-${index + 1}`,
-    date: "May 15, 2023",
-    amount: "$87",
-    method: "Credit Card",
-    status: "Paid" as const
-  }))
+  const { paymentHistory, isPaymentHistoryLoading, paymentHistoryError } = useSettings();
 
   // Define columns for the table
   const columns: MRT_ColumnDef<PaymentRecord>[] = [
@@ -35,7 +26,13 @@ export default function PaymentHistorySettings() {
       Cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-gray-400" />
-          <span className="text-sm text-gray-900">{row.original.date}</span>
+          <span className="text-sm text-gray-900">
+            {new Date(row.original.createdAt).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}
+          </span>
         </div>
       ),
     },
@@ -43,21 +40,21 @@ export default function PaymentHistorySettings() {
       accessorKey: "amount",
       header: "Amount",
       Cell: ({ row }) => (
-        <span className="text-sm font-medium text-gray-900">{row.original.amount}</span>
+        <span className="text-sm font-medium text-gray-900">{Number(row.original.amount) / 100}</span>
       ),
     },
     {
-      accessorKey: "method",
-      header: "Method",
+      accessorKey: "planName",
+      header: "Plan",
       Cell: ({ row }) => (
-        <span className="text-sm text-gray-900">{row.original.method}</span>
+        <span className="text-sm text-gray-900">{row.original.planName}</span>
       ),
     },
     {
-      accessorKey: "status",
-      header: "Status",
+      accessorKey: "period",
+      header: "Period",
       Cell: ({ row }) => {
-        const status = row.original.status
+        const status = row.original.period
         const getStatusBadge = (status: string) => {
           const baseClasses = "px-2 py-1 rounded-full text-xs font-medium"
           switch (status) {
@@ -112,7 +109,7 @@ export default function PaymentHistorySettings() {
         </div>
         
         <Table
-          data={payments}
+          data={paymentHistory?.subscriptions || []}
           columns={columns}
           actionMenuItems={actionMenuItems}
           enableRowSelection={false}

@@ -22,7 +22,8 @@ export async function POST(request: Request) {
         email: {
           equals: email,
           mode: 'insensitive'
-        }
+        },
+        isDeleted: false
        },
       include: {
         whatsAppAccount: {

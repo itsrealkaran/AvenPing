@@ -18,7 +18,7 @@ export default function GeneralSettings({
   setOptOutStatus,
 }: GeneralSettingsProps) {
   const { userInfo, hasWhatsAppAccount, isLoading } = useUser();
-  const { userSettings, updateOptOutKeywords, toggleOptOut } = useSettings();
+  const { userSettings, updateOptOutKeywords, toggleOptOut, deleteAccount, disconnectWhatsappAccount } = useSettings();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isSavingKeywords, setIsSavingKeywords] = useState(false);
@@ -119,7 +119,7 @@ export default function GeneralSettings({
 
     try {
       // Call API to disconnect WhatsApp account
-      await axios.delete("/api/whatsapp");
+      await disconnectWhatsappAccount();
       toast.success("WhatsApp disconnected successfully!");
       // Refresh the page to update the user context
       window.location.reload();
@@ -359,7 +359,7 @@ export default function GeneralSettings({
               Permanently delete your account and all associated data
             </p>
           </div>
-          <Button variant="destructive">
+          <Button variant="destructive" onClick={deleteAccount}>
             <Trash2 className="h-4 w-4 mr-2" />
             Delete My Account
           </Button>

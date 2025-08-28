@@ -45,6 +45,11 @@ interface SettingsContextType {
   obaStatusError: Error | null;
   refetchOBAStatus: () => void;
   fetchOBAStatus: (phoneNumberId: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
+  disconnectWhatsappAccount: () => Promise<void>;
+  paymentHistory: any;
+  isPaymentHistoryLoading: boolean;
+  paymentHistoryError: Error | null;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -136,6 +141,31 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     enabled: false, // Disabled by default, will be enabled when phoneNumberId is available
   });
 
+  // Delete account mutation
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      const response = await axios.post('/api/settings/delete-account');
+      return response.data;
+    },
+  });
+
+  // disconnect whatsapp account mutation
+  const disconnectWhatsappAccountMutation = useMutation({
+    mutationFn: async () => {
+      const response = await axios.post('/api/settings/disconnect-whatsapp');
+      return response.data;
+    },
+  });
+
+  // fetch payment history
+  const paymentHistoryQuery = useQuery({
+    queryKey: ['paymentHistory', user?.id],
+    queryFn: async () => {
+      const response = await axios.get('/api/subscription/payment-history');
+      return response.data;
+    },
+  });
+
   const value: SettingsContextType = {
     userSettings: userSettings || undefined,
     isLoading,
@@ -167,6 +197,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       // Update the query cache manually
       queryClient.setQueryData(['obaStatus', user?.id], data);
     },
+    deleteAccount: async () => {
+      await deleteAccountMutation.mutateAsync();
+    },
+    disconnectWhatsappAccount: async () => {
+      await disconnectWhatsappAccountMutation.mutateAsync();
+    },
+    paymentHistory: paymentHistoryQuery.data || undefined,
+    isPaymentHistoryLoading: paymentHistoryQuery.isLoading,
+    paymentHistoryError: paymentHistoryQuery.error as Error | null,
   };
 
   return (

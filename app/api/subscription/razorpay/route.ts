@@ -115,25 +115,12 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create subscription record
-    const subscription = await prisma.subscription.create({
-      data: {
-        userId: user.id,
-        planName: plan.name,
-        period: isAddon ? "MONTHLY" : (planPeriod as PlanPeriod),
-        amount: amountInPaise,
-        currency: currency,
-        endDate: pricingDetails.endDate,
-      },
-    })
-
     return NextResponse.json({ 
       message: "Order created successfully",
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
       keyId: process.env.RAZORPAY_KEY_ID,
-      subscriptionId: subscription.id,
       redirectUrl: redirectUrl,
     })
   } catch (error) {
@@ -281,6 +268,18 @@ export async function GET(request: NextRequest) {
           })
         }
       }
+
+      // Create subscription record
+      await prisma.subscription.create({
+        data: {
+          userId: userId,
+          planName: planName,
+          period: planPeriod === "year" ? "YEARLY" : "MONTHLY",
+          amount: Number(payment.amount) / 100,
+          currency: payment.currency,
+          endDate: endDate,
+        },
+      })
 
       return NextResponse.json({ 
         message: "Payment successful",
