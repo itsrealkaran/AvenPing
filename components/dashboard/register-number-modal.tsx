@@ -104,10 +104,10 @@ export default function RegisterNumberModal({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 z-100" onClick={handleClose} />
+      <div className="fixed inset-0 bg-black/50 z-130" onClick={handleClose} />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 z-120">
+      <div className="fixed inset-0 flex items-center justify-center p-4 z-140">
         <div className="bg-white rounded-lg shadow-lg max-w-md w-full max-h-[90vh] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-4 pb-2 border-b border-gray-200">

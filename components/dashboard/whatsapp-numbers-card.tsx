@@ -1,13 +1,5 @@
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
-import {
-  AlertCircle,
-  Info,
-  MessageSquare,
-  PlusCircle,
-  Wifi,
-  WifiOff,
-} from "lucide-react";
+import { Wifi, WifiOff } from "lucide-react";
 
 type Props = {
   isConnected: boolean;
@@ -48,8 +40,8 @@ export default function WhatsAppNumbersCardContent({
               </div>
               <div className="text-sm text-gray-500 mb-4 leading-relaxed">
                 You need to connect your WhatsApp Business account to access all
-                features. Without this connection, you won&apos;t be able to send
-                messages, manage campaigns, or use the messaging interface.
+                features. Without this connection, you won&apos;t be able to
+                send messages, manage campaigns, or use the messaging interface.
               </div>
               <Button onClick={handleConnectAccount} size="sm">
                 Connect WhatsApp
