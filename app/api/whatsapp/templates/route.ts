@@ -64,8 +64,31 @@ export async function POST(request: NextRequest) {
         });
 
         return NextResponse.json(template.data);
-    } catch (error) {
-        return NextResponse.json({ error: "Failed to create template", message: error }, { status: 500 });
+    } catch (error: any) {
+        console.error("Template creation error:", error);
+        
+        // Handle Axios errors
+        if (error.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            return NextResponse.json({ 
+                error: "Failed to create template", 
+                message: error.response.data?.error?.message || error.response.data?.message || error.message,
+                details: error.response.data
+            }, { status: error.response.status });
+        } else if (error.request) {
+            // The request was made but no response was received
+            return NextResponse.json({ 
+                error: "Failed to create template", 
+                message: "No response from WhatsApp API"
+            }, { status: 500 });
+        } else {
+            // Something happened in setting up the request that triggered an Error
+            return NextResponse.json({ 
+                error: "Failed to create template", 
+                message: error.message || "Unknown error occurred"
+            }, { status: 500 });
+        }
     }
 }
 

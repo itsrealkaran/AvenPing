@@ -255,9 +255,11 @@ export function CreateTemplateModal({
                   type: "HEADER",
                   format: "TEXT",
                   text: fixedHeaderText,
-                  example: {
-                    header_text: headerExamples,
-                  },
+                  ...(headerExamples.length > 0 && {
+                    example: {
+                      header_text: headerExamples,
+                    },
+                  }),
                 },
               ]
             : headerFormat !== "TEXT" && headerMediaId
@@ -274,9 +276,11 @@ export function CreateTemplateModal({
           {
             type: "BODY",
             text: fixedBodyText,
-            example: {
-              body_text: [bodyExamples.map((example) => example || "")],
-            },
+            ...(bodyExamples.length > 0 && {
+              example: {
+                body_text: [bodyExamples.map((example) => example || "")],
+              },
+            }),
           },
           {
             type: "FOOTER",
