@@ -33,6 +33,8 @@ export default function CampaignsPage() {
     error,
     setSelectedWhatsAppAccountId,
     createCampaign,
+    refreshCampaigns,
+    isRefreshing,
   } = useCampaigns();
   const { userInfo } = useUser();
 
@@ -218,10 +220,11 @@ export default function CampaignsPage() {
         <Table
           data={campaigns}
           columns={columns}
-          isLoading={isLoading}
+          isLoading={isLoading || isRefreshing}
           isSaving={isSaving}
           actionMenuItems={actionMenuItems}
           onAddItem={handleAddCampaign}
+          onRefresh={refreshCampaigns}
           addButtonLabel="Create Campaign"
           searchPlaceholder="Search campaigns..."
           onRowClick={handleRowClick}

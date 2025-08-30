@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useTemplates } from "./template-provider";
@@ -12,7 +18,7 @@ export interface Campaign {
   message?: string;
   templateName?: string;
   templateParams?: string;
-  status: 'PENDING' | 'SCHEDULED' | 'COMPLETED' | 'FAILED';
+  status: "PENDING" | "SCHEDULED" | "COMPLETED" | "FAILED";
   scheduledAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -21,7 +27,7 @@ export interface Campaign {
 
 interface CampaignData {
   name: string;
-  type: 'TEMPLATE' | 'TEXT';
+  type: "TEMPLATE" | "TEXT";
   message?: string;
   templateName?: string;
   templateParams?: string;
@@ -41,13 +47,20 @@ interface CampaignContextType {
   createCampaign: (data: CampaignData) => Promise<Campaign>;
   selectedWhatsAppAccountId: string | null;
   setSelectedWhatsAppAccountId: (id: string | null) => void;
+  refreshCampaigns: () => Promise<void>;
+  isRefreshing: boolean;
   isSaving: boolean;
 }
 
-const CampaignContext = createContext<CampaignContextType | undefined>(undefined);
+const CampaignContext = createContext<CampaignContextType | undefined>(
+  undefined
+);
 
 export function CampaignProvider({ children }: { children: ReactNode }) {
-  const [selectedWhatsAppAccountId, setSelectedWhatsAppAccountId] = useState<string | null>(null);
+  const [selectedWhatsAppAccountId, setSelectedWhatsAppAccountId] = useState<
+    string | null
+  >(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
 
   const { templates } = useTemplates();
@@ -58,15 +71,17 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['campaigns', selectedWhatsAppAccountId],
+    queryKey: ["campaigns", selectedWhatsAppAccountId],
     queryFn: async () => {
       if (!selectedWhatsAppAccountId) {
         return [];
       }
-      
-      const response = await fetch(`/api/whatsapp/campaigns?id=${selectedWhatsAppAccountId}`);
+
+      const response = await fetch(
+        `/api/whatsapp/campaigns?id=${selectedWhatsAppAccountId}`
+      );
       if (!response.ok) {
-        throw new Error('Failed to fetch campaigns');
+        throw new Error("Failed to fetch campaigns");
       }
       const data = await response.json();
       return data.campaigns;
@@ -78,35 +93,51 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   const createCampaignMutation = useMutation({
     mutationFn: async (campaignData: CampaignData) => {
       if (!selectedWhatsAppAccountId) {
-        throw new Error('No WhatsApp account selected');
+        throw new Error("No WhatsApp account selected");
       }
 
-      const response = await fetch(`/api/whatsapp/campaigns?id=${selectedWhatsAppAccountId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(campaignData),
-      });
+      const response = await fetch(
+        `/api/whatsapp/campaigns?id=${selectedWhatsAppAccountId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(campaignData),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create campaign');
+        throw new Error(errorData.error || "Failed to create campaign");
       }
 
       return response.json();
     },
     onSuccess: (newCampaign) => {
       // Invalidate and refetch campaigns
-      queryClient.invalidateQueries({ queryKey: ['campaigns', selectedWhatsAppAccountId] });
+      queryClient.invalidateQueries({
+        queryKey: ["campaigns", selectedWhatsAppAccountId],
+      });
     },
     onError: (error: Error) => {
-      console.error('Error creating campaign:', error);
+      console.error("Error creating campaign:", error);
     },
   });
 
   const createCampaign = async (data: CampaignData): Promise<Campaign> => {
     return createCampaignMutation.mutateAsync(data);
+  };
+
+  const refreshCampaigns = async () => {
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({
+        queryKey: ["campaigns", selectedWhatsAppAccountId],
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const value: CampaignContextType = {
@@ -116,6 +147,8 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     createCampaign,
     selectedWhatsAppAccountId,
     setSelectedWhatsAppAccountId,
+    refreshCampaigns,
+    isRefreshing,
     isSaving: createCampaignMutation.isPending,
   };
 
@@ -129,7 +162,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
 export function useCampaigns() {
   const context = useContext(CampaignContext);
   if (context === undefined) {
-    throw new Error('useCampaigns must be used within a CampaignProvider');
+    throw new Error("useCampaigns must be used within a CampaignProvider");
   }
   return context;
-} 
+}
