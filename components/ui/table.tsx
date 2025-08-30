@@ -8,6 +8,7 @@ import {
   MRT_ColumnDef,
 } from "material-react-table";
 import { ListItemIcon, MenuItem } from "@mui/material";
+import { Refresh } from "@mui/icons-material";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, LucideIcon } from "lucide-react";
@@ -52,6 +53,7 @@ export type TableProps<T extends Record<string, any>> = {
   toolbarActions?: ToolbarAction<T>[];
   onAddItem?: () => void;
   onDelete?: (rows: T[]) => void;
+  onRefresh?: () => void | Promise<void>;
   addButtonLabel?: string;
   deleteButtonLabel?: string;
   searchPlaceholder?: string;
@@ -81,6 +83,7 @@ export default function Table<T extends Record<string, any>>({
   toolbarActions = [],
   onAddItem,
   onDelete,
+  onRefresh,
   addButtonLabel = "Add Item",
   deleteButtonLabel = "Delete",
   searchPlaceholder = "Search...",
@@ -91,9 +94,10 @@ export default function Table<T extends Record<string, any>>({
   Delete,
   onRowClick,
   renderTopToolbar,
-  isSaving
+  isSaving,
 }: TableProps<T>) {
   const [tableHeight, setTableHeight] = useState(propTableHeight || "450px");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (!propTableHeight) {
@@ -112,6 +116,19 @@ export default function Table<T extends Record<string, any>>({
       return () => window.removeEventListener("resize", updateHeight);
     }
   }, [propTableHeight]);
+
+  const handleRefresh = async () => {
+    if (!onRefresh) return;
+
+    setIsRefreshing(true);
+    try {
+      await onRefresh();
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const table = useMaterialReactTable({
     columns,
@@ -203,6 +220,21 @@ export default function Table<T extends Record<string, any>>({
                 />
               </div>
               <MRT_ToggleFiltersButton table={table} />
+              <button
+                onClick={() => {
+                  table.reset();
+                  handleRefresh();
+                }}
+                className="flex items-center"
+                disabled={isRefreshing || isLoading}
+                title="Refresh data"
+              >
+                {isRefreshing || isLoading ? (
+                  <Refresh className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Refresh className="h-4 w-4 mr-2" />
+                )}
+              </button>
             </div>
 
             <div className="flex items-center gap-2">
@@ -327,6 +359,7 @@ export default function Table<T extends Record<string, any>>({
 //   isLoading={isLoading}
 //   actionMenuItems={actionMenuItems}
 //   onAddItem={handleAddContact}
+//   onRefresh={fetchContacts}
 //   addButtonLabel="Add Contact"
 //   onDelete={handleDeleteContacts}
 //   deleteButtonLabel="Delete Contact"
