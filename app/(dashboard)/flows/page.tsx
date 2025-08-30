@@ -143,6 +143,8 @@ export default function FlowPage() {
     toggleFlowDisabled,
     saveFlowFromBuilder,
     reconstructFlowData,
+    refreshFlows,
+    isRefreshing,
     clearError,
   } = useFlow();
 
@@ -359,9 +361,10 @@ export default function FlowPage() {
         <Table
           data={flows}
           columns={columns}
-          isLoading={isLoading}
+          isLoading={isLoading || isRefreshing}
           actionMenuItems={actionMenuItems}
           onAddItem={handleAddFlow}
+          onRefresh={refreshFlows}
           addButtonLabel="Add Flow"
           searchPlaceholder="Search flows..."
         />

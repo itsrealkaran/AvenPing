@@ -53,6 +53,10 @@ interface FlowContextType {
   getFlowById: (id: string) => Flow | undefined;
   reconstructFlowData: (flow: Flow) => { nodes: Node[]; edges: Edge[] };
 
+  // Refresh Operations
+  refreshFlows: () => Promise<void>;
+  isRefreshing: boolean;
+
   // State Management
   setError: (error: string | null) => void;
   clearError: () => void;
@@ -63,6 +67,7 @@ const FlowContext = createContext<FlowContextType | undefined>(undefined);
 export const FlowProvider = ({ children }: { children: ReactNode }) => {
   const [flows, setFlows] = useState<Flow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Convert database flow to frontend flow format
@@ -389,6 +394,16 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
     []
   );
 
+  // Refresh flows
+  const refreshFlows = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchFlows();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [fetchFlows]);
+
   // Clear error
   const clearError = useCallback(() => {
     setError(null);
@@ -411,6 +426,8 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
     saveFlowFromBuilder,
     getFlowById,
     reconstructFlowData,
+    refreshFlows,
+    isRefreshing,
     setError,
     clearError,
   };
