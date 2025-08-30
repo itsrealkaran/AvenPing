@@ -312,8 +312,13 @@ export default function FlowPage() {
     },
     {
       key: "toggleDisabled",
-      label: (flow: Flow) => flow.isDisabled ? "Enable" : "Disable",
-      icon: (flow: Flow) => flow.isDisabled ? <Play className="size-4" /> : <Pause className="size-4" />,
+      label: (flow: Flow) => (flow.isDisabled ? "Enable" : "Disable"),
+      icon: (flow: Flow) =>
+        flow.isDisabled ? (
+          <Play className="size-4" />
+        ) : (
+          <Pause className="size-4" />
+        ),
       onClick: (flow: Flow, closeMenu: () => void) => {
         handleToggleDisabled(flow);
         closeMenu();

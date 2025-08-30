@@ -6,24 +6,41 @@ import React, { useState, useEffect } from "react";
 import Table, { ActionMenuItem } from "@/components/ui/table";
 import { MRT_ColumnDef } from "material-react-table";
 import { CreateCampaignModal } from "@/components/campaigns/create-campaign-modal";
-import { useCampaigns, Campaign as BaseCampaign } from "@/context/campaign-provider";
+import {
+  useCampaigns,
+  Campaign as BaseCampaign,
+} from "@/context/campaign-provider";
 import { useUser } from "@/context/user-context";
 import { toast } from "sonner";
 import { RecipientStatsModal } from "@/components/campaigns/recipient-stats-modal";
 
 type Campaign = BaseCampaign & {
-  recipientStats?: Array<{ id: string; name: string; phoneNumber: string; status: string }>;
+  recipientStats?: Array<{
+    id: string;
+    name: string;
+    phoneNumber: string;
+    status: string;
+  }>;
   chartData?: Array<{ Status: string; Count: number }>;
 };
 
 export default function CampaignsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const { campaigns, isLoading, isSaving, error, setSelectedWhatsAppAccountId, createCampaign } = useCampaigns();
+  const {
+    campaigns,
+    isLoading,
+    isSaving,
+    error,
+    setSelectedWhatsAppAccountId,
+    createCampaign,
+  } = useCampaigns();
   const { userInfo } = useUser();
 
   const [selectedRecipientStats, setSelectedRecipientStats] = useState(null);
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(
+    null
+  );
   // Set the selected WhatsApp account ID when user info is available
   useEffect(() => {
     if (userInfo?.whatsappAccount?.id) {
@@ -87,7 +104,7 @@ export default function CampaignsPage() {
         return (
           <span
             className={`px-2 py-1 text-xs font-medium rounded-full ${
-                value === "COMPLETED"
+              value === "COMPLETED"
                 ? "bg-green-100 text-green-800"
                 : value === "SCHEDULED"
                 ? "bg-blue-100 text-blue-800"
@@ -106,7 +123,10 @@ export default function CampaignsPage() {
       header: "Read",
       Cell: ({ row }) => {
         const chartData = row.original.chartData || [];
-        const total = chartData.reduce((sum: number, item: any) => sum + item.Count, 0);
+        const total = chartData.reduce(
+          (sum: number, item: any) => sum + item.Count,
+          0
+        );
         const readItem = chartData.find((item: any) => item.Status === "Read");
         const count = readItem ? readItem.Count : 0;
         const percent = total > 0 ? Math.round((count / total) * 100) : 0;
@@ -118,8 +138,13 @@ export default function CampaignsPage() {
       header: "Replied",
       Cell: ({ row }) => {
         const chartData = row.original.chartData || [];
-        const total = chartData.reduce((sum: number, item: any) => sum + item.Count, 0);
-        const repliedItem = chartData.find((item: any) => item.Status === "Replied");
+        const total = chartData.reduce(
+          (sum: number, item: any) => sum + item.Count,
+          0
+        );
+        const repliedItem = chartData.find(
+          (item: any) => item.Status === "Replied"
+        );
         const count = repliedItem ? repliedItem.Count : 0;
         const percent = total > 0 ? Math.round((count / total) * 100) : 0;
         return `${percent}%`;
@@ -130,8 +155,13 @@ export default function CampaignsPage() {
       header: "Unread",
       Cell: ({ row }) => {
         const chartData = row.original.chartData || [];
-        const total = chartData.reduce((sum: number, item: any) => sum + item.Count, 0);
-        const unreadItem = chartData.find((item: any) => item.Status === "Unread");
+        const total = chartData.reduce(
+          (sum: number, item: any) => sum + item.Count,
+          0
+        );
+        const unreadItem = chartData.find(
+          (item: any) => item.Status === "Unread"
+        );
         const count = unreadItem ? unreadItem.Count : 0;
         const percent = total > 0 ? Math.round((count / total) * 100) : 0;
         return `${percent}%`;
@@ -197,7 +227,7 @@ export default function CampaignsPage() {
           onRowClick={handleRowClick}
         />
       </Body>
-      
+
       <CreateCampaignModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}

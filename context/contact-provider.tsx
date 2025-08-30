@@ -1,10 +1,17 @@
-'use client';
+"use client";
 
-import { createContext, useContext, ReactNode, useState, useCallback, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import { useUser } from './user-context';
-import { toast } from 'sonner';
+import {
+  createContext,
+  useContext,
+  ReactNode,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { useUser } from "./user-context";
+import { toast } from "sonner";
 
 export interface Contact {
   id: string;
@@ -60,13 +67,26 @@ interface ContactContextType {
   createContact: (data: CreateContactData) => Promise<Contact>;
   updateContact: (data: UpdateContactData) => Promise<Contact>;
   deleteContacts: (ids: string[]) => Promise<void>;
-  bulkImportContacts: (contacts: CreateContactData[]) => Promise<{ success: number; failed: number; errors?: Array<{ index: number; error: string }> }>;
+  bulkImportContacts: (contacts: CreateContactData[]) => Promise<{
+    success: number;
+    failed: number;
+    errors?: Array<{ index: number; error: string }>;
+  }>;
   toggleContactStatus: (contactId: string) => Promise<void>;
+  refreshContacts: () => Promise<void>;
+  isRefreshing: boolean;
   attributes: ContactAttribute[] | undefined;
   isLoadingAttributes: boolean;
   errorAttributes: Error | null;
-  createAttribute: (data: { name: string; type: string }) => Promise<ContactAttribute>;
-  updateAttribute: (data: { id: string; name: string; type: string }) => Promise<ContactAttribute>;
+  createAttribute: (data: {
+    name: string;
+    type: string;
+  }) => Promise<ContactAttribute>;
+  updateAttribute: (data: {
+    id: string;
+    name: string;
+    type: string;
+  }) => Promise<ContactAttribute>;
   deleteAttribute: (id: string) => Promise<void>;
   isCreating: boolean;
   isUpdating: boolean;
@@ -92,23 +112,24 @@ export function ContactProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const { userInfo: user } = useUser();
   const [phoneNumberId, setPhoneNumberId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Set phone number ID when user info is available
   const updatePhoneNumberId = useCallback(() => {
     if (user?.whatsappAccount?.phoneNumbers?.[0]?.id) {
       const newPhoneNumberId = user.whatsappAccount.phoneNumbers[0].id;
-      
+
       // Only update if the phone number ID has actually changed
       if (newPhoneNumberId !== phoneNumberId) {
         setPhoneNumberId(newPhoneNumberId);
-        
+
         // Clear contacts query to force fresh data fetch
-        queryClient.removeQueries({ queryKey: ['contacts'] });
+        queryClient.removeQueries({ queryKey: ["contacts"] });
       }
     } else {
       // Reset if no user data
       setPhoneNumberId(null);
-      queryClient.removeQueries({ queryKey: ['contacts'] });
+      queryClient.removeQueries({ queryKey: ["contacts"] });
     }
   }, [user, phoneNumberId, queryClient]);
 
@@ -118,17 +139,19 @@ export function ContactProvider({ children }: { children: ReactNode }) {
   }, [updatePhoneNumberId]);
 
   // Fetch contacts
-  const { 
-    data: contacts, 
-    isLoading, 
-    error 
+  const {
+    data: contacts,
+    isLoading,
+    error,
   } = useQuery({
-    queryKey: ['contacts', phoneNumberId],
+    queryKey: ["contacts", phoneNumberId],
     queryFn: async () => {
       if (!phoneNumberId) {
-        throw new Error('Phone number ID is required');
+        throw new Error("Phone number ID is required");
       }
-      const response = await axios.get(`/api/contacts?phoneNumberId=${phoneNumberId}`);
+      const response = await axios.get(
+        `/api/contacts?phoneNumberId=${phoneNumberId}`
+      );
       return response.data;
     },
     enabled: !!phoneNumberId,
@@ -137,12 +160,12 @@ export function ContactProvider({ children }: { children: ReactNode }) {
   // Create contact mutation
   const createContactMutation = useMutation({
     mutationFn: async (data: CreateContactData) => {
-      const response = await axios.post('/api/contacts', data);
+      const response = await axios.post("/api/contacts", data);
       return response.data;
     },
     onSuccess: () => {
       // Invalidate and refetch contacts data
-      queryClient.invalidateQueries({ queryKey: ['contacts', phoneNumberId] });
+      queryClient.invalidateQueries({ queryKey: ["contacts", phoneNumberId] });
     },
     onError: (error: any) => {
       toast.error(error.response.data.error);
@@ -152,43 +175,45 @@ export function ContactProvider({ children }: { children: ReactNode }) {
   // Update contact mutation
   const updateContactMutation = useMutation({
     mutationFn: async (data: UpdateContactData) => {
-      const response = await axios.put('/api/contacts', data);
+      const response = await axios.put("/api/contacts", data);
       return response.data;
     },
     onSuccess: () => {
       // Invalidate and refetch contacts data
-      queryClient.invalidateQueries({ queryKey: ['contacts', phoneNumberId] });
+      queryClient.invalidateQueries({ queryKey: ["contacts", phoneNumberId] });
     },
   });
 
   // Delete contacts mutation
   const deleteContactsMutation = useMutation({
     mutationFn: async (ids: string[]) => {
-      await axios.delete('/api/contacts', { data: { ids } });
+      await axios.delete("/api/contacts", { data: { ids } });
     },
     onSuccess: () => {
       // Invalidate and refetch contacts data
-      queryClient.invalidateQueries({ queryKey: ['contacts', phoneNumberId] });
+      queryClient.invalidateQueries({ queryKey: ["contacts", phoneNumberId] });
     },
   });
 
   // Bulk import contacts mutation
   const bulkImportContactsMutation = useMutation({
     mutationFn: async (contacts: CreateContactData[]) => {
-      const response = await axios.post('/api/contacts/bulk-import', { contacts });
+      const response = await axios.post("/api/contacts/bulk-import", {
+        contacts,
+      });
       return response.data;
     },
     onSuccess: () => {
       // Invalidate and refetch contacts data
-      queryClient.invalidateQueries({ queryKey: ['contacts', phoneNumberId] });
+      queryClient.invalidateQueries({ queryKey: ["contacts", phoneNumberId] });
     },
   });
 
   // Get attributes
   const { data: attributes } = useQuery({
-    queryKey: ['attributes'],
+    queryKey: ["attributes"],
     queryFn: async () => {
-      const response = await axios.get('/api/contacts/attribute');
+      const response = await axios.get("/api/contacts/attribute");
       return response.data;
     },
   });
@@ -196,51 +221,55 @@ export function ContactProvider({ children }: { children: ReactNode }) {
   // Create attribute mutation
   const addAttributeMutation = useMutation({
     mutationFn: async (data: { name: string; type: string }) => {
-      const response = await axios.post('/api/contacts/attribute', data);
+      const response = await axios.post("/api/contacts/attribute", data);
       return response.data;
     },
     onSuccess: () => {
       // Invalidate and refetch attributes data
-      queryClient.invalidateQueries({ queryKey: ['attributes'] });
+      queryClient.invalidateQueries({ queryKey: ["attributes"] });
     },
   });
 
   // Update attribute mutation
   const updateAttributeMutation = useMutation({
     mutationFn: async (data: { id: string; name: string; type: string }) => {
-      const response = await axios.put('/api/contacts/attribute', data);
+      const response = await axios.put("/api/contacts/attribute", data);
       return response.data;
     },
     onSuccess: () => {
       // Invalidate and refetch attributes data
-      queryClient.invalidateQueries({ queryKey: ['attributes'] });
+      queryClient.invalidateQueries({ queryKey: ["attributes"] });
     },
   });
 
   // Delete attribute mutation
   const deleteAttributeMutation = useMutation({
     mutationFn: async (id: string) => {
-      await axios.delete('/api/contacts/attribute', { data: { id } });
+      await axios.delete("/api/contacts/attribute", { data: { id } });
     },
     onSuccess: () => {
       // Invalidate and refetch attributes data
-      queryClient.invalidateQueries({ queryKey: ['attributes'] });
+      queryClient.invalidateQueries({ queryKey: ["attributes"] });
     },
   });
 
   // Toggle contact status mutation
   const toggleStatusMutation = useMutation({
     mutationFn: async (contactId: string) => {
-      const response = await axios.put('/api/contacts/toggle-status', { contactId });
+      const response = await axios.put("/api/contacts/toggle-status", {
+        contactId,
+      });
       return response.data;
     },
     onSuccess: () => {
       // Invalidate and refetch contacts data
-      queryClient.invalidateQueries({ queryKey: ['contacts', phoneNumberId] });
-      toast.success('Contact status updated successfully');
+      queryClient.invalidateQueries({ queryKey: ["contacts", phoneNumberId] });
+      toast.success("Contact status updated successfully");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Failed to update contact status');
+      toast.error(
+        error.response?.data?.error || "Failed to update contact status"
+      );
     },
   });
 
@@ -264,6 +293,17 @@ export function ContactProvider({ children }: { children: ReactNode }) {
     toggleContactStatus: async (contactId: string) => {
       await toggleStatusMutation.mutateAsync(contactId);
     },
+    refreshContacts: async () => {
+      setIsRefreshing(true);
+      try {
+        await queryClient.invalidateQueries({
+          queryKey: ["contacts", phoneNumberId],
+        });
+      } finally {
+        setIsRefreshing(false);
+      }
+    },
+    isRefreshing,
     isCreating: createContactMutation.isPending,
     isUpdating: updateContactMutation.isPending,
     isDeleting: deleteContactsMutation.isPending,
@@ -282,7 +322,11 @@ export function ContactProvider({ children }: { children: ReactNode }) {
     createAttribute: async (data: { name: string; type: string }) => {
       return await addAttributeMutation.mutateAsync(data);
     },
-    updateAttribute: async (data: { id: string; name: string; type: string }) => {
+    updateAttribute: async (data: {
+      id: string;
+      name: string;
+      type: string;
+    }) => {
       return await updateAttributeMutation.mutateAsync(data);
     },
     deleteAttribute: async (id: string) => {
@@ -297,16 +341,14 @@ export function ContactProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ContactContext.Provider value={value}>
-      {children}
-    </ContactContext.Provider>
+    <ContactContext.Provider value={value}>{children}</ContactContext.Provider>
   );
 }
 
 export function useContacts() {
   const context = useContext(ContactContext);
   if (context === undefined) {
-    throw new Error('useContacts must be used within a ContactProvider');
+    throw new Error("useContacts must be used within a ContactProvider");
   }
   return context;
 }

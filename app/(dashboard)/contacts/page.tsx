@@ -73,6 +73,8 @@ export default function ContactsPage() {
     updateContact,
     deleteContacts,
     toggleContactStatus,
+    refreshContacts,
+    isRefreshing,
     isCreating,
     isUpdating,
     isDeleting,
@@ -229,7 +231,7 @@ export default function ContactsPage() {
       Cell: ({ row }) => {
         const contact = row.original;
         const isDisabled = contact.isDisabled;
-        
+
         return (
           <span
             className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -279,8 +281,13 @@ export default function ContactsPage() {
     },
     {
       key: "toggle",
-      label: (contact) => contact.isDisabled ? "Enable" : "Disable",
-      icon: (contact) => contact.isDisabled ? <Play className="size-4" /> : <Pause className="size-4" />,
+      label: (contact) => (contact.isDisabled ? "Enable" : "Disable"),
+      icon: (contact) =>
+        contact.isDisabled ? (
+          <Play className="size-4" />
+        ) : (
+          <Pause className="size-4" />
+        ),
       onClick: (contact, closeMenu) => {
         handleToggleStatus(contact);
         closeMenu();
@@ -323,9 +330,10 @@ export default function ContactsPage() {
         <Table
           data={contacts || []}
           columns={columns}
-          isLoading={isLoading}
+          isLoading={isLoading || isRefreshing}
           actionMenuItems={actionMenuItems}
           onAddItem={handleAddContact}
+          onRefresh={refreshContacts}
           addButtonLabel="Add Contact"
           onDelete={handleDeleteContacts}
           deleteButtonLabel="Delete Contact"
