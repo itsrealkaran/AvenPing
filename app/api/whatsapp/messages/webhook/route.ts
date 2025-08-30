@@ -190,12 +190,31 @@ export async function POST(req: NextRequest) {
                   (recipient) => recipient.phoneNumber === message.from
                 );
                 let isOptedOut = false;
+                // Check for opt-out in text messages or button responses
                 if (message.type === "text" && message.text.body.toLowerCase().replace(/\s/g, "") === "stop") {
                   isOptedOut = true;
+                } else if (message.type === "button") {
+                  const buttonText = message.button?.text || message.button?.payload || '';
+                  if (buttonText.toLowerCase().replace(/\s/g, "") === "stop") {
+                    isOptedOut = true;
+                  }
                 }
                 let newMessage;
 
-                const messageText = message?.text?.body || message?.interactive?.button_reply?.title;
+                // Handle different message types and extract text content
+                let messageText = '';
+                if (message.type === 'text') {
+                  messageText = message.text?.body || '';
+                } else if (message.type === 'button') {
+                  // Handle new button response format
+                  messageText = message.button?.text || message.button?.payload || '';
+                } else if (message.type === 'interactive') {
+                  // Handle interactive button replies
+                  messageText = message.interactive?.button_reply?.title || '';
+                } else {
+                  // Fallback for other message types
+                  messageText = message?.text?.body || message?.interactive?.button_reply?.title || '';
+                }
 
                 if (recipient) {
                   if (
