@@ -169,6 +169,7 @@ export const useWebSocket = ({ onMessage, onConnect, onDisconnect, onError }: Us
     sendMessage,
     isConnected,
     connectionStatus,
+    connect,
     disconnect
   };
 }; 

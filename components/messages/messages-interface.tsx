@@ -178,12 +178,19 @@ const MessagesInterface = () => {
   }, []);
 
   // WebSocket integration
-  const { isConnected, connectionStatus } = useWebSocket({
+  const { connectionStatus, connect, disconnect } = useWebSocket({
     onMessage: handleWebSocketMessage,
     onConnect: handleWebSocketConnect,
     onDisconnect: handleWebSocketDisconnect,
     onError: handleWebSocketError,
   });
+
+  const handleWebSocketReconnect = useCallback(() => {
+    if (connectionStatus === "disconnected") {
+      console.log("Attempting to reconnect WebSocket...");
+      connect();
+    }
+  }, [connectionStatus, connect]);
 
   const handleLabelSelect = (item: {
     id: string;
@@ -288,7 +295,19 @@ const MessagesInterface = () => {
 
           {/* WebSocket Connection Status */}
           <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center space-x-1 text-xs">
+            <div
+              className={`flex items-center space-x-1 text-xs ${
+                connectionStatus === "disconnected"
+                  ? "cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition-colors"
+                  : ""
+              }`}
+              onClick={handleWebSocketReconnect}
+              title={
+                connectionStatus === "disconnected"
+                  ? "Click to reconnect"
+                  : undefined
+              }
+            >
               {connectionStatus === "connected" ? (
                 <>
                   <Wifi className="h-3 w-3 text-green-500" />
