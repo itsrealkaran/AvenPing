@@ -52,6 +52,8 @@ export default function TemplatesPage() {
     selectedWhatsAppAccountId,
     setSelectedWhatsAppAccountId,
     deleteTemplate,
+    refreshTemplates,
+    isRefreshing,
   } = useTemplates();
 
   // Set the selected WhatsApp account ID when user info is available
@@ -243,9 +245,10 @@ export default function TemplatesPage() {
       <Table
         data={templates as Template[]}
         columns={columns}
-        isLoading={isLoading}
+        isLoading={isLoading || isRefreshing}
         actionMenuItems={actionMenuItems}
         onAddItem={handleAddTemplate}
+        onRefresh={refreshTemplates}
         addButtonLabel="Create Template"
         searchPlaceholder="Search templates..."
         deleteButtonLabel="Delete Template"
