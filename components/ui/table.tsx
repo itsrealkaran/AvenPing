@@ -225,14 +225,14 @@ export default function Table<T extends Record<string, any>>({
                   table.reset();
                   handleRefresh();
                 }}
-                className="flex items-center"
+                className="flex justify-center items-center text-gray-500 hover:bg-gray-50 p-2 rounded-full"
                 disabled={isRefreshing || isLoading}
                 title="Refresh data"
               >
                 {isRefreshing || isLoading ? (
-                  <Refresh className="h-4 w-4 mr-2 animate-spin" />
+                  <Refresh className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Refresh className="h-4 w-4 mr-2" />
+                  <Refresh className="h-4 w-4" />
                 )}
               </button>
             </div>
