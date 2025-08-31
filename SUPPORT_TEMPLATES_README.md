@@ -28,6 +28,8 @@ When a flow contains support nodes (`CallSupport` or `WhatsAppSupport`):
 2. Retrieves customer details (name, phone number)
 3. Sends template message to the specified support agent
 4. Template includes all necessary information for the agent
+5. **Sends confirmation message to the customer** informing them that support has been contacted
+6. **All messages include "Sent using AvenPing" footer** for branding
 
 ## Template Messages
 
@@ -72,6 +74,35 @@ AvenPing Support System
 
 - Customer Name: Jane Smith
 - Customer Phone: +1987654321
+
+## Customer Confirmation Messages
+
+When a support node is triggered, the customer receives an automatic confirmation message:
+
+### Call Support Confirmation
+
+```
+Thank you for reaching out! We've connected you with our support team. A support agent will contact you via call shortly.
+
+_Sent using AvenPing._
+```
+
+### WhatsApp Support Confirmation
+
+```
+Thank you for reaching out! We've connected you with our support team. A support agent will contact you via WhatsApp message shortly.
+
+_Sent using AvenPing._
+```
+
+## Message Branding
+
+All messages sent by the flow runner include the "Sent using AvenPing" footer for consistent branding:
+
+- **Regular messages**: Footer added to message text
+- **Template messages**: Footer added as template component
+- **Media messages**: Footer added to caption
+- **Interactive messages**: Footer added to body text
 
 ## Components
 

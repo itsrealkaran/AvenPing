@@ -27,6 +27,7 @@ export interface FlowStep {
   type: string;
   file?: string;
   message?: string;
+  header?: string;
   next?: string | null;
   link?: string;
   buttons?: { label: string; next: string | null }[];
@@ -189,6 +190,18 @@ export class FlowRunner {
         templateParams
       );
 
+      // If support message was sent successfully, send confirmation to the customer
+      if (success) {
+        const supportTypeText = supportType === 'CallSupport' ? 'call' : 'WhatsApp message';
+        const confirmationMessage = `Thank you for reaching out! We've connected you with our support team. A support agent will contact you via ${supportTypeText} shortly.`;
+        
+        await this.sendWhatsAppMessage(
+          phoneNumberId,
+          customerPhoneNumber,
+          confirmationMessage
+        );
+      }
+
       return success;
     } catch (error) {
       console.error('Error sending support message:', error);
@@ -298,7 +311,8 @@ export class FlowRunner {
     message: string,
     mediaUrl?: string,
     mediaType?: string,
-    buttons?: { label: string; next: string | null }[]
+    buttons?: { label: string; next: string | null }[],
+    header?: string
   ): Promise<boolean> {
     try {
       // Get account details
@@ -330,23 +344,41 @@ export class FlowRunner {
           }
         };
       } else if (buttons && buttons.length > 0) {
+        // Split message and footer for interactive messages
+        const messageText = message;
+        const footerText = 'Sent using AvenPing';
+        
+        // Build interactive message structure
+        const interactiveMessage: any = {
+          type: 'button',
+          body: {
+            text: messageText
+          },
+          footer: {
+            text: footerText
+          },
+          action: {
+            buttons: buttons.map(button => ({
+              type: 'reply',
+              reply: { id: button.next, title: button.label }
+            }))
+          }
+        };
+
+        // Add optional header if provided
+        if (header && typeof header === 'string' && header.trim()) {
+          interactiveMessage.header = {
+            type: 'text',
+            text: header.trim()
+          };
+        }
+        
         messageData = {
           messaging_product: 'whatsapp',
           recipient_type: 'individual',
           to: recipientPhoneNumber,
           type: 'interactive',
-          interactive: {
-            type: 'button',
-            body: {
-              text: message
-            },
-            action: {
-              buttons: buttons.map(button => ({
-                type: 'reply',
-                reply: { id: button.next, title: button.label }
-              }))
-            }
-          }
+          interactive: interactiveMessage
         };
       } else {
         // Text message
@@ -462,7 +494,8 @@ export class FlowRunner {
             step.message || '',
             undefined,
             undefined,
-            step.buttons || []
+            step.buttons || [],
+            step.header
           );
 
           if (step.buttons && step.buttons.length === 0) {

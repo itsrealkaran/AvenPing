@@ -112,7 +112,7 @@ const renderNodeDetails = (
     return (
       <>
         <div>
-          <Label htmlFor="message">Message</Label>
+          <Label htmlFor="message">Message Body</Label>
           <Textarea
             id="message"
             value={
@@ -122,8 +122,53 @@ const renderNodeDetails = (
             }
             onChange={(e) => onUpdateNodeData("message", e.target.value)}
             className="mt-1"
-            rows={2}
+            rows={3}
+            placeholder="Enter the main message text that will appear in the body of the interactive message..."
           />
+          <div className="text-xs text-gray-500 mt-1">
+            This text will appear in the message body. Maximum 1024 characters.
+            {typeof selectedNode.data.message === "string" && (
+              <span
+                className={`ml-2 ${
+                  selectedNode.data.message.length > 1024
+                    ? "text-red-500"
+                    : "text-gray-500"
+                }`}
+              >
+                ({selectedNode.data.message.length}/1024)
+              </span>
+            )}
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="header">Optional Header Text</Label>
+          <Input
+            id="header"
+            value={
+              typeof selectedNode.data.header === "string"
+                ? selectedNode.data.header
+                : ""
+            }
+            onChange={(e) => onUpdateNodeData("header", e.target.value)}
+            className="mt-1"
+            placeholder="Optional header text (maximum 60 characters)"
+            maxLength={60}
+          />
+          <div className="text-xs text-gray-500 mt-1">
+            Optional header text that appears above the message body. Maximum 60
+            characters.
+            {typeof selectedNode.data.header === "string" && (
+              <span
+                className={`ml-2 ${
+                  selectedNode.data.header.length > 60
+                    ? "text-red-500"
+                    : "text-gray-500"
+                }`}
+              >
+                ({selectedNode.data.header.length}/60)
+              </span>
+            )}
+          </div>
         </div>
         <div>
           <Label htmlFor="link">Optional Link</Label>
@@ -136,6 +181,7 @@ const renderNodeDetails = (
             }
             onChange={(e) => onUpdateNodeData("link", e.target.value)}
             className="mt-1"
+            placeholder="Optional link URL"
           />
         </div>
         <div>
@@ -151,8 +197,9 @@ const renderNodeDetails = (
                     newButtons[idx] = e.target.value;
                     onUpdateNodeData("replyButtons", newButtons);
                   }}
-                  placeholder={`Button ${idx + 1} label`}
+                  placeholder={`Button ${idx + 1} label (max 20 chars)`}
                   className="flex-1"
+                  maxLength={20}
                 />
                 <Button
                   variant="ghost"
