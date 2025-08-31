@@ -283,6 +283,7 @@ export class FlowRunner {
         });
 
         if (recipient) {
+          // Create templateData based on the actual support template structure
           const templateData: Array<{
             type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
             text?: string;
@@ -298,13 +299,53 @@ export class FlowRunner {
               url?: string;
               phone_number?: string;
             }>;
-          }> = [
-            {
+          }> = [];
+
+          // Build template data based on template name
+          if (templateName === 'call_support_alert') {
+            templateData.push(
+              {
+                type: "HEADER",
+                text: "Support Alert - Call Required",
+                format: "TEXT"
+              },
+              {
+                type: "BODY",
+                text: `Hello! A customer needs support and requires a call.\n\nCustomer Name: ${parameters[0] || 'Unknown'}\nCustomer Phone: ${parameters[1] || 'Unknown'}\nAction Required: Call\n\nPlease contact the customer as soon as possible.`,
+                format: "TEXT"
+              },
+              {
+                type: "FOOTER",
+                text: "AvenPing Support System",
+                format: "TEXT"
+              }
+            );
+          } else if (templateName === 'whatsapp_support_alert') {
+            templateData.push(
+              {
+                type: "HEADER",
+                text: "Support Alert - WhatsApp Message Required",
+                format: "TEXT"
+              },
+              {
+                type: "BODY",
+                text: `Hello! A customer needs support and requires a WhatsApp message.\n\nCustomer Name: ${parameters[0] || 'Unknown'}\nCustomer Phone: ${parameters[1] || 'Unknown'}\nAction Required: WhatsApp Message\n\nPlease contact the customer as soon as possible.`,
+                format: "TEXT"
+              },
+              {
+                type: "FOOTER",
+                text: "AvenPing Support System",
+                format: "TEXT"
+              }
+            );
+          } else {
+            // Fallback for other templates
+            templateData.push({
               type: "BODY",
               text: `Template: ${templateName}`,
               format: "TEXT"
-            }
-          ];
+            });
+          }
 
           await storeWhatsAppMessage({
             recipientId: recipient.id,
@@ -331,7 +372,7 @@ export class FlowRunner {
       });
 
       if (recipient) {
-        // Create structured templateData for template messages
+        // Create templateData based on the actual support template structure
         const templateData: Array<{
           type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
           text?: string;
@@ -347,13 +388,53 @@ export class FlowRunner {
             url?: string;
             phone_number?: string;
           }>;
-        }> = [
-          {
+        }> = [];
+
+        // Build template data based on template name
+        if (templateName === 'call_support_alert') {
+          templateData.push(
+            {
+              type: "HEADER",
+              text: "Support Alert - Call Required",
+              format: "TEXT"
+            },
+            {
+              type: "BODY",
+              text: `Hello! A customer needs support and requires a call.\n\nCustomer Name: ${parameters[0] || 'Unknown'}\nCustomer Phone: ${parameters[1] || 'Unknown'}\nAction Required: Call\n\nPlease contact the customer as soon as possible.`,
+              format: "TEXT"
+            },
+            {
+              type: "FOOTER",
+              text: "AvenPing Support System",
+              format: "TEXT"
+            }
+          );
+        } else if (templateName === 'whatsapp_support_alert') {
+          templateData.push(
+            {
+              type: "HEADER",
+              text: "Support Alert - WhatsApp Message Required",
+              format: "TEXT"
+            },
+            {
+              type: "BODY",
+              text: `Hello! A customer needs support and requires a WhatsApp message.\n\nCustomer Name: ${parameters[0] || 'Unknown'}\nCustomer Phone: ${parameters[1] || 'Unknown'}\nAction Required: WhatsApp Message\n\nPlease contact the customer as soon as possible.`,
+              format: "TEXT"
+            },
+            {
+              type: "FOOTER",
+              text: "AvenPing Support System",
+              format: "TEXT"
+            }
+          );
+        } else {
+          // Fallback for other templates
+          templateData.push({
             type: "BODY",
             text: `Template: ${templateName}`,
             format: "TEXT"
-          }
-        ];
+          });
+        }
 
         await storeWhatsAppMessage({
           recipientId: recipient.id,
