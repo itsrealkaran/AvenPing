@@ -10,6 +10,7 @@ import SearchableDropdown from "../ui/searchable-dropdown";
 import { useUser } from "@/context/user-context";
 import axios from "axios";
 import { normalizePhoneNumber } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface NodeDetailsSidebarProps {
   selectedNode: Node | null;
@@ -20,12 +21,79 @@ interface NodeDetailsSidebarProps {
 
 const MAX_REPLY_BUTTONS = 3;
 
+// Validation functions
+const validateMessageAction = (nodeData: any): string[] => {
+  const errors: string[] = [];
+  
+  if (!nodeData.message || nodeData.message.trim() === "") {
+    errors.push("Message body is required");
+  }
+  
+  if (nodeData.headerType && nodeData.headerType !== "none") {
+    if (!nodeData.header || nodeData.header.trim() === "") {
+      errors.push(`${nodeData.headerType} header is required`);
+    }
+  }
+  
+  if (nodeData.replyButtons && nodeData.replyButtons.length > 0) {
+    const emptyButtons = nodeData.replyButtons.filter((btn: string) => !btn || btn.trim() === "");
+    if (emptyButtons.length > 0) {
+      errors.push("All reply buttons must have labels");
+    }
+  }
+  
+  return errors;
+};
+
+const validateSupportNode = (nodeData: any): string[] => {
+  const errors: string[] = [];
+  
+  if (!nodeData.phoneNumber || nodeData.phoneNumber.trim() === "") {
+    errors.push("Phone number is required");
+  }
+  
+  return errors;
+};
+
+const validateMediaNode = (nodeData: any): string[] => {
+  const errors: string[] = [];
+  
+  if (!nodeData.file || nodeData.file.trim() === "") {
+    errors.push("Media file is required");
+  }
+  
+  return errors;
+};
+
+const validateConnectFlow = (nodeData: any): string[] => {
+  const errors: string[] = [];
+  
+  if (!nodeData.flowId || nodeData.flowId.trim() === "") {
+    errors.push("Flow selection is required");
+  }
+  
+  return errors;
+};
+
+const validateStartNode = (nodeData: any): string[] => {
+  const errors: string[] = [];
+  
+  if (!nodeData.startKeywords || nodeData.startKeywords.length === 0) {
+    errors.push("At least one start keyword is required");
+  }
+  
+  return errors;
+};
+
 // WhatsApp file upload utility
 async function uploadFileToWhatsApp(
   file: File,
-  phoneNumberId: string
+  phoneNumberId: string,
+  onProgress?: (progress: number) => void
 ): Promise<string> {
   try {
+    toast.loading("Uploading file...", { id: "upload-progress" });
+    
     const formData = new FormData();
     formData.append("file", file);
     formData.append("phoneNumberId", phoneNumberId);
@@ -34,11 +102,19 @@ async function uploadFileToWhatsApp(
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total && onProgress) {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress(progress);
+        }
+      },
     });
 
+    toast.success("File uploaded successfully!", { id: "upload-progress" });
     return response.data.mediaId;
   } catch (error) {
     console.error("Error uploading file to WhatsApp:", error);
+    toast.error("Failed to upload file. Please try again.", { id: "upload-progress" });
     throw new Error("Failed to upload file to WhatsApp");
   }
 }
@@ -204,9 +280,7 @@ const renderNodeDetails = (
                         ?.phoneNumberId;
 
                     if (!phoneNumberId) {
-                      alert(
-                        "No WhatsApp phone number configured. Please set up your WhatsApp account first."
-                      );
+                      toast.error("No WhatsApp phone number configured. Please set up your WhatsApp account first.");
                       return;
                     }
 
@@ -217,7 +291,7 @@ const renderNodeDetails = (
                     onUpdateNodeData("header", mediaId);
                   } catch (error) {
                     console.error("Upload failed:", error);
-                    alert("File upload failed. Please try again.");
+                    // Error toast is already handled in uploadFileToWhatsApp
                   }
                 }
               }}
@@ -444,9 +518,7 @@ const renderNodeDetails = (
                     userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId;
 
                   if (!phoneNumberId) {
-                    alert(
-                      "No WhatsApp phone number configured. Please set up your WhatsApp account first."
-                    );
+                    toast.error("No WhatsApp phone number configured. Please set up your WhatsApp account first.");
                     return;
                   }
 
@@ -457,7 +529,7 @@ const renderNodeDetails = (
                   onUpdateNodeData("file", mediaId);
                 } catch (error) {
                   console.error("Upload failed:", error);
-                  alert("File upload failed. Please try again.");
+                  // Error toast is already handled in uploadFileToWhatsApp
                 }
               }
             }}
@@ -500,6 +572,32 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({
   const { userInfo } = useUser();
   if (!selectedNode) return null;
 
+  // Get validation errors for the current node
+  const getValidationErrors = (): string[] => {
+    const nodeType = selectedNode.data.nodeType;
+    
+    switch (nodeType) {
+      case "MessageAction":
+        return validateMessageAction(selectedNode.data);
+      case "CallSupport":
+      case "WhatsAppSupport":
+        return validateSupportNode(selectedNode.data);
+      case "ImageMessage":
+      case "VideoMessage":
+      case "AudioMessage":
+      case "DocumentMessage":
+        return validateMediaNode(selectedNode.data);
+      case "ConnectFlowAction":
+        return validateConnectFlow(selectedNode.data);
+      case "Start":
+        return validateStartNode(selectedNode.data);
+      default:
+        return [];
+    }
+  };
+
+  const validationErrors = getValidationErrors();
+
   return (
     <div className="absolute z-30 top-16 right-4 flex flex-col gap-4 bg-white border border-gray-200 rounded-xl shadow-lg p-4 max-h-[calc(100%-5rem)] min-w-[280px] w-[320px]">
       <div className="flex items-center justify-between">
@@ -511,6 +609,23 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({
         </button>
       </div>
       <div className="space-y-4 overflow-auto px-2">
+        {/* Validation Errors */}
+        {validationErrors.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div className="text-sm font-medium text-red-800 mb-2">
+              Required Fields Missing:
+            </div>
+            <ul className="text-xs text-red-700 space-y-1">
+              {validationErrors.map((error, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="text-red-500 mr-1">•</span>
+                  {error}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
         {/* Render node-specific details */}
         {renderNodeDetails(selectedNode, onUpdateNodeData, flows, userInfo)}
 

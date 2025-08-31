@@ -21,6 +21,7 @@ import FlowHeader from "./flow-header";
 import SidebarToggle from "./sidebar-toggle";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export interface FlowBuilderProps {
   onBack: () => void;
@@ -79,6 +80,116 @@ interface FlowJson {
   triggers: string[];
   steps: Step[];
 }
+
+// Validation functions
+const validateMessageAction = (nodeData: any): string[] => {
+  const errors: string[] = [];
+
+  if (!nodeData.message || nodeData.message.trim() === "") {
+    errors.push("Message body is required");
+  }
+
+  if (nodeData.headerType && nodeData.headerType !== "none") {
+    if (!nodeData.header || nodeData.header.trim() === "") {
+      errors.push(`${nodeData.headerType} header is required`);
+    }
+  }
+
+  if (nodeData.replyButtons && nodeData.replyButtons.length > 0) {
+    const emptyButtons = nodeData.replyButtons.filter(
+      (btn: string) => !btn || btn.trim() === ""
+    );
+    if (emptyButtons.length > 0) {
+      errors.push("All reply buttons must have labels");
+    }
+  }
+
+  return errors;
+};
+
+const validateSupportNode = (nodeData: any): string[] => {
+  const errors: string[] = [];
+
+  if (!nodeData.phoneNumber || nodeData.phoneNumber.trim() === "") {
+    errors.push("Phone number is required");
+  }
+
+  return errors;
+};
+
+const validateMediaNode = (nodeData: any): string[] => {
+  const errors: string[] = [];
+
+  if (!nodeData.file || nodeData.file.trim() === "") {
+    errors.push("Media file is required");
+  }
+
+  return errors;
+};
+
+const validateConnectFlow = (nodeData: any): string[] => {
+  const errors: string[] = [];
+
+  if (!nodeData.flowId || nodeData.flowId.trim() === "") {
+    errors.push("Flow selection is required");
+  }
+
+  return errors;
+};
+
+const validateStartNode = (nodeData: any): string[] => {
+  const errors: string[] = [];
+
+  if (!nodeData.startKeywords || nodeData.startKeywords.length === 0) {
+    errors.push("At least one start keyword is required");
+  }
+
+  return errors;
+};
+
+const validateAllNodes = (
+  nodes: Node[]
+): { isValid: boolean; errors: string[] } => {
+  const allErrors: string[] = [];
+
+  for (const node of nodes) {
+    const nodeType = node.data.nodeType;
+    let nodeErrors: string[] = [];
+
+    switch (nodeType) {
+      case "MessageAction":
+        nodeErrors = validateMessageAction(node.data);
+        break;
+      case "CallSupport":
+      case "WhatsAppSupport":
+        nodeErrors = validateSupportNode(node.data);
+        break;
+      case "ImageMessage":
+      case "VideoMessage":
+      case "AudioMessage":
+      case "DocumentMessage":
+        nodeErrors = validateMediaNode(node.data);
+        break;
+      case "ConnectFlowAction":
+        nodeErrors = validateConnectFlow(node.data);
+        break;
+      case "Start":
+        nodeErrors = validateStartNode(node.data);
+        break;
+    }
+
+    if (nodeErrors.length > 0) {
+      allErrors.push(
+        `${node.data.label || nodeType}: ${nodeErrors.join(", ")}`
+      );
+    }
+  }
+
+  return {
+    isValid: allErrors.length === 0,
+    errors: allErrors,
+  };
+};
 
 function buildFlowJson({
   nodes,
@@ -308,6 +419,10 @@ export default function FlowBuilder({
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [flowName, setFlowName] = useState(editingFlow?.name || "");
 
+  // Check if flow is valid for save button state
+  const validation = validateAllNodes(nodes);
+  const isFlowValid = validation.isValid && flowName.trim() !== "";
+
   // Delete node handler
   const handleDeleteNode = useCallback(
     (nodeId: string) => {
@@ -440,7 +555,23 @@ export default function FlowBuilder({
 
   // Confirm save: call onSave with flow data
   const handleConfirmSave = () => {
-    if (!flowName.trim()) return;
+    if (!flowName.trim()) {
+      toast.error("Flow name is required");
+      return;
+    }
+
+    // Validate all nodes
+    const validation = validateAllNodes(nodes);
+    if (!validation.isValid) {
+      toast.error("Please complete all required fields before saving", {
+        description:
+          validation.errors.slice(0, 3).join(", ") +
+          (validation.errors.length > 3 ? "..." : ""),
+        duration: 5000,
+      });
+      return;
+    }
+
     const flowId = editingFlow?.id || `${+new Date()}`;
     const status = editingFlow?.status || "active";
     const date = editingFlow?.date || new Date().toISOString();
@@ -452,6 +583,8 @@ export default function FlowBuilder({
       status,
       date,
     });
+
+    toast.success("Flow saved successfully!");
     onSave(flowJson);
     setShowSaveModal(false);
     setFlowName("");
@@ -460,13 +593,37 @@ export default function FlowBuilder({
   return (
     <div className="relative h-full w-full bg-gray-50 rounded-lg border border-gray-200 shadow">
       {/* Header */}
-      <FlowHeader onBack={onBack} onSave={handleSave} />
+      <FlowHeader
+        onBack={onBack}
+        onSave={handleSave}
+        hasValidationErrors={!validation.isValid}
+        validationErrorCount={validation.errors.length}
+        validationErrors={validation.errors}
+      />
 
       {/* Save Modal */}
       {showSaveModal && (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px] max-w-[90vw]">
+          <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px] max-w-[90vw] max-h-[80vh] overflow-y-auto">
             <div className="mb-4 text-lg font-semibold">Save Flow</div>
+
+            {/* Validation Issues Display */}
+            {!validation.isValid && (
+              <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className="text-sm font-medium text-red-800 mb-2">
+                  Please fix the following issues before saving:
+                </div>
+                <ul className="text-xs text-red-700 space-y-1 max-h-32 overflow-y-auto">
+                  {validation.errors.map((error, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-red-500 mr-2 mt-0.5">•</span>
+                      <span className="flex-1">{error}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="mb-2">
               <label className="block text-sm font-medium mb-1">
                 Flow Name
@@ -482,8 +639,12 @@ export default function FlowBuilder({
               <Button variant="ghost" onClick={() => setShowSaveModal(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleConfirmSave} disabled={!flowName.trim()}>
-                Save
+              <Button
+                onClick={handleConfirmSave}
+                disabled={!flowName.trim()}
+                variant={isFlowValid ? "default" : "secondary"}
+              >
+                {isFlowValid ? "Save" : "Complete Required Fields"}
               </Button>
             </div>
           </div>
