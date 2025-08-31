@@ -141,49 +141,124 @@ const renderNodeDetails = (
           </div>
         </div>
         <div>
-          <Label htmlFor="header">Optional Header Text</Label>
-          <Input
-            id="header"
+          <Label htmlFor="headerType">Header Type</Label>
+          <select
+            id="headerType"
             value={
-              typeof selectedNode.data.header === "string"
-                ? selectedNode.data.header
-                : ""
+              typeof selectedNode.data.headerType === "string"
+                ? selectedNode.data.headerType
+                : "none"
             }
-            onChange={(e) => onUpdateNodeData("header", e.target.value)}
-            className="mt-1"
-            placeholder="Optional header text (maximum 60 characters)"
-            maxLength={60}
-          />
-          <div className="text-xs text-gray-500 mt-1">
-            Optional header text that appears above the message body. Maximum 60
-            characters.
-            {typeof selectedNode.data.header === "string" && (
-              <span
-                className={`ml-2 ${
-                  selectedNode.data.header.length > 60
-                    ? "text-red-500"
-                    : "text-gray-500"
-                }`}
-              >
-                ({selectedNode.data.header.length}/60)
-              </span>
-            )}
+            onChange={(e) => onUpdateNodeData("headerType", e.target.value)}
+            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="none">No Header</option>
+            <option value="text">Text Header</option>
+            <option value="image">Image Header</option>
+            <option value="video">Video Header</option>
+            <option value="document">Document Header</option>
+          </select>
+        </div>
+
+        {/* Text Header */}
+        {selectedNode.data.headerType === "text" && (
+          <div>
+            <Label htmlFor="headerText">Header Text</Label>
+            <Input
+              id="headerText"
+              value={
+                typeof selectedNode.data.header === "string"
+                  ? selectedNode.data.header
+                  : ""
+              }
+              onChange={(e) => onUpdateNodeData("header", e.target.value)}
+              className="mt-1"
+              placeholder="Header text (maximum 60 characters)"
+              maxLength={60}
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              Header text that appears above the message body. Maximum 60
+              characters.
+              {typeof selectedNode.data.header === "string" && (
+                <span
+                  className={`ml-2 ${
+                    selectedNode.data.header.length > 60
+                      ? "text-red-500"
+                      : "text-gray-500"
+                  }`}
+                >
+                  ({selectedNode.data.header.length}/60)
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-        <div>
-          <Label htmlFor="link">Optional Link</Label>
-          <Input
-            id="link"
-            value={
-              typeof selectedNode.data.link === "string"
-                ? selectedNode.data.link
-                : ""
-            }
-            onChange={(e) => onUpdateNodeData("link", e.target.value)}
-            className="mt-1"
-            placeholder="Optional link URL"
-          />
-        </div>
+        )}
+
+        {/* Media Header */}
+        {(selectedNode.data.headerType === "image" ||
+          selectedNode.data.headerType === "video" ||
+          selectedNode.data.headerType === "document") && (
+          <div>
+            <Label htmlFor="headerMedia">
+              Upload{" "}
+              {selectedNode.data.headerType === "image"
+                ? "Image"
+                : selectedNode.data.headerType === "video"
+                ? "Video"
+                : "Document"}
+            </Label>
+            <Input
+              id="headerMedia"
+              type="file"
+              accept={
+                selectedNode.data.headerType === "image"
+                  ? "image/*"
+                  : selectedNode.data.headerType === "video"
+                  ? "video/*"
+                  : selectedNode.data.headerType === "document"
+                  ? "application/pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
+                  : "*"
+              }
+              onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  try {
+                    const phoneNumberId =
+                      userInfo?.whatsappAccount?.activePhoneNumber
+                        ?.phoneNumberId;
+
+                    if (!phoneNumberId) {
+                      alert(
+                        "No WhatsApp phone number configured. Please set up your WhatsApp account first."
+                      );
+                      return;
+                    }
+
+                    const mediaId = await uploadFileToWhatsApp(
+                      file,
+                      phoneNumberId
+                    );
+                    onUpdateNodeData("header", mediaId);
+                  } catch (error) {
+                    console.error("Upload failed:", error);
+                    alert("File upload failed. Please try again.");
+                  }
+                }
+              }}
+              className="mt-1"
+            />
+            {typeof selectedNode.data.header === "string" &&
+              selectedNode.data.header &&
+              (selectedNode.data.headerType === "image" ||
+                selectedNode.data.headerType === "video" ||
+                selectedNode.data.headerType === "document") && (
+                <div className="text-xs text-green-600 mt-1">
+                  {selectedNode.data.headerType} uploaded successfully! Media
+                  ID: {selectedNode.data.header}
+                </div>
+              )}
+          </div>
+        )}
         <div>
           <Label>Reply Buttons (max 3)</Label>
           <br />

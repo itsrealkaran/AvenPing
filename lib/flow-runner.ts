@@ -28,6 +28,7 @@ export interface FlowStep {
   file?: string;
   message?: string;
   header?: string;
+  headerType?: string;
   next?: string | null;
   link?: string;
   buttons?: { label: string; next: string | null }[];
@@ -284,16 +285,15 @@ export class FlowRunner {
       });
 
       if (recipient) {
-        await prisma.whatsAppMessage.create({
-          data: {
-            wamid: result.messages?.[0]?.id,
-            status: 'SENT',
-            message: `Template: ${templateName}`,
-            isOutbound: true,
-            phoneNumber: recipientPhoneNumber,
-            whatsAppPhoneNumberId: phoneNumberId,
-            recipientId: recipient.id
-          }
+        await storeWhatsAppMessage({
+          recipientId: recipient.id,
+          phoneNumber: recipientPhoneNumber,
+          wamid: result.messages?.[0]?.id,
+          isOutbound: true,
+          message: `Template: ${templateName}`,
+          timestamp: Math.floor(Date.now() / 1000),
+          status: 'SENT',
+          whatsAppPhoneNumberId: phoneNumberId
         });
       }
 
@@ -312,7 +312,8 @@ export class FlowRunner {
     mediaUrl?: string,
     mediaType?: string,
     buttons?: { label: string; next: string | null }[],
-    header?: string
+    header?: string,
+    headerType?: string
   ): Promise<boolean> {
     try {
       // Get account details
@@ -366,11 +367,20 @@ export class FlowRunner {
         };
 
         // Add optional header if provided
-        if (header && typeof header === 'string' && header.trim()) {
-          interactiveMessage.header = {
-            type: 'text',
-            text: header.trim()
-          };
+        if (header && typeof header === 'string' && header.trim() && headerType && headerType !== 'none') {
+          if (headerType === 'text') {
+            interactiveMessage.header = {
+              type: 'text',
+              text: header.trim()
+            };
+          } else if (['image', 'video', 'document'].includes(headerType)) {
+            interactiveMessage.header = {
+              type: headerType,
+              [headerType]: {
+                id: header
+              }
+            };
+          }
         }
         
         messageData = {
@@ -422,32 +432,16 @@ export class FlowRunner {
       });
 
       if (recipient) {
-        // await storeWhatsAppMessage({
-        //     wamid: result.messages?.[0]?.id,
-        //     status: 'SENT',
-        //     message,
-        //     isOutbound: true,
-        //     phoneNumber: recipientPhoneNumber,
-        //     whatsAppPhoneNumberId: phoneNumberId,
-        //     recipientId: recipient.id,
-        //     mediaIds: mediaUrl ? [mediaUrl] : [],
-        //     timestamp: Date.now()
-        // })
-        await prisma.whatsAppMessage.create({
-          data: {
-            wamid: result.messages?.[0]?.id,
-            status: 'SENT',
-            message,
-            isOutbound: true,
-            phoneNumber: recipientPhoneNumber,
-            whatsAppPhoneNumberId: phoneNumberId,
-            recipientId: recipient.id,
-            mediaIds: mediaUrl ? [mediaUrl] : [],
-            interactiveJson: buttons ? buttons.map(button => ({
-              type: 'button',
-              label: button.label
-            })) : undefined
-          }
+        await storeWhatsAppMessage({
+          recipientId: recipient.id,
+          phoneNumber: recipientPhoneNumber,
+          wamid: result.messages?.[0]?.id,
+          isOutbound: true,
+          message,
+          timestamp: Math.floor(Date.now() / 1000),
+          status: 'SENT',
+          whatsAppPhoneNumberId: phoneNumberId,
+          mediaIds: mediaUrl ? [mediaUrl] : []
         });
       }
 
@@ -495,7 +489,8 @@ export class FlowRunner {
             undefined,
             undefined,
             step.buttons || [],
-            step.header
+            step.header,
+            step.headerType
           );
 
           if (step.buttons && step.buttons.length === 0) {
