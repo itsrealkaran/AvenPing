@@ -542,7 +542,8 @@ export class FlowRunner {
           type: 'interactive',
           interactive: interactiveMessage
         };
-      } else {
+      } 
+      else {
         // Text message
         messageData = {
           messaging_product: 'whatsapp',

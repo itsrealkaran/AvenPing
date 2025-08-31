@@ -103,7 +103,7 @@ export async function POST(request: Request) {
 
             <!-- CTA Button -->
             <div style="text-align: center; margin: 35px 0;">
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.avenping.com'}/dashboard" 
+              <a href="https://app.avenping.com/login" 
                  style="display: inline-block; background: linear-gradient(135deg, #43A2C9 0%, #667eea 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(67, 162, 201, 0.3); transition: all 0.3s ease;">
                 🚀 Get Started Now
               </a>

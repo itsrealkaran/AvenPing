@@ -350,17 +350,21 @@ export default function FlowPage() {
   return (
     <Body title="Flows">
       {/* Error toast handled in useEffect, nothing rendered here */}
-      <div className="mb-4">
-        <SupportTemplatesStatus />
-      </div>
 
       {showBuilder ? (
-        <FlowBuilderComponent
-          onBack={handleBack}
-          onSave={handleSaveFlow}
-          flows={flows}
-          {...(editingFlow ? { initialNodes, initialEdges, editingFlow } : {})}
-        />
+        <>
+          <div className="mb-4">
+            <SupportTemplatesStatus />
+          </div>
+          <FlowBuilderComponent
+            onBack={handleBack}
+            onSave={handleSaveFlow}
+            flows={flows}
+            {...(editingFlow
+              ? { initialNodes, initialEdges, editingFlow }
+              : {})}
+          />
+        </>
       ) : (
         <Table
           data={flows}

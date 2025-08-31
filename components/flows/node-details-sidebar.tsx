@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { DropdownButton } from "@/components/ui/dropdown-button";
 import SearchableDropdown from "../ui/searchable-dropdown";
 import { useUser } from "@/context/user-context";
 import axios from "axios";
@@ -112,54 +113,27 @@ const renderNodeDetails = (
     return (
       <>
         <div>
-          <Label htmlFor="message">Message Body</Label>
-          <Textarea
-            id="message"
-            value={
-              typeof selectedNode.data.message === "string"
-                ? selectedNode.data.message
-                : ""
-            }
-            onChange={(e) => onUpdateNodeData("message", e.target.value)}
-            className="mt-1"
-            rows={3}
-            placeholder="Enter the main message text that will appear in the body of the interactive message..."
-          />
-          <div className="text-xs text-gray-500 mt-1">
-            This text will appear in the message body. Maximum 1024 characters.
-            {typeof selectedNode.data.message === "string" && (
-              <span
-                className={`ml-2 ${
-                  selectedNode.data.message.length > 1024
-                    ? "text-red-500"
-                    : "text-gray-500"
-                }`}
-              >
-                ({selectedNode.data.message.length}/1024)
-              </span>
-            )}
-          </div>
-        </div>
-        <div>
-          <Label htmlFor="headerType">Header Type</Label>
-          <select
-            id="headerType"
-            value={
+          <Label htmlFor="headerType">Header Type:</Label>
+          <DropdownButton
+            options={[
+              { label: "No Header", value: "none" },
+              { label: "Text Header", value: "text" },
+              { label: "Image Header", value: "image" },
+              { label: "Video Header", value: "video" },
+              { label: "Document Header", value: "document" },
+            ]}
+            selected={
               typeof selectedNode.data.headerType === "string"
                 ? selectedNode.data.headerType
                 : "none"
             }
-            onChange={(e) => onUpdateNodeData("headerType", e.target.value)}
-            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="none">No Header</option>
-            <option value="text">Text Header</option>
-            <option value="image">Image Header</option>
-            <option value="video">Video Header</option>
-            <option value="document">Document Header</option>
-          </select>
+            onChange={(value) => onUpdateNodeData("headerType", value)}
+            size= "sm"
+            variant="outline"
+            className="ml-2"
+            disabled={replyButtons.length === 0}
+          />
         </div>
-
         {/* Text Header */}
         {selectedNode.data.headerType === "text" && (
           <div>
@@ -259,6 +233,36 @@ const renderNodeDetails = (
               )}
           </div>
         )}
+        <div>
+          <Label htmlFor="message">Message Body</Label>
+          <Textarea
+            id="message"
+            value={
+              typeof selectedNode.data.message === "string"
+                ? selectedNode.data.message
+                : ""
+            }
+            onChange={(e) => onUpdateNodeData("message", e.target.value)}
+            className="mt-1"
+            rows={3}
+            placeholder="Enter the main message text that will appear in the body of the interactive message..."
+          />
+          <div className="text-xs text-gray-500 mt-1">
+            This text will appear in the message body. Maximum 1024 characters.
+            {typeof selectedNode.data.message === "string" && (
+              <span
+                className={`ml-2 ${
+                  selectedNode.data.message.length > 1024
+                    ? "text-red-500"
+                    : "text-gray-500"
+                }`}
+              >
+                ({selectedNode.data.message.length}/1024)
+              </span>
+            )}
+          </div>
+        </div>
+
         <div>
           <Label>Reply Buttons (max 3)</Label>
           <br />

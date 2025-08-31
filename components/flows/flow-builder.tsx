@@ -51,6 +51,25 @@ interface Step {
   flowId?: string;
   phoneNumber?: string;
   position: { x: number; y: number };
+  // New fields for template data structure
+  header?: string;
+  headerType?: string;
+  templateData?: Array<{
+    type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
+    text?: string;
+    mediaUrl?: string;
+    mediaId?: string;
+    format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
+    buttonText?: string;
+    buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+    buttonValue?: string;
+    buttons?: Array<{
+      type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+      text: string;
+      url?: string;
+      phone_number?: string;
+    }>;
+  }>;
 }
 
 interface FlowJson {
@@ -147,6 +166,66 @@ function buildFlowJson({
           };
         });
 
+        // Build template data structure for MessageAction
+        const templateData: Array<{
+          type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
+          text?: string;
+          mediaUrl?: string;
+          mediaId?: string;
+          format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
+          buttonText?: string;
+          buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+          buttonValue?: string;
+          buttons?: Array<{
+            type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+            text: string;
+            url?: string;
+            phone_number?: string;
+          }>;
+        }> = [];
+
+        // Add header if provided
+        if (data.header && data.headerType && data.headerType !== "none") {
+          if (data.headerType === "text") {
+            templateData.push({
+              type: "HEADER",
+              text: String(data.header),
+              format: "TEXT",
+            });
+          } else if (
+            ["image", "video", "document"].includes(String(data.headerType))
+          ) {
+            templateData.push({
+              type: "HEADER",
+              mediaId: String(data.header),
+              format: String(data.headerType).toUpperCase() as
+                | "IMAGE"
+                | "VIDEO"
+                | "DOCUMENT",
+            });
+          }
+        }
+
+        // Add body
+        if (data.message) {
+          templateData.push({
+            type: "BODY",
+            text: String(data.message),
+            format: "TEXT",
+          });
+        }
+
+        // Add buttons if they exist
+        if (replyButtons.length > 0) {
+          templateData.push({
+            type: "BUTTONS",
+            buttons: replyButtons.map((label) => ({
+              type: "QUICK_REPLY" as const,
+              text: label,
+            })),
+          });
+        }
+
         return {
           id,
           type,
@@ -155,6 +234,10 @@ function buildFlowJson({
           next: defaultNext,
           buttons,
           position: { x: position.x, y: position.y },
+          header: typeof data.header === "string" ? data.header : undefined,
+          headerType:
+            typeof data.headerType === "string" ? data.headerType : undefined,
+          templateData: templateData.length > 0 ? templateData : undefined,
         };
       }
       // ConnectFlow node
@@ -198,6 +281,117 @@ function buildFlowJson({
   };
 }
 
+// Function to rebuild nodes from stored flow JSON
+function rebuildNodesFromFlowJson(flowJson: FlowJson): {
+  nodes: Node[];
+  edges: Edge[];
+} {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
+  // Add start node with triggers
+  const startNode: Node = {
+    id: "1",
+    type: "custom",
+    position: { x: 250, y: 100 },
+    data: {
+      label: "Start",
+      isStartNode: true,
+      nodeType: "Start",
+      currentFlowId: flowJson.id,
+      startKeywords: flowJson.triggers,
+    },
+  };
+  nodes.push(startNode);
+
+  // Add step nodes
+  flowJson.steps.forEach((step, index) => {
+    const nodeId = step.id;
+    const position = step.position || { x: 250 + index * 200, y: 200 };
+
+    let nodeData: any = {
+      label: step.type.replace(/([A-Z])/g, " $1").trim(),
+      nodeType: step.type,
+      currentFlowId: flowJson.id,
+    };
+
+    // Add specific data based on node type
+    switch (step.type) {
+      case "ImageMessage":
+      case "VideoMessage":
+      case "AudioMessage":
+      case "DocumentMessage":
+        nodeData = {
+          ...nodeData,
+          file: step.file || "",
+          caption: step.message || "",
+        };
+        break;
+
+      case "MessageAction":
+        nodeData = {
+          ...nodeData,
+          message: step.message || "",
+          link: step.link || "",
+          header: step.header || "",
+          headerType: step.headerType || "none",
+          replyButtons: step.buttons ? step.buttons.map((b) => b.label) : [],
+        };
+        break;
+
+      case "ConnectFlowAction":
+        nodeData = {
+          ...nodeData,
+          flowId: step.flowId || "",
+        };
+        break;
+
+      case "CallSupport":
+      case "WhatsAppSupport":
+        nodeData = {
+          ...nodeData,
+          phoneNumber: step.phoneNumber || "",
+        };
+        break;
+    }
+
+    const node: Node = {
+      id: nodeId,
+      type: "custom",
+      position,
+      data: nodeData,
+    };
+    nodes.push(node);
+
+    // Create edges based on next connections
+    if (step.next) {
+      edges.push({
+        id: `${nodeId}-${step.next}`,
+        source: nodeId,
+        target: step.next,
+        type: "smoothstep",
+      });
+    }
+
+    // Create edges for button connections
+    if (step.buttons) {
+      step.buttons.forEach((button, buttonIndex) => {
+        if (button.next) {
+          edges.push({
+            id: `${nodeId}-reply-${buttonIndex}-${button.next}`,
+            source: nodeId,
+            target: button.next,
+            sourceHandle: `reply-${buttonIndex}`,
+            type: "smoothstep",
+          });
+        }
+      });
+    }
+  });
+
+  return { nodes, edges };
+}
+
 export default function FlowBuilder({
   onBack,
   onSave,
@@ -218,8 +412,13 @@ export default function FlowBuilder({
   editingFlow = null,
   flows = [],
 }: FlowBuilderProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  // If editing an existing flow, rebuild nodes and edges from the flow JSON
+  const { nodes: rebuiltNodes, edges: rebuiltEdges } =
+    editingFlow?.automationJson
+      ? rebuildNodesFromFlowJson(editingFlow.automationJson)
+      : { nodes: initialNodes, edges: initialEdges };
+  const [nodes, setNodes, onNodesChange] = useNodesState(rebuiltNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(rebuiltEdges);
   const [draggedNode, setDraggedNode] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
