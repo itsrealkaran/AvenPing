@@ -281,40 +281,23 @@ export async function POST(req: NextRequest) {
                         whatsAppAccountId: whatsAppPhoneNumber.account.id as string,
                       },
                     });
-                    newMessage = await storeWhatsAppMessage({
-                      recipientId: newRecipient.id,
-                      phoneNumber: message.from,
-                      wamid: message.id,
-                      message: messageText,
-                      timestamp: message.timestamp,
-                      whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
-                      isOutbound: false,  // Explicitly set for incoming messages
+
+                    // Create the message inside the transaction to avoid foreign key constraint issues
+                    const newMessage = await tx.whatsAppMessage.create({
+                      data: {
+                        recipientId: newRecipient.id,
+                        phoneNumber: message.from,
+                        wamid: message.id,
+                        message: messageText,
+                        sentAt: new Date(message.timestamp * 1000),
+                        whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
+                        isOutbound: false,  // Explicitly set for incoming messages
+                        status: "DELIVERED", // Incoming messages are considered delivered
+                      },
                     });
 
-                    if (whatsAppPhoneNumber.account.user?.settings?.notificationSettings?.some((setting: any) => setting.notificationType === 'chats' && setting.isEnabled)) {
-                      await notify.chatReceived(whatsAppPhoneNumber.account.user.id, message.from, messageText);
-                    }
-
-                  // newMessage = await prisma.whatsAppRecipient.update({
-                  //   where: {
-                  //     id: recipient.id,
-                  //   },
-                  //   data: {
-                  //     lastMessageTime: new Date(),
-                  //     messages: {
-                  //       create: {
-                  //         message: messageText,
-                  //         phoneNumber: message.from,
-                  //         wamid: message.id,
-                  //         sentAt: new Date(message.timestamp * 1000),
-                  //         whatsAppPhoneNumberId: whatsAppPhoneNumber.id,
-                  //       },
-                  //     },
-                  //   },
-                  // });
-
                     if (!newRecipient.hasConversation) {
-                      await prisma.whatsAppRecipient.update({
+                      await tx.whatsAppRecipient.update({
                         where: {
                           id: newRecipient.id,
                         },
@@ -325,6 +308,13 @@ export async function POST(req: NextRequest) {
                     }
                     return { newRecipient, newMessage };
                   });
+
+                  // Set newMessage for use outside the transaction
+                  newMessage = newData.newMessage;
+
+                  if (whatsAppPhoneNumber.account.user?.settings?.notificationSettings?.some((setting: any) => setting.notificationType === 'chats' && setting.isEnabled)) {
+                    await notify.chatReceived(whatsAppPhoneNumber.account.user.id, message.from, messageText);
+                  }
 
                   // Process flow automation for new recipient
                   if (whatsAppPhoneNumber.account.user?.id && !isOptedOut) {
