@@ -4,6 +4,7 @@ import { getSession } from '@/lib/jwt';
 import { normalizePhoneNumber } from '@/lib/utils';
 import axios from 'axios';
 import { notify } from '@/lib/notification-utils';
+import { ensureSupportTemplates } from '@/lib/support-templates';
 
 export async function GET() {
   try {
@@ -94,6 +95,15 @@ export async function POST(request: Request) {
 
     if (user.settings?.notificationSettings?.some((setting: any) => setting.notificationType === 'systemUpdates' && setting.isEnabled)) {
       await notify.whatsappConnected(user.id, userInfo.phoneNumberData.map((phoneNumber: any) => phoneNumber.phoneNumber));
+    }
+
+    // Create support templates automatically after WhatsApp account setup
+    try {
+      const templateResult = await ensureSupportTemplates(user.id);
+      console.log('Support templates creation result:', templateResult);
+    } catch (error) {
+      console.error('Error creating support templates during onboarding:', error);
+      // Don't fail the entire process if template creation fails
     }
 
     return NextResponse.json(whatsappAccount, { status: 201 });

@@ -9,6 +9,7 @@ import dynamic from "next/dynamic";
 import { Node, Edge } from "@xyflow/react";
 import { useFlow, Flow } from "@/context/flow-provider";
 import { toast } from "sonner";
+import { SupportTemplatesStatus } from "@/components/onboarding/support-templates-status";
 
 // Dynamically import FlowBuilder to avoid SSR issues
 const FlowBuilderComponent = dynamic(
@@ -349,6 +350,9 @@ export default function FlowPage() {
   return (
     <Body title="Flows">
       {/* Error toast handled in useEffect, nothing rendered here */}
+      <div className="mb-4">
+        <SupportTemplatesStatus />
+      </div>
 
       {showBuilder ? (
         <FlowBuilderComponent

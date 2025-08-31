@@ -16,7 +16,7 @@ import { useUser } from "@/context/user-context";
 import { cn } from "@/lib/utils";
 import { useAnalytics } from "@/hooks/use-analytics";
 
-export default function DashboardPage() {
+export default function DashboardPage() { 
   // Register Number state
   const [isRegistered, setIsRegistered] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);

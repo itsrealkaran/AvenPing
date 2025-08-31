@@ -10,8 +10,8 @@ import {
   Play,
   Trash,
   Phone,
-  MessageCircle,
 } from "lucide-react";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 
 interface CustomNodeProps {
   data: any;
@@ -81,7 +81,14 @@ const CustomNode = ({ data, selected, id, onDelete }: CustomNodeProps) => {
       case "CallSupport":
         return <Phone size={14} className="text-orange-500" />;
       case "WhatsAppSupport":
-        return <MessageCircle size={14} className="text-orange-500" />;
+        // MUI icons do not accept a "size" prop, use fontSize and style instead
+        return (
+          <WhatsAppIcon
+            fontSize="small"
+            style={{ color: "#f97316", fontSize: 14 }}
+            className="!text-orange-500"
+          />
+        );
       default:
         return null;
     }

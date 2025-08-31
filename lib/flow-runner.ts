@@ -31,6 +31,7 @@ export interface FlowStep {
   link?: string;
   buttons?: { label: string; next: string | null }[];
   flowId?: string;
+  phoneNumber?: string;
   position: { x: number; y: number };
 }
 
@@ -149,6 +150,149 @@ export class FlowRunner {
     }
   }
 
+  // Send support message to agent
+  private async sendSupportMessage(
+    phoneNumberId: string,
+    supportPhoneNumber: string,
+    supportType: string,
+    customerPhoneNumber: string,
+    userId: string
+  ): Promise<boolean> {
+    try {
+      // Get customer details
+      const customer = await prisma.whatsAppRecipient.findFirst({
+        where: {
+          phoneNumber: customerPhoneNumber,
+          whatsAppPhoneNumberId: phoneNumberId
+        }
+      });
+
+      // Get user details
+      const user = await prisma.user.findUnique({
+        where: { id: userId }
+      });
+
+      const customerName = customer?.name || 'Unknown Customer';
+      const supportAction = supportType === 'CallSupport' ? 'call' : 'message';
+      const templateName = supportType === 'CallSupport' ? 'call_support_alert' : 'whatsapp_support_alert';
+
+      // Prepare template parameters
+      const templateParams = [
+        customerName,
+        customerPhoneNumber,
+        supportAction
+      ];
+
+      // Send template message to support agent
+      const success = await this.sendTemplateMessage(
+        phoneNumberId,
+        supportPhoneNumber,
+        templateName,
+        templateParams
+      );
+
+      return success;
+    } catch (error) {
+      console.error('Error sending support message:', error);
+      return false;
+    }
+  }
+
+  // Send template message via WhatsApp API
+  private async sendTemplateMessage(
+    phoneNumberId: string,
+    recipientPhoneNumber: string,
+    templateName: string,
+    parameters: string[]
+  ): Promise<boolean> {
+    try {
+      // Get account details
+      const phoneNumber = await prisma.whatsAppPhoneNumber.findUnique({
+        where: { id: phoneNumberId },
+        include: {
+          account: true
+        }
+      });
+
+      if (!phoneNumber) {
+        console.error('Phone number not found');
+        return false;
+      }
+
+      // Prepare template message data
+      const messageData = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: recipientPhoneNumber,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: {
+            code: 'en'
+          },
+          components: [
+            {
+              type: 'body',
+              parameters: parameters.map(param => ({
+                type: 'text',
+                text: param
+              }))
+            }
+          ]
+        }
+      };
+
+      console.log("Template message data:", messageData);
+
+      // Send via WhatsApp API
+      const response = await fetch(
+        `https://graph.facebook.com/v23.0/${phoneNumber.phoneNumberId}/messages`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${phoneNumber.account.accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(messageData)
+        }
+      );
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error('WhatsApp API error:', result);
+        return false;
+      }
+
+      // Save message to database
+      const recipient = await prisma.whatsAppRecipient.findFirst({
+        where: {
+          phoneNumber: recipientPhoneNumber,
+          whatsAppPhoneNumberId: phoneNumberId
+        }
+      });
+
+      if (recipient) {
+        await prisma.whatsAppMessage.create({
+          data: {
+            wamid: result.messages?.[0]?.id,
+            status: 'SENT',
+            message: `Template: ${templateName}`,
+            isOutbound: true,
+            phoneNumber: recipientPhoneNumber,
+            whatsAppPhoneNumberId: phoneNumberId,
+            recipientId: recipient.id
+          }
+        });
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error sending template message:', error);
+      return false;
+    }
+  }
+
   // Send message via WhatsApp API
   private async sendWhatsAppMessage(
     phoneNumberId: string,
@@ -221,7 +365,7 @@ export class FlowRunner {
       console.log("messageData", messageData);
       // Send via WhatsApp API
       const response = await fetch(
-        `https://graph.facebook.com/v17.0/${phoneNumber.phoneNumberId}/messages`,
+        `https://graph.facebook.com/v23.0/${phoneNumber.phoneNumberId}/messages`,
         {
           method: 'POST',
           headers: {
@@ -345,6 +489,18 @@ export class FlowRunner {
             return { success: true };
           }
           return { success: false };
+
+        case 'CallSupport':
+        case 'WhatsAppSupport':
+          // Handle support nodes - send template message to support agent
+          const supportSuccess = await this.sendSupportMessage(
+            phoneNumberId,
+            step.phoneNumber || '',
+            step.type,
+            recipientPhoneNumber,
+            userId
+          );
+          return { success: supportSuccess };
 
         default:
           console.warn('Unknown step type:', step.type);

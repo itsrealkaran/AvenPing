@@ -5,13 +5,12 @@ import {
   FileVideo,
   FileText,
   FileAudio,
-  FileEdit,
   MessageSquare,
   GitMerge,
   PanelLeft,
   Phone,
-  MessageCircle,
 } from "lucide-react";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 
 interface ComponentsSidebarProps {
   showSidebar: boolean;
@@ -51,7 +50,13 @@ const initialSidebarNodes = {
     {
       type: "WhatsAppSupport",
       label: "WhatsApp Support",
-      icon: <MessageCircle size={18} />,
+      icon: (
+        <WhatsAppIcon
+          fontSize="small"
+          style={{ color: "#f97316", fontSize: 18 }}
+          className="!text-orange-500"
+        />
+      ),
     },
   ],
 };

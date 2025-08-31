@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import SearchableDropdown from "../ui/searchable-dropdown";
 import { useUser } from "@/context/user-context";
 import axios from "axios";
+import { normalizePhoneNumber } from "@/lib/utils";
 
 interface NodeDetailsSidebarProps {
   selectedNode: Node | null;
@@ -229,11 +230,11 @@ const renderNodeDetails = (
         <Label htmlFor="phoneNumber">Phone Number</Label>
         <Input
           id="phoneNumber"
-          value={
+          value={normalizePhoneNumber(
             typeof selectedNode.data.phoneNumber === "string"
               ? selectedNode.data.phoneNumber
               : ""
-          }
+          )}
           onChange={(e) => onUpdateNodeData("phoneNumber", e.target.value)}
           placeholder="Enter phone number"
           className="mt-1"
