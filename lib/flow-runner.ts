@@ -173,14 +173,12 @@ export class FlowRunner {
       });
 
       const customerName = customer?.name || 'Unknown Customer';
-      const supportAction = supportType === 'CallSupport' ? 'call' : 'message';
       const templateName = supportType === 'CallSupport' ? 'call_support_alert' : 'whatsapp_support_alert';
 
-      // Prepare template parameters
+      // Prepare template parameters (only 2 parameters needed)
       const templateParams = [
         customerName,
-        customerPhoneNumber,
-        supportAction
+        customerPhoneNumber
       ];
 
       // Send template message to support agent

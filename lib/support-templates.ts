@@ -42,7 +42,7 @@ export const SUPPORT_TEMPLATES = {
       },
       {
         type: 'BODY',
-        text: 'Hello! A customer needs support and requires a WhatsApp message.\n\nCustomer Name: {{1}}\nCustomer Phone: {{2}}\nAction Required: Whatsapp Message\n\nPlease contact the customer as soon as possible.',
+        text: 'Hello! A customer needs support and requires a WhatsApp message.\n\nCustomer Name: {{1}}\nCustomer Phone: {{2}}\nAction Required: WhatsApp Message\n\nPlease contact the customer as soon as possible.',
         example: {
           body_text: [
             [

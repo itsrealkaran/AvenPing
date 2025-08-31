@@ -61,7 +61,7 @@ Hello! A customer needs support and requires a WhatsApp message.
 
 Customer Name: {{1}}
 Customer Phone: {{2}}
-Action Required: Whatsapp Message
+Action Required: WhatsApp Message
 
 Please contact the customer as soon as possible.
 
