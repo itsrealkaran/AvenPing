@@ -313,6 +313,8 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
         if (nodeType === "MessageAction") {
           nodeData.message = step.message || "";
           nodeData.link = step.link || "";
+          nodeData.header = step.header || "";
+          nodeData.headerType = step.headerType || "none";
           nodeData.replyButtons =
             step.buttons?.map((btn: any) => btn.label) || [];
         } else if (

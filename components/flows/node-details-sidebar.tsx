@@ -125,10 +125,12 @@ const renderNodeDetails = (
             selected={
               typeof selectedNode.data.headerType === "string"
                 ? selectedNode.data.headerType
+                : selectedNode.data.header && selectedNode.data.header !== ""
+                ? "image" // Default to image if header exists but no type specified
                 : "none"
             }
             onChange={(value) => onUpdateNodeData("headerType", value)}
-            size= "sm"
+            size="sm"
             variant="outline"
             className="ml-2"
             disabled={replyButtons.length === 0}
