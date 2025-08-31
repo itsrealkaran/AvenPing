@@ -17,6 +17,8 @@ interface NodeDetailsSidebarProps {
   onClose: () => void;
   onUpdateNodeData: (key: string, value: any) => void;
   flows?: any[]; // All available flows for Connect Flow nodes
+  allNodes?: Node[]; // All nodes in the flow for connection validation
+  allEdges?: any[]; // All edges in the flow for connection validation
 }
 
 const MAX_REPLY_BUTTONS = 3;
@@ -24,65 +26,86 @@ const MAX_REPLY_BUTTONS = 3;
 // Validation functions
 const validateMessageAction = (nodeData: any): string[] => {
   const errors: string[] = [];
-  
+
   if (!nodeData.message || nodeData.message.trim() === "") {
     errors.push("Message body is required");
   }
-  
+
   if (nodeData.headerType && nodeData.headerType !== "none") {
     if (!nodeData.header || nodeData.header.trim() === "") {
       errors.push(`${nodeData.headerType} header is required`);
     }
   }
-  
+
   if (nodeData.replyButtons && nodeData.replyButtons.length > 0) {
-    const emptyButtons = nodeData.replyButtons.filter((btn: string) => !btn || btn.trim() === "");
+    const emptyButtons = nodeData.replyButtons.filter(
+      (btn: string) => !btn || btn.trim() === ""
+    );
     if (emptyButtons.length > 0) {
       errors.push("All reply buttons must have labels");
     }
   }
-  
+
   return errors;
 };
 
 const validateSupportNode = (nodeData: any): string[] => {
   const errors: string[] = [];
-  
+
   if (!nodeData.phoneNumber || nodeData.phoneNumber.trim() === "") {
     errors.push("Phone number is required");
   }
-  
+
   return errors;
 };
 
 const validateMediaNode = (nodeData: any): string[] => {
   const errors: string[] = [];
-  
+
   if (!nodeData.file || nodeData.file.trim() === "") {
     errors.push("Media file is required");
   }
-  
+
   return errors;
 };
 
 const validateConnectFlow = (nodeData: any): string[] => {
   const errors: string[] = [];
-  
+
   if (!nodeData.flowId || nodeData.flowId.trim() === "") {
     errors.push("Flow selection is required");
   }
-  
+
   return errors;
 };
 
 const validateStartNode = (nodeData: any): string[] => {
   const errors: string[] = [];
-  
+
   if (!nodeData.startKeywords || nodeData.startKeywords.length === 0) {
     errors.push("At least one start keyword is required");
   }
-  
+
   return errors;
+};
+
+const validateNodeConnections = (nodes: Node[], edges: any[]): string[] => {
+  const orphanedNodes: string[] = [];
+
+  // Create a set of all target nodes (nodes that have incoming connections)
+  const connectedNodes = new Set<string>();
+  edges.forEach((edge) => {
+    connectedNodes.add(String(edge.target));
+  });
+
+  // Check each node (except Start node) to see if it has incoming connections
+  nodes.forEach((node) => {
+    if (node.data.nodeType !== "Start" && !connectedNodes.has(node.id)) {
+      orphanedNodes.push(String(node.data.label || node.data.nodeType));
+    }
+  });
+
+  return orphanedNodes;
 };
 
 // WhatsApp file upload utility
@@ -93,7 +116,7 @@ async function uploadFileToWhatsApp(
 ): Promise<string> {
   try {
     toast.loading("Uploading file...", { id: "upload-progress" });
-    
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("phoneNumberId", phoneNumberId);
@@ -104,7 +127,9 @@ async function uploadFileToWhatsApp(
       },
       onUploadProgress: (progressEvent) => {
         if (progressEvent.total && onProgress) {
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          const progress = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
           onProgress(progress);
         }
       },
@@ -114,7 +139,9 @@ async function uploadFileToWhatsApp(
     return response.data.mediaId;
   } catch (error) {
     console.error("Error uploading file to WhatsApp:", error);
-    toast.error("Failed to upload file. Please try again.", { id: "upload-progress" });
+    toast.error("Failed to upload file. Please try again.", {
+      id: "upload-progress",
+    });
     throw new Error("Failed to upload file to WhatsApp");
   }
 }
@@ -280,7 +307,9 @@ const renderNodeDetails = (
                         ?.phoneNumberId;
 
                     if (!phoneNumberId) {
-                      toast.error("No WhatsApp phone number configured. Please set up your WhatsApp account first.");
+                      toast.error(
+                        "No WhatsApp phone number configured. Please set up your WhatsApp account first."
+                      );
                       return;
                     }
 
@@ -518,7 +547,9 @@ const renderNodeDetails = (
                     userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumberId;
 
                   if (!phoneNumberId) {
-                    toast.error("No WhatsApp phone number configured. Please set up your WhatsApp account first.");
+                    toast.error(
+                      "No WhatsApp phone number configured. Please set up your WhatsApp account first."
+                    );
                     return;
                   }
 
@@ -568,6 +599,8 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({
   onClose,
   onUpdateNodeData,
   flows = [],
+  allNodes = [],
+  allEdges = [],
 }) => {
   const { userInfo } = useUser();
   if (!selectedNode) return null;
@@ -575,25 +608,40 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({
   // Get validation errors for the current node
   const getValidationErrors = (): string[] => {
     const nodeType = selectedNode.data.nodeType;
-    
+    let errors: string[] = [];
+
     switch (nodeType) {
       case "MessageAction":
-        return validateMessageAction(selectedNode.data);
+        errors = validateMessageAction(selectedNode.data);
+        break;
       case "CallSupport":
       case "WhatsAppSupport":
-        return validateSupportNode(selectedNode.data);
+        errors = validateSupportNode(selectedNode.data);
+        break;
       case "ImageMessage":
       case "VideoMessage":
       case "AudioMessage":
       case "DocumentMessage":
-        return validateMediaNode(selectedNode.data);
+        errors = validateMediaNode(selectedNode.data);
+        break;
       case "ConnectFlowAction":
-        return validateConnectFlow(selectedNode.data);
+        errors = validateConnectFlow(selectedNode.data);
+        break;
       case "Start":
-        return validateStartNode(selectedNode.data);
-      default:
-        return [];
+        errors = validateStartNode(selectedNode.data);
+        break;
     }
+
+    // Check if this node is orphaned (not connected to flow, except Start node)
+    if (nodeType !== "Start" && allNodes.length > 0 && allEdges.length > 0) {
+      const orphanedNodes = validateNodeConnections(allNodes, allEdges);
+      const nodeLabel = selectedNode.data.label || nodeType;
+      if (orphanedNodes.includes(String(nodeLabel))) {
+        errors.push("This node is not connected to the flow");
+      }
+    }
+
+    return errors;
   };
 
   const validationErrors = getValidationErrors();
@@ -625,7 +673,7 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({
             </ul>
           </div>
         )}
-        
+
         {/* Render node-specific details */}
         {renderNodeDetails(selectedNode, onUpdateNodeData, flows, userInfo)}
 

@@ -147,10 +147,38 @@ const validateStartNode = (nodeData: any): string[] => {
   return errors;
 };
 
+const validateNodeConnections = (nodes: Node[], edges: Edge[]): string[] => {
+  const orphanedNodes: string[] = [];
+
+  // Create a set of all target nodes (nodes that have incoming connections)
+  const connectedNodes = new Set<string>();
+  edges.forEach((edge) => {
+    connectedNodes.add(String(edge.target));
+  });
+
+  // Check each node (except Start node) to see if it has incoming connections
+  nodes.forEach((node) => {
+    if (node.data.nodeType !== "Start" && !connectedNodes.has(node.id)) {
+      orphanedNodes.push(String(node.data.label || node.data.nodeType));
+    }
+  });
+
+  return orphanedNodes;
+};
+
 const validateAllNodes = (
-  nodes: Node[]
+  nodes: Node[],
+  edges: Edge[]
 ): { isValid: boolean; errors: string[] } => {
   const allErrors: string[] = [];
+
+  // Check for orphaned nodes (nodes without incoming connections, except Start node)
+  const orphanedNodes = validateNodeConnections(nodes, edges);
+  if (orphanedNodes.length > 0) {
+    allErrors.push(
+      `Orphaned nodes (not connected to flow): ${orphanedNodes.join(", ")}`
+    );
+  }
 
   for (const node of nodes) {
     const nodeType = node.data.nodeType;
@@ -420,7 +448,7 @@ export default function FlowBuilder({
   const [flowName, setFlowName] = useState(editingFlow?.name || "");
 
   // Check if flow is valid for save button state
-  const validation = validateAllNodes(nodes);
+  const validation = validateAllNodes(nodes, edges);
   const isFlowValid = validation.isValid && flowName.trim() !== "";
 
   // Delete node handler
@@ -561,7 +589,7 @@ export default function FlowBuilder({
     }
 
     // Validate all nodes
-    const validation = validateAllNodes(nodes);
+    const validation = validateAllNodes(nodes, edges);
     if (!validation.isValid) {
       toast.error("Please complete all required fields before saving", {
         description:
@@ -669,6 +697,8 @@ export default function FlowBuilder({
         onClose={closeRightSidebar}
         onUpdateNodeData={updateNodeData}
         flows={flows}
+        allNodes={nodes}
+        allEdges={edges}
       />
 
       {/* Main Flow Area */}
