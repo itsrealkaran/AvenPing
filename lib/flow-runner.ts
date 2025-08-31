@@ -273,6 +273,52 @@ export class FlowRunner {
       
       if (!response.ok) {
         console.error('WhatsApp API error:', result);
+        
+        // Save failed message to database
+        const recipient = await prisma.whatsAppRecipient.findFirst({
+          where: {
+            phoneNumber: recipientPhoneNumber,
+            whatsAppPhoneNumberId: phoneNumberId
+          }
+        });
+
+        if (recipient) {
+          const templateData: Array<{
+            type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
+            text?: string;
+            mediaUrl?: string;
+            mediaId?: string;
+            format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
+            buttonText?: string;
+            buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+            buttonValue?: string;
+            buttons?: Array<{
+              type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+              text: string;
+              url?: string;
+              phone_number?: string;
+            }>;
+          }> = [
+            {
+              type: "BODY",
+              text: `Template: ${templateName}`,
+              format: "TEXT"
+            }
+          ];
+
+          await storeWhatsAppMessage({
+            recipientId: recipient.id,
+            phoneNumber: recipientPhoneNumber,
+            whatsAppPhoneNumberId: phoneNumberId,
+            isOutbound: true,
+            message: "", // Template messages don't have regular text
+            timestamp: Math.floor(Date.now() / 1000),
+            status: "FAILED",
+            errorMessage: result.error?.message || result.error?.error_user_msg || `HTTP ${response.status}: ${response.statusText}`,
+            templateData: templateData
+          });
+        }
+        
         return false;
       }
 
@@ -285,15 +331,40 @@ export class FlowRunner {
       });
 
       if (recipient) {
+        // Create structured templateData for template messages
+        const templateData: Array<{
+          type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
+          text?: string;
+          mediaUrl?: string;
+          mediaId?: string;
+          format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
+          buttonText?: string;
+          buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+          buttonValue?: string;
+          buttons?: Array<{
+            type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+            text: string;
+            url?: string;
+            phone_number?: string;
+          }>;
+        }> = [
+          {
+            type: "BODY",
+            text: `Template: ${templateName}`,
+            format: "TEXT"
+          }
+        ];
+
         await storeWhatsAppMessage({
           recipientId: recipient.id,
           phoneNumber: recipientPhoneNumber,
           wamid: result.messages?.[0]?.id,
           isOutbound: true,
-          message: `Template: ${templateName}`,
+          message: "", // Template messages don't have regular text
           timestamp: Math.floor(Date.now() / 1000),
           status: 'SENT',
-          whatsAppPhoneNumberId: phoneNumberId
+          whatsAppPhoneNumberId: phoneNumberId,
+          templateData: templateData
         });
       }
 
@@ -420,6 +491,83 @@ export class FlowRunner {
       
       if (!response.ok) {
         console.error('WhatsApp API error:', result);
+        
+        // Save failed message to database
+        const recipient = await prisma.whatsAppRecipient.findFirst({
+          where: {
+            phoneNumber: recipientPhoneNumber,
+            whatsAppPhoneNumberId: phoneNumberId
+          }
+        });
+
+        if (recipient) {
+          // Create templateData for interactive messages with buttons
+          let templateData: Array<{
+            type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
+            text?: string;
+            mediaUrl?: string;
+            mediaId?: string;
+            format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
+            buttonText?: string;
+            buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+            buttonValue?: string;
+            buttons?: Array<{
+              type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+              text: string;
+              url?: string;
+              phone_number?: string;
+            }>;
+          }> | undefined = undefined;
+
+          // If this is an interactive message with buttons, create templateData
+          if (buttons && buttons.length > 0) {
+            templateData = [
+              {
+                type: "BODY",
+                text: message,
+                format: "TEXT"
+              },
+              {
+                type: "BUTTONS",
+                buttons: buttons.map(button => ({
+                  type: "QUICK_REPLY" as const,
+                  text: button.label
+                }))
+              }
+            ];
+
+            // Add header if provided
+            if (header && typeof header === 'string' && header.trim() && headerType && headerType !== 'none') {
+              if (headerType === 'text') {
+                templateData.unshift({
+                  type: "HEADER",
+                  text: header.trim(),
+                  format: "TEXT"
+                });
+              } else if (['image', 'video', 'document'].includes(headerType)) {
+                templateData.unshift({
+                  type: "HEADER",
+                  mediaId: header,
+                  format: headerType.toUpperCase() as "IMAGE" | "VIDEO" | "DOCUMENT"
+                });
+              }
+            }
+          }
+
+          await storeWhatsAppMessage({
+            recipientId: recipient.id,
+            phoneNumber: recipientPhoneNumber,
+            whatsAppPhoneNumberId: phoneNumberId,
+            isOutbound: true,
+            message,
+            timestamp: Math.floor(Date.now() / 1000),
+            status: "FAILED",
+            errorMessage: result.error?.message || result.error?.error_user_msg || `HTTP ${response.status}: ${response.statusText}`,
+            mediaIds: mediaUrl ? [mediaUrl] : [],
+            templateData: templateData
+          });
+        }
+        
         return false;
       }
 
@@ -432,6 +580,59 @@ export class FlowRunner {
       });
 
       if (recipient) {
+        // Create templateData for interactive messages with buttons
+        let templateData: Array<{
+          type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
+          text?: string;
+          mediaUrl?: string;
+          mediaId?: string;
+          format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
+          buttonText?: string;
+          buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+          buttonValue?: string;
+          buttons?: Array<{
+            type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+            text: string;
+            url?: string;
+            phone_number?: string;
+          }>;
+        }> | undefined = undefined;
+
+        // If this is an interactive message with buttons, create templateData
+        if (buttons && buttons.length > 0) {
+          templateData = [
+            {
+              type: "BODY",
+              text: message,
+              format: "TEXT"
+            },
+            {
+              type: "BUTTONS",
+              buttons: buttons.map(button => ({
+                type: "QUICK_REPLY" as const,
+                text: button.label
+              }))
+            }
+          ];
+
+          // Add header if provided
+          if (header && typeof header === 'string' && header.trim() && headerType && headerType !== 'none') {
+            if (headerType === 'text') {
+              templateData.unshift({
+                type: "HEADER",
+                text: header.trim(),
+                format: "TEXT"
+              });
+            } else if (['image', 'video', 'document'].includes(headerType)) {
+              templateData.unshift({
+                type: "HEADER",
+                mediaId: header,
+                format: headerType.toUpperCase() as "IMAGE" | "VIDEO" | "DOCUMENT"
+              });
+            }
+          }
+        }
+
         await storeWhatsAppMessage({
           recipientId: recipient.id,
           phoneNumber: recipientPhoneNumber,
@@ -441,7 +642,8 @@ export class FlowRunner {
           timestamp: Math.floor(Date.now() / 1000),
           status: 'SENT',
           whatsAppPhoneNumberId: phoneNumberId,
-          mediaIds: mediaUrl ? [mediaUrl] : []
+          mediaIds: mediaUrl ? [mediaUrl] : [],
+          templateData: templateData
         });
       }
 
