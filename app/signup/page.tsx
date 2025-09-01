@@ -686,45 +686,47 @@ function SignupContent() {
             {renderStep()}
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between mt-8">
-              {currentStep < 6 && (
+            {currentStep < 6 && (
+              <div className="flex items-center justify-between mt-8">
                 <button
                   type="button"
                   onClick={prevStep}
-                  disabled={currentStep === 1}
+                  disabled={currentStep === 1 || currentStep >= 6}
                   className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <ArrowLeft size={16} />
                   Back
                 </button>
-              )}
 
-              {currentStep < 5 ? (
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  disabled={!canProceed()}
-                  className="px-6 py-2 bg-[#43A2C9] text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Next
-                </button>
-              ) : currentStep === 5 ? (
-                <button
-                  type="submit"
-                  disabled={!canProceed() || isLoading}
-                  className="px-6 py-2 bg-[#43A2C9] text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isLoading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Creating account...
-                    </div>
-                  ) : (
-                    "Create Account"
-                  )}
-                </button>
-              ) : null}
-            </div>
+                {currentStep < 5 && (
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    disabled={!canProceed()}
+                    className="px-6 py-2 bg-[#43A2C9] text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                  </button>
+                )}
+
+                {currentStep === 5 && (
+                  <button
+                    type="submit"
+                    disabled={!canProceed() || isLoading}
+                    className="px-6 py-2 bg-[#43A2C9] text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Creating account...
+                      </div>
+                    ) : (
+                      "Create Account"
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
           </form>
 
           {/* Progress Indicator */}

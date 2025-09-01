@@ -339,7 +339,7 @@ export default function PaymentStep({
   };
 
   return (
-    <div className="min-h-[400px] flex flex-col space-y-6">
+    <div className="flex flex-col space-y-6">
       <div className="">
         <h1 className="text-2xl font-bold text-gray-900">Choose Your Plan</h1>
         <p className="text-gray-600">
@@ -348,7 +348,7 @@ export default function PaymentStep({
       </div>
 
       {/* Billing Toggle */}
-      <div className="flex items-center justify-center gap-4 mb-8">
+      {/* <div className="flex items-center justify-center gap-4 mb-8">
         <span
           className={`text-sm font-medium ${
             !isYearly ? "text-gray-900" : "text-gray-500"
@@ -361,6 +361,7 @@ export default function PaymentStep({
             e.stopPropagation();
             setIsYearly(!isYearly);
           }}
+          type="button"
           className={`relative w-12 h-6 rounded-full transition-colors ${
             isYearly ? "bg-[#43A2C9]" : "bg-gray-300"
           }`}
@@ -378,15 +379,33 @@ export default function PaymentStep({
         >
           Annual
         </span>
-      </div>
+      </div> */}
 
       {/* Plans Grid */}
       {plansLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#43A2C9] border-t-transparent mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading plans...</p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="cursor-pointer border-3 border-[#E0E0E0] rounded-2xl p-3.5 flex flex-col animate-pulse"
+            >
+              <span className="text-sm text-gray-700 animate-pulse">
+                Plan {i}
+              </span>
+              <div className="flex flex-1 justify-between gap-4">
+                <div className="flex flex-col">
+                  <span className="text-2xl font-300 text-gray-800 mt-2 animate-pulse">
+                    {`00`}
+                  </span>
+                  <div className="flex items-center gap-1 mt-2 text-xs">
+                    <span className="font-semibold animate-pulse">
+                      Billed annually
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : plansError ? (
         <div className="bg-white/80 backdrop-blur-sm border border-red-200 rounded-lg p-4 shadow-sm">
@@ -410,7 +429,7 @@ export default function PaymentStep({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
           {/* Free Trial Card */}
           <div
             onClick={() =>
@@ -423,7 +442,7 @@ export default function PaymentStep({
                 isAddOn: false,
               })
             }
-            className={`cursor-pointer border-3 border-[#E0E0E0] rounded-2xl p-4 flex flex-col ${
+            className={`cursor-pointer border-3 border-[#E0E0E0] rounded-2xl p-3.5 flex flex-col ${
               selectedPlan?.id === "free-trial"
                 ? "border-green-500 bg-green-50 shadow-lg"
                 : "border-gray-200 bg-white hover:border-green-300 hover:shadow-md hover:bg-green-50"
@@ -453,7 +472,7 @@ export default function PaymentStep({
               <div
                 key={plan.id}
                 onClick={() => setSelectedPlan(plan)}
-                className={`cursor-pointer border-3 rounded-2xl p-4 flex flex-col ${
+                className={`cursor-pointer border-3 rounded-2xl p-3.5 flex flex-col ${
                   isSelected
                     ? "border-[#43A2C9] bg-[#43A2C9]/5 shadow-lg"
                     : "border-gray-200 bg-white hover:border-[#43A2C9] hover:shadow-md hover:bg-[#43A2C9]/5"
@@ -462,10 +481,13 @@ export default function PaymentStep({
                 <span className="text-sm text-gray-700">{plan.name}</span>
                 <div className="flex justify-between gap-4">
                   <div className="flex flex-col">
-                    <span className="text-2xl font-300 text-gray-800 mt-2">
-                      {price === 0 ? "Free" : `${currencySymbol}${price}/month`}
+                    <span className="text-2xl font-300 text-gray-800 mt-1">
+                      {price === 0 ? "Free" : `${currencySymbol}${price}`}
+                      <span className="text-lg font-medium text-gray-600">
+                        /month
+                      </span>
                     </span>
-                    <div className={`flex items-center gap-1 mt-2 text-xs`}>
+                    <div className={`flex items-center gap-1 mt-1 text-xs`}>
                       <span className="font-semibold">
                         {price === 0
                           ? "Explore features risk-free!"
@@ -480,10 +502,115 @@ export default function PaymentStep({
             );
           })}
         </div>
+
+        // <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-2xl mx-auto">
+        //   {/* Free Trial Card */}
+        //   <div
+        //     onClick={() =>
+        //       setSelectedPlan({
+        //         id: "free-trial",
+        //         name: "Free Trial",
+        //         monthlyPriceJson: { US: 0, IND: 0, ASIA: 0 },
+        //         yearlyPriceJson: { US: 0, IND: 0, ASIA: 0 },
+        //         features: [],
+        //         isAddOn: false,
+        //       })
+        //     }
+        //     className={`cursor-pointer border-3 border-[#E0E0E0] rounded-2xl p-4 flex flex-col ${
+        //       selectedPlan?.id === "free-trial"
+        //         ? "border-green-500 bg-green-50 shadow-lg"
+        //         : "border-gray-200 bg-white hover:border-green-300 hover:shadow-md hover:bg-green-50"
+        //     }`}
+        //   >
+        //     <div className="flex justify-between gap-4">
+        //       <div className="flex flex-col">
+        //         <div className="flex justify-between items-center">
+        //           <span className="text-sm text-gray-700">Free Trial</span>
+        //           <span className="text-xl font-300 text-gray-800">Free</span>
+        //         </div>
+        //         <div className={`flex items-center gap-1 mt-2 text-xs`}>
+        //           <span className="font-semibold">
+        //             Explore features risk-free!
+        //           </span>
+        //         </div>
+        //       </div>
+        //     </div>
+        //   </div>
+
+        //   {plans.map((plan) => {
+        //     const price = getPlanPrice(plan, isYearly, region);
+        //     const currencySymbol = getCurrencySymbol(region);
+        //     const isSelected = selectedPlan?.id === plan.id;
+
+        //     return (
+        //       <div
+        //         key={plan.id}
+        //         onClick={() => setSelectedPlan(plan)}
+        //         className={`cursor-pointer border-3 rounded-2xl p-4 flex flex-col ${
+        //           isSelected
+        //             ? "border-[#43A2C9] bg-[#43A2C9]/5 shadow-lg"
+        //             : "border-gray-200 bg-white hover:border-[#43A2C9] hover:shadow-md hover:bg-[#43A2C9]/5"
+        //         }`}
+        //       >
+        //         <div className="flex justify-between gap-4">
+        //           <div className="flex flex-1 flex-col">
+        //             <div className="flex justify-between items-center">
+        //               <span className="text-sm text-gray-700">{plan.name}</span>
+        //               <span className="text-xl font-300 text-gray-800">
+        //                 {price === 0 ? "Free" : `${currencySymbol}${price}/m.`}
+        //               </span>
+        //             </div>
+        //             <div className={`flex items-center gap-1 mt-2 text-xs`}>
+        //               <span className="font-semibold">
+        //                 {price === 0
+        //                   ? "Explore features risk-free!"
+        //                   : isYearly
+        //                   ? "Billed annually"
+        //                   : "Billed monthly"}
+        //               </span>
+        //             </div>
+        //           </div>
+        //         </div>
+        //       </div>
+        //     );
+        //   })}
+        // </div>
       )}
 
       {/* Continue Button */}
-      <div className="flex justify-center mt-8">
+      <div className="flex justify-around items-center">
+        <div className="flex items-center justify-center gap-4">
+          <span
+            className={`text-sm font-medium ${
+              !isYearly ? "text-gray-900" : "text-gray-500"
+            }`}
+          >
+            Monthly
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsYearly(!isYearly);
+            }}
+            type="button"
+            className={`relative w-12 h-6 rounded-full transition-colors ${
+              isYearly ? "bg-[#43A2C9]" : "bg-gray-300"
+            }`}
+          >
+            <div
+              className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                isYearly ? "translate-x-6" : "translate-x-0.5"
+              }`}
+            />
+          </button>
+          <span
+            className={`text-sm font-medium ${
+              isYearly ? "text-gray-900" : "text-gray-500"
+            }`}
+          >
+            Annual
+          </span>
+        </div>
         <button
           type="button"
           onClick={handlePlanSelection}
@@ -503,7 +630,7 @@ export default function PaymentStep({
           ) : selectedPlan?.id === "free-trial" ? (
             "Start Free Trial"
           ) : (
-            `Continue with ${selectedPlan?.name}`
+            `Proceed to Pay`
           )}
         </button>
       </div>
