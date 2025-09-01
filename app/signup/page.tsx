@@ -186,7 +186,12 @@ function SignupContent() {
   };
 
   const handleSkipWhatsApp = () => {
-    setCurrentStep(8);
+    fetch("/api/auth/signup/complete", {
+      method: "POST",
+      credentials: "include",
+    }).then(() => {
+      window.location.href = "/dashboard";
+    });
   };
 
   const handleShowPaymentModal = (
@@ -705,7 +710,7 @@ function SignupContent() {
               <button
                 type="button"
                 onClick={handleConnectWhatsApp}
-                disabled={isConnectingWhatsApp}
+                disabled={isConnectingWhatsApp || whatsappStatus.isConnected}
                 className="w-full px-6 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isConnectingWhatsApp ? (
@@ -773,13 +778,13 @@ function SignupContent() {
         <Navbar />
 
         {/* Main Form Card */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border-4 border-black/10 p-6 sm:p-8 w-full max-h-[70vh] max-w-lg overflow-y-auto">
-          <form onSubmit={handleSubmit}>
-            {renderStep()}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border-4 border-black/10 p-6 sm:p-8 w-full max-h-[70vh] min-h-[70vh] max-w-lg flex flex-col">
+          <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+            <div className="flex-1">{renderStep()}</div>
 
             {/* Navigation Buttons */}
             {currentStep < 6 && (
-              <div className="flex items-center justify-between mt-8">
+              <div className="flex items-center justify-between mt-8 bottom-2">
                 <button
                   type="button"
                   onClick={prevStep}
