@@ -31,6 +31,24 @@ interface SignupData {
   confirm_password: string;
 }
 
+interface PriceJson {
+  US: number;
+  IND: number;
+  ASIA: number;
+}
+
+interface Addon {
+  id: string;
+  name: string;
+  monthlyPriceJson: string; // JSON string from API
+  yearlyPriceJson: string; // JSON string from API
+  features: string[];
+  isAddOn: boolean;
+  isActivated?: boolean;
+  isActive?: boolean;
+  quantity?: number | null;
+}
+
 const industries = [
   { id: "1", label: "Technology", value: "Technology" },
   { id: "2", label: "Healthcare", value: "Healthcare" },
@@ -183,7 +201,7 @@ function SignupContent() {
   };
 
   const handleShowAddonPaymentModal = (
-    addon: any,
+    addon: Addon,
     period: "month" | "year",
     region: "US" | "IND" | "ASIA",
     months: number,
@@ -573,6 +591,14 @@ function SignupContent() {
 
       case 7:
         return (
+          <AddonsStep
+            onNext={nextStep}
+            onShowPaymentModal={handleShowAddonPaymentModal}
+          />
+        );
+
+      case 8:
+        return (
           <div className="min-h-[260px] flex flex-col justify-center space-y-6">
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-cyan-100 rounded-full flex items-center justify-center">
@@ -629,15 +655,6 @@ function SignupContent() {
               </button>
             </div>
           </div>
-        );
-
-      case 8:
-        return (
-          <AddonsStep
-            onNext={nextStep}
-            onBack={prevStep}
-            onShowPaymentModal={handleShowAddonPaymentModal}
-          />
         );
 
       default:
