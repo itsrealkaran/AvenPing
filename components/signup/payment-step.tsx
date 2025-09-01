@@ -394,10 +394,14 @@ export default function PaymentStep({
               </span>
               <div className="flex flex-1 justify-between gap-4">
                 <div className="flex flex-col">
-                  <span className="text-2xl font-300 text-gray-800 mt-2 animate-pulse">
+                  <span className="text-2xl font-300 text-gray-800 mt-1 animate-pulse">
                     {`00`}
+                    <span className="text-lg font-medium text-gray-600">
+                      /month
+                    </span>
                   </span>
-                  <div className="flex items-center gap-1 mt-2 text-xs">
+
+                  <div className="flex items-center gap-1 mt-1 text-xs">
                     <span className="font-semibold animate-pulse">
                       Billed annually
                     </span>

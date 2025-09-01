@@ -233,25 +233,65 @@ export default function AddonsStep({
 
       {/* Addons Grid */}
       {addonsLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl animate-pulse">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="cursor-pointer border-3 border-[#E0E0E0] rounded-2xl p-3.5 flex flex-col animate-pulse"
+              className="border-3 rounded-2xl p-3 flex flex-col border-gray-200"
             >
-              <span className="text-sm text-gray-700 animate-pulse">
-                Addon {i}
-              </span>
-              <div className="flex flex-1 justify-between gap-4">
-                <div className="flex flex-col">
-                  <span className="text-2xl font-300 text-gray-800 mt-2 animate-pulse">
-                    {`00`}
+              {/* Addon selection checkbox */}
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-gray-700">
+                    Addon {i}
                   </span>
-                  <div className="flex items-center gap-1 mt-2 text-xs">
-                    <span className="font-semibold animate-pulse">
-                      Billed annually
+                </div>
+              </div>
+
+              {/* Quantity selector for selected addons */}
+              <div className="flex items-center gap-2 bg-[#43A2C9]/5 opacity-50">
+                <span className="text-xs font-medium text-gray-700">
+                  Quantity:
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const currentQty = addonQuantities[i] || 1;
+                      handleAddonQuantityChange(i.toString(), currentQty - 1);
+                    }}
+                    disabled={true}
+                    className="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    -
+                  </button>
+                  <span className="text-sm font-medium text-gray-900 min-w-[20px] text-center">
+                    {addonQuantities[i] || 1}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const currentQty = addonQuantities[i] || 1;
+                      handleAddonQuantityChange(i.toString(), currentQty + 1);
+                    }}
+                    disabled={true}
+                    className="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-between gap-4">
+                <div className="flex flex-col">
+                  <span className="text-2xl font-300 text-gray-800">
+                    00
+                    <span className="text-lg font-medium text-gray-600">
+                      /month
                     </span>
-                  </div>
+                  </span>
                 </div>
               </div>
             </div>

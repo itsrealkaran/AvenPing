@@ -4,7 +4,7 @@ import type React from "react";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Info } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 import Navbar from "@/components/landing/navbar";
@@ -143,7 +143,7 @@ function SignupContent() {
   };
 
   const nextStep = () => {
-    if (currentStep < 7) {
+    if (currentStep < 8) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -269,8 +269,23 @@ function SignupContent() {
     region: "US" | "IND" | "ASIA"
   ) => {
     if (!plan) return 0;
-    const priceJson =
+
+    let priceJson: PriceJson;
+    const priceJsonString =
       period === "month" ? plan.monthlyPriceJson : plan.yearlyPriceJson;
+
+    // Handle both string format (addons) and object format (plans)
+    if (typeof priceJsonString === "string") {
+      try {
+        priceJson = JSON.parse(priceJsonString);
+      } catch (error) {
+        console.error("Error parsing price JSON:", error);
+        return 0;
+      }
+    } else {
+      priceJson = priceJsonString;
+    }
+
     const basePrice = priceJson?.[region] || 0;
 
     // For addons, multiply by months and quantity
@@ -479,10 +494,30 @@ function SignupContent() {
             <div className="space-y-2">
               <div>
                 <label
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1"
                   htmlFor="password"
                 >
-                  Password
+                  Enter Password
+                  {/* Tooltip for password requirements */}
+                  <span className="relative group ml-1">
+                    <Info size={16} className="cursor-pointer" />
+                    <div className="absolute left-1/2 z-10 hidden group-hover:block group-focus:block -translate-x-1/2 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700">
+                      <div className="font-semibold mb-1 text-gray-900">
+                        Password must contain:
+                      </div>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>At least 8 characters</li>
+                        <li>At least one uppercase letter</li>
+                        <li>At least one lowercase letter</li>
+                        <li>At least one number</li>
+                        <li>
+                          At least one special character
+                          <br />
+                          (e.g. !@#$%^&amp;*)
+                        </li>
+                      </ul>
+                    </div>
+                  </span>
                 </label>
                 <div className="relative">
                   <input
@@ -507,25 +542,57 @@ function SignupContent() {
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
-                <div className="flex items-center mt-2">
-                  <span
-                    className={`text-xs font-medium ${
-                      formData.password.length >= 8
-                        ? "text-green-600"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {formData.password.length > 0 &&
-                      formData.confirm_password.length === 0 &&
-                      (formData.password.length >= 8
-                        ? "Strong password"
-                        : "* Password should be at least 8 characters long")}
-                  </span>
-                </div>
+                {/* Password strength validation - show only the first unmet requirement */}
+                {formData.password.length > 0 &&
+                  (() => {
+                    const requirements = [
+                      {
+                        test: (pw: string) => pw.length >= 8,
+                        message: "At least 8 characters",
+                      },
+                      {
+                        test: (pw: string) => /[A-Z]/.test(pw),
+                        message: "At least one uppercase letter",
+                      },
+                      {
+                        test: (pw: string) => /[a-z]/.test(pw),
+                        message: "At least one lowercase letter",
+                      },
+                      {
+                        test: (pw: string) => /\d/.test(pw),
+                        message: "At least one number",
+                      },
+                      {
+                        test: (pw: string) =>
+                          /[!@#$%^&*(),.?\":{}|<>]/.test(pw),
+                        message: "At least one special character",
+                      },
+                    ];
+                    const firstUnmet = requirements.find(
+                      (r) => !r.test(formData.password)
+                    );
+                    if (firstUnmet) {
+                      return (
+                        <div className="flex items-center mt-2">
+                          <span className="text-xs font-medium text-red-500">
+                            ✗ {firstUnmet.message}
+                          </span>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="flex items-center mt-2">
+                          <span className="text-xs font-medium text-green-600">
+                            Strong password
+                          </span>
+                        </div>
+                      );
+                    }
+                  })()}
               </div>
               <div>
                 <label
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
                   htmlFor="confirm_password"
                 >
                   Confirm Password
@@ -593,7 +660,15 @@ function SignupContent() {
         return (
           <AddonsStep
             onNext={nextStep}
-            onShowPaymentModal={handleShowAddonPaymentModal}
+            onShowPaymentModal={(addon, months, quantity, period, region) => {
+              handleShowAddonPaymentModal(
+                addon,
+                period,
+                region,
+                months,
+                quantity
+              );
+            }}
           />
         );
 
