@@ -41,7 +41,14 @@ export default function PaymentStep({
   isAddon = false,
 }: PaymentStepProps) {
   // Plan selection state
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>({
+    id: "free-trial",
+    name: "Free Trial",
+    monthlyPriceJson: { US: 0, IND: 0, ASIA: 0 },
+    yearlyPriceJson: { US: 0, IND: 0, ASIA: 0 },
+    features: [],
+    isAddOn: false,
+  });
   const [isYearly, setIsYearly] = useState(true);
   const [region, setRegion] = useState<"US" | "IND" | "ASIA">("US");
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -333,10 +340,8 @@ export default function PaymentStep({
 
   return (
     <div className="min-h-[400px] flex flex-col space-y-6">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Choose Your Plan
-        </h1>
+      <div className="">
+        <h1 className="text-2xl font-bold text-gray-900">Choose Your Plan</h1>
         <p className="text-gray-600">
           Select the perfect plan for your Business
         </p>
