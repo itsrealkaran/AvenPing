@@ -3,7 +3,7 @@
  * Returns 'india', 'asia', or 'global' based on user's location
  */
 
-export type Region = 'india' | 'asia' | 'global';
+export type Region = 'IND' | 'ASIA' | 'US';
 
 interface GeolocationData {
   country?: string;
@@ -166,19 +166,19 @@ async function getIPGeolocationData(): Promise<GeolocationData | null> {
  * @returns Region
  */
 function getRegionFromCountryCode(countryCode: string): Region {
-  if (!countryCode) return 'global';
+  if (!countryCode) return 'US';
   
   const upperCode = countryCode.toUpperCase();
   
   if (INDIA_CODES.includes(upperCode)) {
-    return 'india';
+    return 'IND';
   }
   
   if (ASIA_COUNTRIES.includes(upperCode)) {
-    return 'asia';
+    return 'ASIA';
   }
   
-  return 'global';
+  return 'US';
 }
 
 /**
@@ -211,7 +211,7 @@ function getRegionFromCoordinates(latitude: number, longitude: number): Region {
     longitude >= indiaBounds.west &&
     longitude <= indiaBounds.east
   ) {
-    return 'india';
+    return 'IND';
   }
   
   // Check if coordinates are within Asia (excluding India)
@@ -221,10 +221,10 @@ function getRegionFromCoordinates(latitude: number, longitude: number): Region {
     longitude >= asiaBounds.west &&
     longitude <= asiaBounds.east
   ) {
-    return 'asia';
+    return 'ASIA';
   }
   
-  return 'global';
+  return 'US';
 }
 
 /**
@@ -253,10 +253,10 @@ export async function getUserRegion(): Promise<Region> {
     }
     
     // Method 3: Default to global if all methods fail
-    return 'global';
+    return 'US';
   } catch (error) {
     console.warn('Region detection failed:', error);
-    return 'global';
+    return 'US';
   }
 }
 
@@ -308,11 +308,11 @@ export function clearCachedRegion(): void {
  */
 export function getRegionDisplayName(region: Region): string {
   switch (region) {
-    case 'india':
+    case 'IND':
       return 'India';
-    case 'asia':
+    case 'ASIA':
       return 'Asia';
-    case 'global':
+    case 'US':
       return 'Global';
     default:
       return 'Unknown';
@@ -326,21 +326,21 @@ export function getRegionDisplayName(region: Region): string {
  */
 export function getRegionConfig(region: Region) {
   const configs = {
-    india: {
+    IND: {
       currency: 'INR',
       timezone: 'Asia/Kolkata',
       locale: 'en-IN',
       dateFormat: 'DD/MM/YYYY',
       serviceTier: 'budget', // Low-cost service expectations
     },
-    asia: {
+    ASIA: {
       currency: 'USD', // Most Asian countries use USD for international services
       timezone: 'Asia/Bangkok', // Default to Southeast Asia timezone
       locale: 'en',
       dateFormat: 'DD/MM/YYYY', // Common in Asia
       serviceTier: 'budget', // Low-cost service expectations like India
     },
-    global: {
+    US: {
       currency: 'USD',
       timezone: 'UTC',
       locale: 'en',

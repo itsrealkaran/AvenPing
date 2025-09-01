@@ -484,7 +484,7 @@ function SignupContent() {
         return (
           <PaymentStep 
             onNext={nextStep}
-            onBack={prevStep}
+            onBack={() => console.log("back")}
             onShowPaymentModal={handleShowPaymentModal}
             isAddon={searchParams.get("isAddon") === "true"}
           />
