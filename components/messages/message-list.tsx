@@ -194,18 +194,6 @@ const MessageList = ({
             </div>
           </div>
         )}
-
-        {/* Manual load more button for testing */}
-        {hasMore && !isLoadingMore && (
-          <div className="flex justify-center py-2">
-            <button
-              onClick={() => onLoadMore?.()}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-600 transition-colors"
-            >
-              Load Older Messages
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Scroll to bottom button */}

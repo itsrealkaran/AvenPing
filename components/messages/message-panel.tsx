@@ -53,30 +53,60 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
 
   const { getConversation } = useMessages();
 
-  // Sync state with prop so UI updates immediately on conversation switch
-  useEffect(() => {
-    getConversation(conversation.id).then((conversation) => {
-      if (conversation) {
+  // Track if we've already loaded the conversation to prevent duplicate calls
+  const hasLoadedConversation = useRef(false);
+  const isLoadingConversation = useRef(false);
+
+  // Single function to load conversation data with debouncing
+  const loadConversation = useCallback(async (conversationId: string, cursor?: string) => {
+    if (isLoadingConversation.current) {
+      console.log("Already loading conversation, skipping...");
+      return;
+    }
+
+    // Add a small delay to prevent rapid successive calls
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    isLoadingConversation.current = true;
+    try {
+      console.log("Loading conversation:", { conversationId, cursor });
+      const conversationData = await getConversation(conversationId, cursor);
+      
+      if (conversationData) {
         console.log("Conversation loaded:", {
-          id: conversation.id,
-          messagesCount: conversation.messages.length,
-          hasMore: conversation.hasMore,
-          nextCursor: conversation.nextCursor,
+          id: conversationData.id,
+          messagesCount: conversationData.messages.length,
+          hasMore: conversationData.hasMore,
+          nextCursor: conversationData.nextCursor,
         });
 
-        setCurrentConversation(conversation);
-        setAllMessages(conversation.messages);
-        setNextCursor((conversation as any).nextCursor || null);
-        setHasMoreMessages(conversation.hasMore || false);
+        setCurrentConversation(conversationData);
+        setAllMessages(conversationData.messages);
+        setNextCursor(conversationData.nextCursor || null);
+        setHasMoreMessages(conversationData.hasMore || false);
+        hasLoadedConversation.current = true;
       } else {
         console.log("No conversation found, resetting state");
-        setCurrentConversation(conversation as any);
+        setCurrentConversation(conversationData as any);
         setAllMessages([]);
         setNextCursor(null);
         setHasMoreMessages(false);
       }
-    });
-  }, [conversation.id, getConversation]);
+    } catch (error) {
+      console.error("Error loading conversation:", error);
+    } finally {
+      isLoadingConversation.current = false;
+    }
+  }, [getConversation]);
+
+  // Sync state with prop so UI updates immediately on conversation switch
+  useEffect(() => {
+    // Only load if we haven't loaded this conversation yet or if it's a different conversation
+    if (!hasLoadedConversation.current || conversation.id !== currentConversation.id) {
+      hasLoadedConversation.current = false;
+      loadConversation(conversation.id, nextCursor || undefined);
+    }
+  }, [conversation.id, loadConversation]);
 
   // Scroll to bottom when conversation changes
   useEffect(() => {
@@ -156,9 +186,17 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
       const currentScrollTop = messageList?.scrollTop || 0;
       const currentScrollHeight = messageList?.scrollHeight || 0;
 
+      // Create a Set of existing message IDs for deduplication
+      const existingMessageIds = new Set(allMessages.map(msg => msg.id));
+      
+      // Filter out duplicate messages and prepend new ones
+      const newMessages = newConversation.messages.filter(
+        (msg: any) => !existingMessageIds.has(msg.id)
+      );
+
       // Prepend new messages to the beginning (older messages)
       // The API now returns messages in correct order (oldest to newest)
-      const updatedMessages = [...newConversation.messages, ...allMessages];
+      const updatedMessages = [...newMessages, ...allMessages];
       setAllMessages(updatedMessages);
 
       // Update conversation data with the nextCursor from API response
@@ -168,8 +206,9 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
       console.log("Updated state:", {
         newCursor: newConversation.nextCursor,
         newHasMore: newConversation.hasMore,
-        newMessagesCount: newConversation.messages.length,
+        newMessagesCount: newMessages.length,
         totalMessagesCount: updatedMessages.length,
+        duplicatesFiltered: newConversation.messages.length - newMessages.length,
       });
 
       // Restore scroll position after new messages are added
@@ -250,12 +289,23 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
         `/api/whatsapp/messages/conversation/${currentConversation.id}?cursor=${nextCursor}&limit=20`
       );
       const newConversation = response.data;
+      
+      // Create a Set of existing message IDs for deduplication
+      const existingMessageIds = new Set(allMessages.map(msg => msg.id));
+      
+      // Filter out duplicate messages
+      const newMessages = newConversation.messages.filter(
+        (msg: any) => !existingMessageIds.has(msg.id)
+      );
+      
       // Update messages with new ones
-      const updatedMessages = [...allMessages, ...newConversation.messages];
+      const updatedMessages = [...allMessages, ...newMessages];
       setAllMessages(updatedMessages);
+      
       // Update conversation data
       setNextCursor(newConversation.nextCursor);
       setHasMoreMessages(newConversation.hasMore);
+      
       // Search in the new messages
       const newMatchingIds = updatedMessages
         .filter((message) =>
@@ -266,6 +316,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
         .map((message) => message.id);
       setMatchingMessageIds(newMatchingIds);
       setCurrentMatchIndex(0);
+      
       // If still no matches and we can fetch more, try again
       if (
         newMatchingIds.length === 0 &&

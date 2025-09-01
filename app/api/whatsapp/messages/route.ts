@@ -78,9 +78,9 @@ export async function GET(request: Request) {
         name: true,
         lastCheckedTime: true,
         messages: {
-          take: 20,
+          take: take + 1,
           orderBy: {
-            createdAt: "asc",
+            createdAt: "desc",
           },
         },
         labels: {
@@ -120,56 +120,66 @@ export async function GET(request: Request) {
         (message: WhatsAppMessage) =>
           !message.isOutbound && message.createdAt > item.lastCheckedTime
       ).length,
+      hasMore: item.messages.length > take,
+      nextCursor: item.messages[0].id,
     }));
+    // @ts-ignore
+    console.log("items.messages[0].id", items[0].messages[0]);
 
-    items = await Promise.all(
-      items.map(async (item: any) => ({
-        ...item,
-        messages: await Promise.all(item.messages.map(async (message: any) => ({
-          ...message,
-          media:
-            message.media && message.media.length > 0
-              ? await (async () => {
-                  try {
-                    const mediaResponse = await axios.get(
-                      `https://graph.facebook.com/v23.0/${message?.media?.[0]?.mediaId}`,
-                      {
-                        headers: {
-                          Authorization: `Bearer ${account.accessToken}`,
-                        },
-                      }
-                    );
+    // items = await Promise.all(
+    //   items.map(async (item: any) => ({
+    //     ...item,
+    //     messages: await Promise.all(item.messages.map(async (message: any) => ({
+    //       ...message,
+    //       media:
+    //         message.media && message.media.length > 0
+    //           ? await (async () => {
+    //               try {
+    //                 const mediaResponse = await axios.get(
+    //                   `https://graph.facebook.com/v23.0/${message?.media?.[0]?.mediaId}`,
+    //                   {
+    //                     headers: {
+    //                       Authorization: `Bearer ${account.accessToken}`,
+    //                     },
+    //                   }
+    //                 );
 
-                    // Download the actual media file
-                    const mediaFile = await axios.get(mediaResponse.data.url, {
-                      headers: {
-                        Authorization: `Bearer ${account.accessToken}`,
-                      },
-                      responseType: "arraybuffer",
-                    });
+    //                 // Download the actual media file
+    //                 const mediaFile = await axios.get(mediaResponse.data.url, {
+    //                   headers: {
+    //                     Authorization: `Bearer ${account.accessToken}`,
+    //                   },
+    //                   responseType: "arraybuffer",
+    //                 });
 
-                    // Convert to base64 for frontend display
-                    const base64 = Buffer.from(mediaFile.data).toString(
-                      "base64"
-                    );
-                    const dataUrl = `data:${mediaResponse.data.mime_type};base64,${base64}`;
+    //                 // Convert to base64 for frontend display
+    //                 const base64 = Buffer.from(mediaFile.data).toString(
+    //                   "base64"
+    //                 );
+    //                 const dataUrl = `data:${mediaResponse.data.mime_type};base64,${base64}`;
 
-                    return [
-                      { type: mediaResponse.data.mime_type, mediaId: dataUrl },
-                    ];
-                  } catch (error) {
-                    console.error(
-                      "Failed to fetch media:",
-                      error instanceof Error ? error.message : "Unknown error"
-                    );
-                    // Return empty array if media fetch fails
-                    return [];
-                  }
-                })()
-              : null,
-        }))),
-      }))
-    );
+    //                 return [
+    //                   { type: mediaResponse.data.mime_type, mediaId: dataUrl },
+    //                 ];
+    //               } catch (error) {
+    //                 console.error(
+    //                   "Failed to fetch media:",
+    //                   error instanceof Error ? error.message : "Unknown error"
+    //                 );
+    //                 // Return empty array if media fetch fails
+    //                 return [];
+    //               }
+    //             })()
+    //           : null,
+    //     }))),
+    //   }))
+    // );
+
+    // reverse the messages in items.messages
+    items = items.map((item: any) => ({
+      ...item,
+      messages: item.messages.reverse(),
+    }));
 
     // Get the cursor for the next page
     const nextCursor = hasMore

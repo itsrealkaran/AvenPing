@@ -77,7 +77,8 @@ interface MessagesContextType {
   ) => Promise<void>;
   deleteMessage: (messageId: string) => Promise<void>;
   getConversation: (
-    conversationId: string
+    conversationId: string,
+    cursor?: string
   ) => Promise<Conversation | undefined>;
   labels: Label[];
   isLabelsLoading: boolean;
@@ -293,33 +294,42 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     },
     getConversation: async (conversationId: string, cursor?: string) => {
       setConversationId(conversationId);
-      if (cursor) {
-        const response = await axios.get(
-          `/api/whatsapp/messages/conversation/${conversationId}?cursor=${cursor}`
-        );
-        messageCache.current.set(conversationId, response.data.messages);
-        return {
-          ...response.data,
-          messages: response.data.messages,
-          nextCursor: response.data.nextCursor,
-        };
-      }
-      // Check cache first
-      if (messageCache.current.has(conversationId)) {
+      
+      // Check cache first for non-cursor requests
+      if (!cursor && messageCache.current.has(conversationId)) {
         const cachedMessages = messageCache.current.get(conversationId)!;
         const conv = conversations?.find((c) => c.id === conversationId);
         if (conv) {
-          return { ...conv, messages: cachedMessages };
+          console.log("Returning cached conversation:", conversationId);
+          return { ...conv, messages: cachedMessages, hasMore: conv.hasMore, nextCursor: conv.nextCursor };
         }
       }
-      // Always fetch if not in cache
-      const response = await axios.get(
-        `/api/whatsapp/messages/conversation/${conversationId}`
-      );
-      messageCache.current.set(conversationId, response.data.messages);
+      
+      // Fetch from API
+      const url = cursor 
+        ? `/api/whatsapp/messages/conversation/${conversationId}?cursor=${cursor}`
+        : `/api/whatsapp/messages/conversation/${conversationId}`;
+        
+      console.log("Fetching conversation from API:", url);
+      const response = await axios.get(url);
+      
+      // Update cache
+      if (cursor) {
+        // For cursor requests, merge with existing messages
+        const existingMessages = messageCache.current.get(conversationId) || [];
+        const newMessages = response.data.messages;
+        const allMessages = [...newMessages, ...existingMessages];
+        messageCache.current.set(conversationId, allMessages);
+      } else {
+        // For initial requests, replace cache
+        messageCache.current.set(conversationId, response.data.messages);
+      }
+      
+      console.log("Response data:", response.data);
       return {
         ...response.data,
         messages: response.data.messages,
+        hasMore: response.data.hasMore,
         nextCursor: response.data.nextCursor,
       };
     },
@@ -330,36 +340,46 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     label,
     setLabel,
     addRealTimeMessage: (message: Message, conversationId: string) => {
-      // Update cache
+      // Update cache with deduplication
       const cached = messageCache.current.get(conversationId) || [];
-      messageCache.current.set(conversationId, [...cached, message]);
-      console.log("updating cache", message, conversationId);
+      const existingMessageIds = new Set(cached.map(msg => msg.id));
+      
+      // Only add if message doesn't already exist
+      if (!existingMessageIds.has(message.id)) {
+        messageCache.current.set(conversationId, [...cached, message]);
+        console.log("updating cache", message, conversationId);
 
-      // Update react-query cache with proper immutability
-      queryClient.setQueryData(
-        ["messages", phoneNumberId, debouncedSearchQuery, label],
-        (oldData: Conversation[] | undefined) => {
-          if (!oldData) return oldData;
+        // Update react-query cache with proper immutability
+        queryClient.setQueryData(
+          ["messages", phoneNumberId, debouncedSearchQuery, label],
+          (oldData: Conversation[] | undefined) => {
+            if (!oldData) return oldData;
 
-          const updatedData = oldData.map((conv) => {
-            if (conv.id === conversationId) {
-              return {
-                ...conv,
-                messages: [...conv.messages, message],
-              };
-            }
-            return conv;
-          });
+            const updatedData = oldData.map((conv) => {
+              if (conv.id === conversationId) {
+                // Check for duplicates in the conversation messages too
+                const convMessageIds = new Set(conv.messages.map(msg => msg.id));
+                if (!convMessageIds.has(message.id)) {
+                  return {
+                    ...conv,
+                    messages: [...conv.messages, message],
+                  };
+                }
+                return conv;
+              }
+              return conv;
+            });
 
-          console.log("Updated query data:", updatedData);
-          return updatedData;
-        }
-      );
+            console.log("Updated query data:", updatedData);
+            return updatedData;
+          }
+        );
 
-      // Force a re-render by invalidating the query after updating
-      queryClient.invalidateQueries({
-        queryKey: ["messages", phoneNumberId, debouncedSearchQuery, label],
-      });
+        // Note: Removed invalidateQueries to prevent unnecessary refetches
+        // The cache update above should be sufficient for UI updates
+      } else {
+        console.log("Message already exists in cache, skipping:", message.id);
+      }
     },
     updateConversationUnreadCount: (
       conversationId: string,

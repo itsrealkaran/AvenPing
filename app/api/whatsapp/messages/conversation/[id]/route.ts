@@ -100,9 +100,7 @@ export async function GET(
 
         // Sort messages by createdAt ascending for frontend display (oldest to newest)
         // This maintains the chat flow while keeping pagination working
-        const sortedMessages = messages.sort((a, b) => 
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
+        const sortedMessages = messages.reverse();
 
         return NextResponse.json({
             id: conversation.id,
