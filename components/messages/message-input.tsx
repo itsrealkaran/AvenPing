@@ -28,9 +28,10 @@ import { TemplateVariableModal } from "./template-variable-modal";
 interface MessageInputProps {
   onSendMessage: (content: string, media?: { type: string; mediaId: string }) => void;
   onSendTemplate?: (templateName: string, variables: any[]) => void;
+  isMessageWindowOpen: boolean;
 }
 
-const MessageInput = ({ onSendMessage, onSendTemplate }: MessageInputProps) => {
+const MessageInput = ({ onSendMessage, onSendTemplate, isMessageWindowOpen }: MessageInputProps) => {
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
@@ -423,40 +424,46 @@ const MessageInput = ({ onSendMessage, onSendTemplate }: MessageInputProps) => {
           className="absolute bottom-full mb-2 left-4 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
         >
           <div className="p-2 grid grid-cols-1 gap-1 w-48">
-            <button
-              onClick={() => handleAttachmentTypeSelect("image")}
-              className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md transition-colors w-full text-left"
-            >
-              <ImageIcon size={18} className="text-purple-500" />
-              <span>Image</span>
-            </button>
+            {/* Only show media attachments if message window is open */}
+            {isMessageWindowOpen && (
+              <>
+                <button
+                  onClick={() => handleAttachmentTypeSelect("image")}
+                  className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md transition-colors w-full text-left"
+                >
+                  <ImageIcon size={18} className="text-purple-500" />
+                  <span>Image</span>
+                </button>
 
-            <button
-              onClick={() => handleAttachmentTypeSelect("video")}
-              className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md transition-colors w-full text-left"
-            >
-              <Film size={18} className="text-blue-500" />
-              <span>Video</span>
-            </button>
+                <button
+                  onClick={() => handleAttachmentTypeSelect("video")}
+                  className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md transition-colors w-full text-left"
+                >
+                  <Film size={18} className="text-blue-500" />
+                  <span>Video</span>
+                </button>
 
-            <button
-              onClick={() => handleAttachmentTypeSelect("audio")}
-              className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md transition-colors w-full text-left"
-            >
-              <Music size={18} className="text-green-500" />
-              <span>Audio</span>
-            </button>
+                <button
+                  onClick={() => handleAttachmentTypeSelect("audio")}
+                  className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md transition-colors w-full text-left"
+                >
+                  <Music size={18} className="text-green-500" />
+                  <span>Audio</span>
+                </button>
 
-            <button
-              onClick={() => handleAttachmentTypeSelect("document")}
-              className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md transition-colors w-full text-left"
-            >
-              <FileText size={18} className="text-red-500" />
-              <span>Document</span>
-            </button>
+                <button
+                  onClick={() => handleAttachmentTypeSelect("document")}
+                  className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md transition-colors w-full text-left"
+                >
+                  <FileText size={18} className="text-red-500" />
+                  <span>Document</span>
+                </button>
 
-            <hr className="my-1 border-gray-200" />
+                <hr className="my-1 border-gray-200" />
+              </>
+            )}
 
+            {/* Always show templates */}
             {templatesLoading ? (
               <div className="flex items-center gap-3 p-2 text-gray-500">
                 <FileText size={18} className="text-amber-500" />
@@ -535,52 +542,88 @@ const MessageInput = ({ onSendMessage, onSendTemplate }: MessageInputProps) => {
           {renderMediaPreview()}
           
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
-            <button
-              type="button"
-              className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
-              onClick={handleAttachmentClick}
-              data-attachment-button="true"
-            >
-              <Paperclip size={20} />
-            </button>
-
-            <button
-              type="button"
-              className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
-              onClick={() => {
-                setShowEmojiPicker((prev) => !prev);
-                setShowAttachmentMenu(false);
-              }}
-            >
-              <Smile size={20} />
-            </button>
-
-            <div className="flex-1 relative">
-              <Input
-                ref={inputRef}
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder={attachment ? "Add a caption..." : "Type a message"}
-                className="w-full px-4 py-2 rounded-full"
-              />
-            </div>
-
-            {(message.trim() || attachment) ? (
-              <button
-                type="submit"
-                onClick={handleSubmit}
-                className="p-2 text-white bg-primary rounded-full hover:bg-primary/80"
-              >
-                <SendHorizontal size={20} />
-              </button>
-            ) : (
+            {/* Only show attachment button if message window is open */}
+            {isMessageWindowOpen && (
               <button
                 type="button"
                 className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
-                onClick={startRecording}
+                onClick={handleAttachmentClick}
+                data-attachment-button="true"
               >
-                <Mic size={20} />
+                <Paperclip size={20} />
+              </button>
+            )}
+
+            {/* Only show emoji button if message window is open */}
+            {isMessageWindowOpen && (
+              <button
+                type="button"
+                className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
+                onClick={() => {
+                  setShowEmojiPicker((prev) => !prev);
+                  setShowAttachmentMenu(false);
+                }}
+              >
+                <Smile size={20} />
+              </button>
+            )}
+
+            {/* Show text input only if message window is open */}
+            {isMessageWindowOpen ? (
+              <div className="flex-1 relative">
+                <Input
+                  ref={inputRef}
+                  type="text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={attachment ? "Add a caption..." : "Type a message"}
+                  className="w-full px-4 py-2 rounded-full"
+                />
+              </div>
+            ) : (
+              <div className="flex-1 relative">
+                <Input
+                  type="text"
+                  value=""
+                  placeholder="Only template messages allowed"
+                  className="w-full px-4 py-2 rounded-full bg-gray-100 text-gray-500 cursor-not-allowed"
+                  disabled
+                />
+              </div>
+            )}
+
+            {/* Show send/record buttons only if message window is open */}
+            {isMessageWindowOpen && (
+              <>
+                {(message.trim() || attachment) ? (
+                  <button
+                    type="submit"
+                    onClick={handleSubmit}
+                    className="p-2 text-white bg-primary rounded-full hover:bg-primary/80"
+                  >
+                    <SendHorizontal size={20} />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
+                    onClick={startRecording}
+                  >
+                    <Mic size={20} />
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* Show template button when message window is not open */}
+            {!isMessageWindowOpen && (
+              <button
+                type="button"
+                className="p-2 text-white bg-amber-500 rounded-full hover:bg-amber-600"
+                onClick={() => setShowAttachmentMenu(true)}
+                title="Send Template Message"
+              >
+                <FileText size={20} />
               </button>
             )}
           </form>

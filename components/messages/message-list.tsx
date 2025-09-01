@@ -48,12 +48,6 @@ const MessageList = ({
 
         // Load more messages if user scrolls to top
         if (isNearTop && hasMore && !isLoadingMore && onLoadMore) {
-          console.log("Scroll to top detected, loading more messages...", {
-            scrollTop,
-            hasMore,
-            isLoadingMore,
-            messagesCount: messages.length,
-          });
           onLoadMore();
         }
       }

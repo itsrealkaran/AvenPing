@@ -314,21 +314,29 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       const response = await axios.get(url);
       
       // Update cache
+      let cachedMessages;
       if (cursor) {
         // For cursor requests, merge with existing messages
         const existingMessages = messageCache.current.get(conversationId) || [];
         const newMessages = response.data.messages;
-        const allMessages = [...newMessages, ...existingMessages];
-        messageCache.current.set(conversationId, allMessages);
+
+        // remove the duplicate messages
+        cachedMessages = [...newMessages, ...existingMessages].filter((message, index, self) =>
+          index === self.findIndex((t) => t.id === message.id)
+        );
+        messageCache.current.set(conversationId, cachedMessages);
       } else {
         // For initial requests, replace cache
-        messageCache.current.set(conversationId, response.data.messages);
+        cachedMessages = response.data.messages.filter((message: any, index: any, self: any) =>
+          index === self.findIndex((t: any) => t.id === message.id)
+        );
+        messageCache.current.set(conversationId, cachedMessages);
       }
       
       console.log("Response data:", response.data);
       return {
         ...response.data,
-        messages: response.data.messages,
+        messages: cachedMessages, // Return the cached messages (merged for cursor requests)
         hasMore: response.data.hasMore,
         nextCursor: response.data.nextCursor,
       };

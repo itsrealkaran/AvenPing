@@ -46,13 +46,31 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
   const [hasMoreMessages, setHasMoreMessages] = useState(
     conversation.hasMore || false
   );
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(
+    conversation.nextCursor || null
+  );
   const [allMessages, setAllMessages] = useState<Message[]>(
     conversation.messages
   );
   const searchRef = useRef<HTMLDivElement>(null);
   const messageListRef = useRef<HTMLDivElement>(null);
   const scrollToBottomRef = useRef<(() => void) | null>(null);
+
+  // if the last message was sent more than 23 hours ago then set the state to true
+  const [isMessageWindowOpen, setIsMessageWindowOpen] = useState(true);
+  useEffect(() => {
+    if (allMessages && allMessages.length > 0) {
+      const outboundMessages = allMessages.filter((message) => message.isOutbound === false);
+      const lastMessage = outboundMessages.length > 0 ? outboundMessages[outboundMessages.length - 1] : allMessages[allMessages.length - 1];
+      if (!lastMessage) return;
+      const lastMessageDate = new Date(lastMessage.createdAt);
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - lastMessageDate.getTime());
+      const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+      console.log("diffHours > 23", diffHours);
+      setIsMessageWindowOpen(diffHours < 23);
+    }
+  }, [allMessages]);
 
   const { getConversation } = useMessages();
   const { userInfo } = useUser();
@@ -73,7 +91,6 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
 
     isLoadingConversation.current = true;
     try {
-      console.log("Loading conversation:", { conversationId, cursor });
       const conversationData = await getConversation(conversationId, cursor);
       
       if (conversationData) {
@@ -84,33 +101,55 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
           nextCursor: conversationData.nextCursor,
         });
 
-        setCurrentConversation(conversationData);
-        setAllMessages(conversationData.messages);
-        setNextCursor(conversationData.nextCursor || null);
-        setHasMoreMessages(conversationData.hasMore || false);
-        hasLoadedConversation.current = true;
+        // Only update state if this is still the current conversation
+        if (conversationId === conversation.id) {
+          setCurrentConversation(conversationData);
+          setAllMessages(conversationData.messages);
+          setNextCursor(conversationData.nextCursor || null);
+          setHasMoreMessages(conversationData.hasMore || false);
+          hasLoadedConversation.current = true;
+        }
       } else {
         console.log("No conversation found, resetting state");
-        setCurrentConversation(conversationData as any);
-        setAllMessages([]);
-        setNextCursor(null);
-        setHasMoreMessages(false);
+        if (conversationId === conversation.id) {
+          setCurrentConversation(conversationData as any);
+          setAllMessages([]);
+          setNextCursor(null);
+          setHasMoreMessages(false);
+        }
       }
     } catch (error) {
       console.error("Error loading conversation:", error);
     } finally {
       isLoadingConversation.current = false;
     }
-  }, [getConversation]);
+  }, [getConversation, conversation.id]);
 
   // Sync state with prop so UI updates immediately on conversation switch
   useEffect(() => {
-    // Only load if we haven't loaded this conversation yet or if it's a different conversation
-    if (!hasLoadedConversation.current || conversation.id !== currentConversation.id) {
+    // Reset state when conversation changes
+    if (conversation.id !== currentConversation.id) {
+      console.log("Conversation changed, resetting state:", {
+        from: currentConversation.id,
+        to: conversation.id
+      });
+      console.log("conversation.nextCursor", conversation.nextCursor);
+      console.log("conversation.hasMore", conversation.hasMore);
+      
+      // Reset all state for the new conversation
       hasLoadedConversation.current = false;
-      loadConversation(conversation.id, nextCursor || undefined);
+      setCurrentConversation(conversation);
+      setAllMessages(conversation.messages);
+      
+      // Initialize with conversation data, but also load full conversation data
+      // to get accurate hasMore and nextCursor values
+      setNextCursor(conversation.nextCursor || null);
+      setHasMoreMessages(conversation.hasMore || false);
+      
+      // Load the full conversation data to get accurate pagination info
+      loadConversation(conversation.id);
     }
-  }, [conversation.id, loadConversation]);
+  }, [conversation.id, conversation.messages, conversation.nextCursor, conversation.hasMore, loadConversation]);
 
   // Scroll to bottom when conversation changes
   useEffect(() => {
@@ -139,6 +178,13 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
       messagesCount: allMessages.length,
     });
   }, [hasMoreMessages, isLoadingMore, nextCursor, allMessages.length]);
+
+  // Ensure conversation is loaded on initial mount
+  useEffect(() => {
+    if (conversation.id && !hasLoadedConversation.current) {
+      loadConversation(conversation.id);
+    }
+  }, [conversation.id, loadConversation]);
 
   // Function to scroll to bottom
   const scrollToBottom = () => {
@@ -253,8 +299,6 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
         scrollToBottom();
       }, 200);
       
-      // Reload conversation to show the new message
-      loadConversation(currentConversation.id);
     } catch (error) {
       console.error("Error sending template message:", error);
       toast.error("Failed to send template message");
@@ -280,52 +324,30 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
 
     setIsLoadingMore(true);
     try {
-      console.log("Fetching more messages with cursor:", nextCursor);
-      const response = await axios.get(
-        `/api/whatsapp/messages/conversation/${currentConversation.id}?cursor=${nextCursor}&limit=20`
-      );
-      const newConversation = response.data;
-      console.log("API response:", newConversation);
-
-      // Store current scroll position
-      const messageList = messageListRef.current;
-      const currentScrollTop = messageList?.scrollTop || 0;
-      const currentScrollHeight = messageList?.scrollHeight || 0;
-
-      // Create a Set of existing message IDs for deduplication
-      const existingMessageIds = new Set(allMessages.map(msg => msg.id));
+      // Use the context's getConversation function to properly cache messages
+      const newConversation = await getConversation(currentConversation.id, nextCursor);
       
-      // Filter out duplicate messages and prepend new ones
-      const newMessages = newConversation.messages.filter(
-        (msg: any) => !existingMessageIds.has(msg.id)
-      );
+      if (newConversation) {
+        // Store current scroll position
+        const messageList = messageListRef.current;
+        const currentScrollTop = messageList?.scrollTop || 0;
+        const currentScrollHeight = messageList?.scrollHeight || 0;
 
-      // Prepend new messages to the beginning (older messages)
-      // The API now returns messages in correct order (oldest to newest)
-      const updatedMessages = [...newMessages, ...allMessages];
-      setAllMessages(updatedMessages);
+        // Update local state with the cached messages from context
+        setAllMessages(newConversation.messages);
+        setNextCursor(newConversation.nextCursor || null);
+        setHasMoreMessages(newConversation.hasMore || false);
 
-      // Update conversation data with the nextCursor from API response
-      setNextCursor(newConversation.nextCursor || null);
-      setHasMoreMessages(newConversation.hasMore || false);
-
-      console.log("Updated state:", {
-        newCursor: newConversation.nextCursor,
-        newHasMore: newConversation.hasMore,
-        newMessagesCount: newMessages.length,
-        totalMessagesCount: updatedMessages.length,
-        duplicatesFiltered: newConversation.messages.length - newMessages.length,
-      });
-
-      // Restore scroll position after new messages are added
-      // This keeps the user at the same relative position
-      setTimeout(() => {
-        if (messageList) {
-          const newScrollHeight = messageList.scrollHeight;
-          const scrollDifference = newScrollHeight - currentScrollHeight;
-          messageList.scrollTop = currentScrollTop + scrollDifference;
-        }
-      }, 100);
+        // Restore scroll position after new messages are added
+        // This keeps the user at the same relative position
+        setTimeout(() => {
+          if (messageList) {
+            const newScrollHeight = messageList.scrollHeight;
+            const scrollDifference = newScrollHeight - currentScrollHeight;
+            messageList.scrollTop = currentScrollTop + scrollDifference;
+          }
+        }, 100);
+      }
     } catch (error) {
       console.error("Error loading more messages:", error);
     } finally {
@@ -391,47 +413,36 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
     searchAttemptsRef.current += 1;
 
     try {
-      const response = await axios.get(
-        `/api/whatsapp/messages/conversation/${currentConversation.id}?cursor=${nextCursor}&limit=20`
-      );
-      const newConversation = response.data;
+      // Use the context's getConversation function to properly cache messages
+      const newConversation = await getConversation(currentConversation.id, nextCursor);
       
-      // Create a Set of existing message IDs for deduplication
-      const existingMessageIds = new Set(allMessages.map(msg => msg.id));
-      
-      // Filter out duplicate messages
-      const newMessages = newConversation.messages.filter(
-        (msg: any) => !existingMessageIds.has(msg.id)
-      );
-      
-      // Update messages with new ones
-      const updatedMessages = [...allMessages, ...newMessages];
-      setAllMessages(updatedMessages);
-      
-      // Update conversation data
-      setNextCursor(newConversation.nextCursor);
-      setHasMoreMessages(newConversation.hasMore);
-      
-      // Search in the new messages
-      const newMatchingIds = updatedMessages
-        .filter((message) =>
-          message.message
-            .toLowerCase()
-            .includes(debouncedSearchQuery.toLowerCase())
-        )
-        .map((message) => message.id);
-      setMatchingMessageIds(newMatchingIds);
-      setCurrentMatchIndex(0);
-      
-      // If still no matches and we can fetch more, try again
-      if (
-        newMatchingIds.length === 0 &&
-        newConversation.hasMore &&
-        searchAttemptsRef.current < 3
-      ) {
-        setTimeout(() => {
-          fetchMoreMessagesForSearch();
-        }, 500); // Small delay to prevent too many rapid requests
+      if (newConversation) {
+        // Update local state with the cached messages from context
+        setAllMessages(newConversation.messages);
+        setNextCursor(newConversation.nextCursor || null);
+        setHasMoreMessages(newConversation.hasMore || false);
+        
+        // Search in the updated messages
+        const newMatchingIds = newConversation.messages
+          .filter((message) =>
+            message.message
+              .toLowerCase()
+              .includes(debouncedSearchQuery.toLowerCase())
+          )
+          .map((message) => message.id);
+        setMatchingMessageIds(newMatchingIds);
+        setCurrentMatchIndex(0);
+        
+        // If still no matches and we can fetch more, try again
+        if (
+          newMatchingIds.length === 0 &&
+          newConversation.hasMore &&
+          searchAttemptsRef.current < 3
+        ) {
+          setTimeout(() => {
+            fetchMoreMessagesForSearch();
+          }, 500); // Small delay to prevent too many rapid requests
+        }
       }
     } catch (error) {
       console.error("Error fetching more messages for search:", error);
@@ -681,6 +692,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
         <MessageInput 
           onSendMessage={handleSendMessage} 
           onSendTemplate={handleSendTemplateMessage}
+          isMessageWindowOpen={isMessageWindowOpen}
         />
       </div>
     </div>
