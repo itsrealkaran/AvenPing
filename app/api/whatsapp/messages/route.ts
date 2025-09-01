@@ -208,7 +208,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const body = await request.json();
-    const { recipientId, message, templateId, templateParams, media } = body;
+    const { recipientId, message, templateId, templateParams, headerParams, bodyParams, media } = body;
+
+    // For now, let's try sending the template without parameters to see the structure
+    if (templateId && templateParams && templateParams.length > 0) {
+      console.log("Attempting to send template with parameters...");
+    }
 
     const { searchParams } = new URL(request.url);
     const phoneNumberId = searchParams.get("phoneNumberId");
@@ -265,6 +270,31 @@ export async function POST(request: Request) {
       );
     }
 
+    // Get template data from WhatsApp API if templateId is provided
+    let templateData = null;
+    if (templateId) {
+      try {
+        const templatesResponse = await fetch(
+          `https://graph.facebook.com/v23.0/${account.wabaid}/message_templates`,
+          {
+            headers: {
+              'Authorization': `Bearer ${account.accessToken}`,
+            },
+          }
+        );
+        
+        if (templatesResponse.ok) {
+          const templatesData = await templatesResponse.json();
+          const template = templatesData.data?.find((t: any) => t.name === templateId);
+          if (template) {
+            templateData = template;
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching template:", error);
+      }
+    }
+
     // Create message in database using storeWhatsAppMessage
     const newMessage = await storeWhatsAppMessage({
       message,
@@ -275,18 +305,96 @@ export async function POST(request: Request) {
       recipientId,
       mediaIds: media ? media.map((m: any) => m.mediaId) : [],
       timestamp: Math.floor(Date.now() / 1000),
-      templateData: templateId ? [
-        {
-          text: `Template: ${templateId}`,
-          type: "HEADER" as const,
-          format: "TEXT" as const
-        },
-        ...(templateParams ? templateParams.map((param: any, index: number) => ({
-          text: param.text || `Parameter ${index + 1}`,
-          type: "BODY" as const,
-          format: "TEXT" as const
-        })) : [])
-      ] : undefined,
+      templateData: templateId && templateData ? (() => {
+        // Create structured templateData with replaced values (similar to send-template-message route)
+        const structuredTemplateData: Array<{
+          type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
+          text?: string;
+          mediaUrl?: string;
+          mediaId?: string;
+          format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
+          buttonText?: string;
+          buttonType?: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+          buttonValue?: string;
+          buttons?: Array<{
+            type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER";
+            text: string;
+            url?: string;
+            phone_number?: string;
+          }>;
+        }> = [];
+        
+        // Add header component if exists
+        const headerComponent = templateData.components.find((comp: any) => comp.type === "HEADER");
+        if (headerComponent) {
+          if (headerComponent.format === "TEXT") {
+            // Text header - replace variables with actual values
+            let headerText = headerComponent.text || "";
+            
+            // Replace header variables with actual parameter values
+            if (headerParams && headerParams.length > 0) {
+              headerParams.forEach((param: any, index: number) => {
+                if (param.type === "text") {
+                  const placeholder = `{{${index + 1}}}`;
+                  headerText = headerText.replace(placeholder, param.text || "");
+                }
+              });
+            }
+            
+            structuredTemplateData.push({
+              type: "HEADER" as const,
+              text: headerText,
+              format: "TEXT" as const
+            });
+          } else if (headerComponent.format && headerComponent.format !== "TEXT") {
+            // Media header
+            const mediaParam = headerParams?.find((p: any) => p.type !== "text");
+            if (mediaParam) {
+              structuredTemplateData.push({
+                type: "HEADER" as const,
+                mediaId: mediaParam.image?.id || mediaParam.video?.id || mediaParam.document?.id,
+                format: headerComponent.format as "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO"
+              });
+            }
+          }
+        }
+        
+        // Add body component if exists
+        const bodyComponent = templateData.components.find((comp: any) => comp.type === "BODY");
+        if (bodyComponent) {
+          let bodyText = bodyComponent.text || "";
+          
+          // Replace body variables with actual parameter values
+          if (bodyParams && bodyParams.length > 0) {
+            bodyParams.forEach((param: any, index: number) => {
+              if (param.type === "text") {
+                const placeholder = `{{${index + 1}}}`;
+                bodyText = bodyText.replace(placeholder, param.text || "");
+              }
+            });
+          }
+          
+          if (bodyText) {
+            structuredTemplateData.push({
+              type: "BODY" as const,
+              text: bodyText,
+              format: "TEXT" as const
+            });
+          }
+        }
+        
+        // Add footer component if exists
+        const footerComponent = templateData.components.find((comp: any) => comp.type === "FOOTER");
+        if (footerComponent) {
+          structuredTemplateData.push({
+            type: "FOOTER" as const,
+            text: footerComponent.text || "",
+            format: "TEXT" as const
+          });
+        }
+        
+        return structuredTemplateData;
+      })() : undefined,
     });
 
     // Send message via WhatsApp API
@@ -303,10 +411,14 @@ export async function POST(request: Request) {
                 code: "en_US",
               },
               components: [
-                {
+                ...(headerParams && headerParams.length > 0 ? [{
+                  type: "header",
+                  parameters: headerParams,
+                }] : []),
+                ...(bodyParams && bodyParams.length > 0 ? [{
                   type: "body",
-                  parameters: templateParams,
-                },
+                  parameters: bodyParams,
+                }] : []),
               ],
             },
           }
@@ -347,6 +459,8 @@ export async function POST(request: Request) {
       );
 
       const result = await response.json();
+
+      console.log("result", result);
 
       // Update message with WhatsApp ID and status
       await prisma.whatsAppMessage.update({

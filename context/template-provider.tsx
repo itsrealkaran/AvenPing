@@ -6,8 +6,10 @@ import React, {
   useContext,
   useState,
   ReactNode,
+  useEffect,
 } from "react";
 import { toast } from "sonner";
+import { useUser } from "./user-context";
 
 interface Template {
   id: string;
@@ -69,6 +71,14 @@ export function TemplateProvider({ children }: TemplateProviderProps) {
   >(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
+
+  const { userInfo } = useUser();
+
+  useEffect(() => {
+    if (userInfo?.whatsappAccount?.id) {
+      setSelectedWhatsAppAccountId(userInfo.whatsappAccount.id);
+    }
+  }, [userInfo, setSelectedWhatsAppAccountId]);
 
   const fetchTemplates = async (
     whatsAppAccountId: string

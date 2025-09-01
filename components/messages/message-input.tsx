@@ -21,12 +21,16 @@ import { Input } from "@/components/ui/input";
 import axios from "axios";
 import { useUser } from "@/context/user-context";
 import { toast } from "sonner";
+import SearchableDropdown from "../ui/searchable-dropdown";
+import { useTemplates } from "@/context/template-provider";
+import { TemplateVariableModal } from "./template-variable-modal";
 
 interface MessageInputProps {
   onSendMessage: (content: string, media?: { type: string; mediaId: string }) => void;
+  onSendTemplate?: (templateName: string, variables: any[]) => void;
 }
 
-const MessageInput = ({ onSendMessage }: MessageInputProps) => {
+const MessageInput = ({ onSendMessage, onSendTemplate }: MessageInputProps) => {
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
@@ -37,6 +41,10 @@ const MessageInput = ({ onSendMessage }: MessageInputProps) => {
   const [attachmentPreview, setAttachmentPreview] = useState<string>("");
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [audioDuration, setAudioDuration] = useState(0);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+
+  const { templates, isLoading: templatesLoading } = useTemplates();
 
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -300,6 +308,15 @@ const MessageInput = ({ onSendMessage }: MessageInputProps) => {
     return `${mins}:${secs < 10 ? "0" + secs : secs}`;
   };
 
+  const handleSendTemplate = async (templateName: string, variables: any[]) => {
+    if (onSendTemplate) {
+      console.log("Sending template:", templateName, variables);
+      onSendTemplate(templateName, variables);
+    } else {
+      console.log("No onSendTemplate function provided");
+    }
+  };
+
   // Render media preview
   const renderMediaPreview = () => {
     if (!attachment || !attachmentPreview) return null;
@@ -440,17 +457,43 @@ const MessageInput = ({ onSendMessage }: MessageInputProps) => {
 
             <hr className="my-1 border-gray-200" />
 
-            <button
-              onClick={() => {
-                setShowAttachmentMenu(false);
-                // Placeholder for template functionality
-                onSendMessage("I'm sending a template message");
-              }}
-              className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-md transition-colors w-full text-left"
-            >
-              <FileText size={18} className="text-amber-500" />
-              <span>Template</span>
-            </button>
+            {templatesLoading ? (
+              <div className="flex items-center gap-3 p-2 text-gray-500">
+                <FileText size={18} className="text-amber-500" />
+                <span>Loading templates...</span>
+              </div>
+            ) : templates.length > 0 ? (
+              <SearchableDropdown
+                items={templates.map((template) => ({
+                  id: template.id,
+                  label: template.name,
+                  value: template.id,
+                  description: `${template.status} • ${template.category} • ${template.language}`,
+                }))}
+                onSelect={(item) => {
+                  const template = templates.find(t => t.id === item.id);
+                  if (template) {
+                    setSelectedTemplate(template);
+                    setShowTemplateModal(true);
+                    setShowAttachmentMenu(false);
+                  }
+                }}
+                placeholder="Select Template"
+                variant="outline"
+                className="w-full"
+                buttonContent={
+                  <div className="flex items-center gap-3">
+                    <FileText size={18} className="text-amber-500" />
+                    <span>Templates ({templates.length})</span>
+                  </div>
+                }
+              />
+            ) : (
+              <div className="flex items-center gap-3 p-2 text-gray-500">
+                <FileText size={18} className="text-amber-500" />
+                <span>No templates available</span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -543,6 +586,17 @@ const MessageInput = ({ onSendMessage }: MessageInputProps) => {
           </form>
         </div>
       )}
+
+      {/* Template Variable Modal */}
+      <TemplateVariableModal
+        open={showTemplateModal}
+        onClose={() => {
+          setShowTemplateModal(false);
+          setSelectedTemplate(null);
+        }}
+        template={selectedTemplate}
+        onSendTemplate={handleSendTemplate}
+      />
     </div>
   );
 };

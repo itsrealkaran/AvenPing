@@ -16,16 +16,19 @@ import {
   UserPlus2,
 } from "lucide-react";
 import { useMessages } from "@/context/messages-context";
+import { useUser } from "@/context/user-context";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import axios from "axios";
 import { generateColorFromString, getFirstLetter } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface MessagePanelProps {
   conversation: Conversation;
   onSendMessage: (
     content: string,
-    media?: { type: string; mediaId: string }
+    media?: { type: string; mediaId: string },
+    templateName?: string
   ) => void;
 }
 
@@ -52,6 +55,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
   const scrollToBottomRef = useRef<(() => void) | null>(null);
 
   const { getConversation } = useMessages();
+  const { userInfo } = useUser();
 
   // Track if we've already loaded the conversation to prevent duplicate calls
   const hasLoadedConversation = useRef(false);
@@ -146,13 +150,115 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
   // Handle sending message and scroll to bottom
   const handleSendMessage = async (
     content: string,
-    media?: { type: string; mediaId: string }
+    media?: { type: string; mediaId: string },
   ) => {
-    await onSendMessage(content, media);
+    onSendMessage(content, media);
     // Scroll to bottom after sending message
     setTimeout(() => {
       scrollToBottom();
     }, 200);
+  };
+
+  const handleSendTemplateMessage = async (
+    templateId: string,
+    variables: any[]
+  ) => {
+    // Send template message with variables
+    try {
+      // Sort variables by their index to ensure correct order
+      const sortedVariables = variables.sort((a, b) => a.variableIndex - b.variableIndex);
+      
+      // Separate variables by component type for proper WhatsApp API structure
+      const headerParams = sortedVariables
+        .filter(variable => variable.componentType === "HEADER")
+        .map(variable => {
+          if (variable.format === "TEXT") {
+            return {
+              type: "text",
+              text: variable.value || variable.fallbackValue || `Variable ${variable.variableIndex}`
+            };
+          } else {
+            // For media parameters, use the correct WhatsApp API structure
+            return {
+              type: variable.format?.toLowerCase() || "text",
+              ...(variable.mediaId && { 
+                [variable.format?.toLowerCase() === "image" ? "image" : 
+                 variable.format?.toLowerCase() === "video" ? "video" : 
+                 variable.format?.toLowerCase() === "document" ? "document" : "image"]: {
+                  id: variable.mediaId
+                }
+              })
+            };
+          }
+        });
+
+      const bodyParams = sortedVariables
+        .filter(variable => variable.componentType === "BODY")
+        .map(variable => {
+          if (variable.format === "TEXT") {
+            return {
+              type: "text",
+              text: variable.value || variable.fallbackValue || `Variable ${variable.variableIndex}`
+            };
+          } else {
+            // For media parameters, use the correct WhatsApp API structure
+            return {
+              type: variable.format?.toLowerCase() || "text",
+              ...(variable.mediaId && { 
+                [variable.format?.toLowerCase() === "image" ? "image" : 
+                 variable.format?.toLowerCase() === "video" ? "video" : 
+                 variable.format?.toLowerCase() === "document" ? "document" : "image"]: {
+                  id: variable.mediaId
+                }
+              })
+            };
+          }
+        });
+
+      // For now, send all parameters as body parameters (this is the current approach)
+      const templateParams = bodyParams;
+
+      console.log("Template variables debug:", {
+        sortedVariables: sortedVariables.map(v => ({
+          index: v.variableIndex,
+          component: v.componentType,
+          format: v.format,
+          value: v.value || v.fallbackValue
+        })),
+        headerParams,
+        bodyParams,
+        templateParams
+      });
+
+      console.log("Sending template with params:", {
+        templateId,
+        templateParams,
+        variablesCount: templateParams.length,
+        originalVariables: variables
+      });
+
+      const response = await axios.post(
+        `/api/whatsapp/messages?phoneNumberId=${userInfo?.whatsappAccount?.activePhoneNumber?.id}`,
+        {
+          recipientId: currentConversation.id,
+          templateId: templateId,
+          templateParams: templateParams,
+          headerParams: headerParams,
+          bodyParams: bodyParams
+        }
+      );
+      
+      // Scroll to bottom after sending message
+      setTimeout(() => {
+        scrollToBottom();
+      }, 200);
+      
+      // Reload conversation to show the new message
+      loadConversation(currentConversation.id);
+    } catch (error) {
+      console.error("Error sending template message:", error);
+      toast.error("Failed to send template message");
+    }
   };
 
   // Load more messages when scrolling to top
@@ -572,7 +678,10 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
       </div>
 
       <div className="p-3 border-t border-gray-200 bg-white flex-shrink-0">
-        <MessageInput onSendMessage={handleSendMessage} />
+        <MessageInput 
+          onSendMessage={handleSendMessage} 
+          onSendTemplate={handleSendTemplateMessage}
+        />
       </div>
     </div>
   );
