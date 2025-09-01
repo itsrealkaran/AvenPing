@@ -84,7 +84,15 @@ export default function FlowPage() {
       setEditingFlow(null);
       setInitialNodes([]);
       setInitialEdges([]);
-    } catch (error) {
+      toast.success("Flow saved successfully!");
+    } catch (error: any) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+          ? error
+          : "An unknown error occurred";
+      toast.error(errorMessage);
       console.error("Failed to save flow:", error);
     }
   };
@@ -225,17 +233,8 @@ export default function FlowPage() {
     },
   ];
 
-  useEffect(() => {
-    if (error) {
-      toast.error(error);
-      clearError();
-    }
-  }, [error, clearError]);
-
   return (
     <Body title="Flows">
-      {/* Error toast handled in useEffect, nothing rendered here */}
-
       {showBuilder ? (
         <>
           <div className="mb-4">

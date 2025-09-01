@@ -611,8 +611,6 @@ export default function FlowBuilder({
       status,
       date,
     });
-
-    toast.success("Flow saved successfully!");
     onSave(flowJson);
     setShowSaveModal(false);
     setFlowName("");

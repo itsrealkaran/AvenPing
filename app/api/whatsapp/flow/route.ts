@@ -49,7 +49,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, triggers, automationJson, status = "INACTIVE" } = await req.json();
+    const body = await req.json();
+    
+    const { name, triggers, automationJson, status = "INACTIVE" } = body;
+
+    // Validate required fields
+    if (!name || !triggers || !automationJson) {
+      console.log("Missing required fields:", { name: !!name, triggers: !!triggers, automationJson: !!automationJson });
+      return NextResponse.json({ 
+        error: "Missing required fields: name, triggers, and automationJson are required" 
+      }, { status: 400 });
+    }
 
     // Get the user's WhatsApp account
     const user = await prisma.user.findUnique({
@@ -82,8 +92,21 @@ export async function POST(req: NextRequest) {
       },
     });
     
-    if (existingFlows.find(flow => flow.automationJson.find((t: any) => t.triggers.find((t: any) => triggers.some((t: any) => t.trigger === t.trigger))))) {
-      return NextResponse.json({ error: "Trigger already exists" }, { status: 400 });
+    // Check for trigger conflicts
+    const hasTriggerConflict = existingFlows.some(flow => {
+      return flow.automationJson.some((automation: any) => {
+        if (automation.triggers && Array.isArray(automation.triggers)) {
+          return automation.triggers.some((existingTrigger: string) => 
+            triggers.includes(existingTrigger)
+          );
+        }
+        return false;
+      });
+    });
+    
+    if (hasTriggerConflict) {
+      console.log("Trigger conflict detected:", { triggers, existingFlows: existingFlows.map(f => f.automationJson) });
+      return NextResponse.json({ error: "One or more triggers already exist in another flow" }, { status: 400 });
     }
 
     const flow = await prisma.whatsAppFlow.create({
@@ -97,10 +120,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    console.log("Flow created successfully:", flow.id);
     return NextResponse.json(flow);
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("Error in POST /api/whatsapp/flow:", error);
+    return NextResponse.json({ 
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : "Unknown error"
+    }, { status: 500 });
   }
 }
 

@@ -94,7 +94,7 @@ export async function validateContactLimit(
   if (currentContactsCount >= maxContacts) {
     return {
       isValid: false,
-      error: `Max contacts of ${maxContacts} reached, Buy more contacts addon if you want to add more contacts`,
+      error: `Max limit of ${maxContacts} contacts reached, Buy more contacts addon if you want to add more contacts`,
       maxContacts
     };
   }
@@ -152,7 +152,7 @@ export async function validateFlowLimit(
   if (currentFlowsCount >= maxFlows) {
     return {
       isValid: false,
-      error: `Max flows of ${maxFlows} reached, Buy more flows addon if you want to add more flows`,
+      error: `Max limit of ${maxFlows} flows reached, Buy more flows addon if you want to add more flows`,
       maxFlows
     };
   }

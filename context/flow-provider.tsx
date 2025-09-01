@@ -259,7 +259,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
           return await createFlow(newFlow);
         }
       } catch (err: any) {
-        const errorMessage = err.response?.data?.error || "Failed to save flow";
+        const errorMessage = err|| "Failed to save flow";
         setError(errorMessage);
         throw new Error(errorMessage);
       }
