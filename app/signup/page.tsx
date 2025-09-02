@@ -4,7 +4,7 @@ import type React from "react";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Info } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 import Navbar from "@/components/landing/navbar";
@@ -29,6 +29,24 @@ interface SignupData {
   email: string;
   password: string;
   confirm_password: string;
+}
+
+interface PriceJson {
+  US: number;
+  IND: number;
+  ASIA: number;
+}
+
+interface Addon {
+  id: string;
+  name: string;
+  monthlyPriceJson: string; // JSON string from API
+  yearlyPriceJson: string; // JSON string from API
+  features: string[];
+  isAddOn: boolean;
+  isActivated?: boolean;
+  isActive?: boolean;
+  quantity?: number | null;
 }
 
 const industries = [
@@ -125,7 +143,7 @@ function SignupContent() {
   };
 
   const nextStep = () => {
-    if (currentStep < 7) {
+    if (currentStep < 8) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -168,7 +186,12 @@ function SignupContent() {
   };
 
   const handleSkipWhatsApp = () => {
-    setCurrentStep(8);
+    fetch("/api/auth/signup/complete", {
+      method: "POST",
+      credentials: "include",
+    }).then(() => {
+      window.location.href = "/dashboard";
+    });
   };
 
   const handleShowPaymentModal = (
@@ -183,7 +206,7 @@ function SignupContent() {
   };
 
   const handleShowAddonPaymentModal = (
-    addon: any,
+    addon: Addon,
     period: "month" | "year",
     region: "US" | "IND" | "ASIA",
     months: number,
@@ -251,8 +274,23 @@ function SignupContent() {
     region: "US" | "IND" | "ASIA"
   ) => {
     if (!plan) return 0;
-    const priceJson =
+
+    let priceJson: PriceJson;
+    const priceJsonString =
       period === "month" ? plan.monthlyPriceJson : plan.yearlyPriceJson;
+
+    // Handle both string format (addons) and object format (plans)
+    if (typeof priceJsonString === "string") {
+      try {
+        priceJson = JSON.parse(priceJsonString);
+      } catch (error) {
+        console.error("Error parsing price JSON:", error);
+        return 0;
+      }
+    } else {
+      priceJson = priceJsonString;
+    }
+
     const basePrice = priceJson?.[region] || 0;
 
     // For addons, multiply by months and quantity
@@ -461,10 +499,30 @@ function SignupContent() {
             <div className="space-y-2">
               <div>
                 <label
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1"
                   htmlFor="password"
                 >
-                  Password
+                  Enter Password
+                  {/* Tooltip for password requirements */}
+                  <span className="relative group ml-1">
+                    <Info size={16} className="cursor-pointer" />
+                    <div className="absolute left-1/2 z-10 hidden group-hover:block group-focus:block -translate-x-1/2 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700">
+                      <div className="font-semibold mb-1 text-gray-900">
+                        Password must contain:
+                      </div>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>At least 8 characters</li>
+                        <li>At least one uppercase letter</li>
+                        <li>At least one lowercase letter</li>
+                        <li>At least one number</li>
+                        <li>
+                          At least one special character
+                          <br />
+                          (e.g. !@#$%^&amp;*)
+                        </li>
+                      </ul>
+                    </div>
+                  </span>
                 </label>
                 <div className="relative">
                   <input
@@ -489,25 +547,57 @@ function SignupContent() {
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
-                <div className="flex items-center mt-2">
-                  <span
-                    className={`text-xs font-medium ${
-                      formData.password.length >= 8
-                        ? "text-green-600"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {formData.password.length > 0 &&
-                      formData.confirm_password.length === 0 &&
-                      (formData.password.length >= 8
-                        ? "Strong password"
-                        : "* Password should be at least 8 characters long")}
-                  </span>
-                </div>
+                {/* Password strength validation - show only the first unmet requirement */}
+                {formData.password.length > 0 &&
+                  (() => {
+                    const requirements = [
+                      {
+                        test: (pw: string) => pw.length >= 8,
+                        message: "At least 8 characters",
+                      },
+                      {
+                        test: (pw: string) => /[A-Z]/.test(pw),
+                        message: "At least one uppercase letter",
+                      },
+                      {
+                        test: (pw: string) => /[a-z]/.test(pw),
+                        message: "At least one lowercase letter",
+                      },
+                      {
+                        test: (pw: string) => /\d/.test(pw),
+                        message: "At least one number",
+                      },
+                      {
+                        test: (pw: string) =>
+                          /[!@#$%^&*(),.?\":{}|<>]/.test(pw),
+                        message: "At least one special character",
+                      },
+                    ];
+                    const firstUnmet = requirements.find(
+                      (r) => !r.test(formData.password)
+                    );
+                    if (firstUnmet) {
+                      return (
+                        <div className="flex items-center mt-2">
+                          <span className="text-xs font-medium text-red-500">
+                            ✗ {firstUnmet.message}
+                          </span>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="flex items-center mt-2">
+                          <span className="text-xs font-medium text-green-600">
+                            Strong password
+                          </span>
+                        </div>
+                      );
+                    }
+                  })()}
               </div>
               <div>
                 <label
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
                   htmlFor="confirm_password"
                 >
                   Confirm Password
@@ -573,6 +663,22 @@ function SignupContent() {
 
       case 7:
         return (
+          <AddonsStep
+            onNext={nextStep}
+            onShowPaymentModal={(addon, months, quantity, period, region) => {
+              handleShowAddonPaymentModal(
+                addon,
+                period,
+                region,
+                months,
+                quantity
+              );
+            }}
+          />
+        );
+
+      case 8:
+        return (
           <div className="min-h-[260px] flex flex-col justify-center space-y-6">
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-cyan-100 rounded-full flex items-center justify-center">
@@ -604,7 +710,7 @@ function SignupContent() {
               <button
                 type="button"
                 onClick={handleConnectWhatsApp}
-                disabled={isConnectingWhatsApp}
+                disabled={isConnectingWhatsApp || whatsappStatus.isConnected}
                 className="w-full px-6 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isConnectingWhatsApp ? (
@@ -629,15 +735,6 @@ function SignupContent() {
               </button>
             </div>
           </div>
-        );
-
-      case 8:
-        return (
-          <AddonsStep
-            onNext={nextStep}
-            onBack={prevStep}
-            onShowPaymentModal={handleShowAddonPaymentModal}
-          />
         );
 
       default:
@@ -681,13 +778,13 @@ function SignupContent() {
         <Navbar />
 
         {/* Main Form Card */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border-4 border-black/10 p-6 sm:p-8 w-full max-h-[70vh] max-w-lg overflow-y-auto">
-          <form onSubmit={handleSubmit}>
-            {renderStep()}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border-4 border-black/10 p-6 sm:p-8 w-full max-h-[70vh] min-h-[70vh] max-w-lg flex flex-col">
+          <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+            <div className="flex-1">{renderStep()}</div>
 
             {/* Navigation Buttons */}
             {currentStep < 6 && (
-              <div className="flex items-center justify-between mt-8">
+              <div className="flex items-center justify-between mt-8 bottom-2">
                 <button
                   type="button"
                   onClick={prevStep}

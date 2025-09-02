@@ -163,48 +163,6 @@ export default function PaymentStep({
     onShowPaymentModal(selectedPlan, isYearly ? "year" : "month", region);
   };
 
-  // Handle free trial selection
-  const handleFreeTrial = async () => {
-    try {
-      setIsFreeTrialLoading(true);
-
-      const response = await fetch("/api/subscription/free-trial", {
-        method: "GET",
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-
-        if (data.success) {
-          toast.success(
-            "Free trial activated successfully! Redirecting to dashboard..."
-          );
-          // Redirect to dashboard after a short delay
-          setTimeout(() => {
-            window.location.href = "/dashboard";
-          }, 1500);
-        } else {
-          toast.error(data.error || "Failed to activate free trial");
-        }
-      } else {
-        const errorData = await response.json();
-        if (errorData.error === "Free trial already redeemed") {
-          toast.error(
-            "You have already used your free trial. Please select a paid plan."
-          );
-        } else {
-          toast.error(errorData.error || "Failed to activate free trial");
-        }
-      }
-    } catch (error) {
-      console.error("Error activating free trial:", error);
-      toast.error("An error occurred while activating free trial");
-    } finally {
-      setIsFreeTrialLoading(false);
-    }
-  };
-
   // Check for payment success from URL parameters
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -394,10 +352,14 @@ export default function PaymentStep({
               </span>
               <div className="flex flex-1 justify-between gap-4">
                 <div className="flex flex-col">
-                  <span className="text-2xl font-300 text-gray-800 mt-2 animate-pulse">
+                  <span className="text-2xl font-300 text-gray-800 mt-1 animate-pulse">
                     {`00`}
+                    <span className="text-lg font-medium text-gray-600">
+                      /month
+                    </span>
                   </span>
-                  <div className="flex items-center gap-1 mt-2 text-xs">
+
+                  <div className="flex items-center gap-1 mt-1 text-xs">
                     <span className="font-semibold animate-pulse">
                       Billed annually
                     </span>
