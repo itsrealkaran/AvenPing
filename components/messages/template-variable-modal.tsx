@@ -413,7 +413,7 @@ export function TemplateVariableModal({
                 Configure Template Variables
               </h2>
               <p className="text-sm text-gray-600 mt-1">
-                Fill in the variables for "{template.name}" template
+                Fill in the variables for &quot;{template.name}&quot; template
               </p>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose}>
