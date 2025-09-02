@@ -1,33 +1,33 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react"
-import Link from "next/link"
-import { toast } from "sonner"
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("")
-  const [otp, setOtp] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [step, setStep] = useState<"email" | "otp" | "password">("email")
-  const [loading, setLoading] = useState(false)
-  const [countdown, setCountdown] = useState(0)
-  const [otpVerified, setOtpVerified] = useState(false)
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [step, setStep] = useState<"email" | "otp" | "password">("email");
+  const [loading, setLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [otpVerified, setOtpVerified] = useState(false);
 
   const handleSendOTP = async () => {
     if (!email) {
-      toast.error("Please enter your email address")
-      return
+      toast.error("Please enter your email address");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
       const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
@@ -35,37 +35,37 @@ export default function ForgotPasswordPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (response.ok) {
-        toast.success("OTP sent to your email!")
-        setStep("otp")
-        setOtpVerified(false) // Reset verification state
-        startCountdown()
+        toast.success("OTP sent to your email!");
+        setStep("otp");
+        setOtpVerified(false); // Reset verification state
+        startCountdown();
       } else {
-        toast.error(data.error || "Failed to send OTP")
+        toast.error(data.error || "Failed to send OTP");
       }
     } catch (error) {
-      toast.error("Something went wrong. Please try again.")
+      toast.error("Something went wrong. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleVerifyOTP = async () => {
     if (!otp) {
-      toast.error("Please enter the OTP")
-      return
+      toast.error("Please enter the OTP");
+      return;
     }
 
     if (otp.length !== 6) {
-      toast.error("Please enter a valid 6-digit OTP")
-      return
+      toast.error("Please enter a valid 6-digit OTP");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
       // Verify OTP with the backend
       const response = await fetch("/api/auth/verify-otp", {
@@ -74,41 +74,41 @@ export default function ForgotPasswordPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, otp }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (response.ok) {
-        toast.success("OTP verified successfully!")
-        setOtpVerified(true)
-        setStep("password")
+        toast.success("OTP verified successfully!");
+        setOtpVerified(true);
+        setStep("password");
       } else {
-        toast.error(data.error || "Invalid OTP. Please try again.")
+        toast.error(data.error || "Invalid OTP. Please try again.");
       }
     } catch (error) {
-      toast.error("Something went wrong. Please try again.")
+      toast.error("Something went wrong. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleResetPassword = async () => {
     if (!newPassword || !confirmPassword) {
-      toast.error("Please fill in all fields")
-      return
+      toast.error("Please fill in all fields");
+      return;
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match")
-      return
+      toast.error("Passwords do not match");
+      return;
     }
 
     if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters long")
-      return
+      toast.error("Password must be at least 6 characters long");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
       const response = await fetch("/api/auth/reset-password", {
         method: "POST",
@@ -116,56 +116,178 @@ export default function ForgotPasswordPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, otp, newPassword }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (response.ok) {
-        toast.success("Password reset successfully!")
+        toast.success("Password reset successfully!");
         // Redirect to login page
-        window.location.href = "/login"
+        window.location.href = "/login";
       } else {
-        toast.error(data.error || "Failed to reset password")
+        toast.error(data.error || "Failed to reset password");
       }
     } catch (error) {
-      toast.error("Something went wrong. Please try again.")
+      toast.error("Something went wrong. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const startCountdown = () => {
-    setCountdown(300) // 5 minutes
+    setCountdown(300); // 5 minutes
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          clearInterval(timer)
-          return 0
+          clearInterval(timer);
+          return 0;
         }
-        return prev - 1
-      })
-    }, 1000)
-  }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, "0")}`
-  }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   const resendOTP = () => {
     if (countdown === 0) {
-      handleSendOTP()
+      handleSendOTP();
     }
-  }
+  };
+
+  const handleOpenEmail = () => {
+    if (!email) {
+      toast.error("No email address available");
+      return;
+    }
+
+    // Extract domain from email
+    const domain = email.split("@")[1]?.toLowerCase();
+
+    if (!domain) {
+      toast.error("Invalid email format");
+      return;
+    }
+
+    // Email provider inbox URLs mapping with search parameters
+    const emailProviders: { [key: string]: string } = {
+      // Gmail
+      "gmail.com":
+        "https://mail.google.com/mail/u/0/#search/from%3Aforgot-password%40avenping.com",
+      "googlemail.com":
+        "https://mail.google.com/mail/u/0/#search/from%3Aforgot-password%40avenping.com",
+
+      // Outlook/Hotmail
+      "outlook.com":
+        "https://outlook.live.com/mail/0/#search/from%3Aforgot-password%40avenping.com",
+      "hotmail.com":
+        "https://outlook.live.com/mail/0/#search/from%3Aforgot-password%40avenping.com",
+      "live.com":
+        "https://outlook.live.com/mail/0/#search/from%3Aforgot-password%40avenping.com",
+      "msn.com":
+        "https://outlook.live.com/mail/0/#search/from%3Aforgot-password%40avenping.com",
+
+      // Yahoo
+      "yahoo.com":
+        "https://mail.yahoo.com/d/search/keyword=from%3Aforgot-password%40avenping.com",
+      "yahoo.co.uk":
+        "https://mail.yahoo.co.uk/d/search/keyword=from%3Aforgot-password%40avenping.com",
+      "yahoo.ca":
+        "https://mail.yahoo.ca/d/search/keyword=from%3Aforgot-password%40avenping.com",
+      "yahoo.com.au":
+        "https://mail.yahoo.com.au/d/search/keyword=from%3Aforgot-password%40avenping.com",
+      "ymail.com":
+        "https://mail.yahoo.com/d/search/keyword=from%3Aforgot-password%40avenping.com",
+      "rocketmail.com":
+        "https://mail.yahoo.com/d/search/keyword=from%3Aforgot-password%40avenping.com",
+
+      // Apple iCloud
+      "icloud.com": "https://www.icloud.com/mail/",
+      "me.com": "https://www.icloud.com/mail/",
+      "mac.com": "https://www.icloud.com/mail/",
+
+      // ProtonMail
+      "protonmail.com": "https://mail.protonmail.com/",
+      "proton.me": "https://mail.protonmail.com/",
+
+      // Zoho
+      "zoho.com":
+        "https://mail.zoho.com/zm/#search/from%3Aforgot-password%40avenping.com",
+      "zohomail.com":
+        "https://mail.zoho.com/zm/#search/from%3Aforgot-password%40avenping.com",
+
+      // AOL
+      "aol.com": "https://mail.aol.com/webmail-std/en-us/suite",
+      "aim.com": "https://mail.aol.com/webmail-std/en-us/suite",
+
+      // FastMail
+      "fastmail.com": "https://www.fastmail.com/mail/",
+      "fastmail.fm": "https://www.fastmail.com/mail/",
+
+      // Tutanota
+      "tutanota.com": "https://mail.tutanota.com/",
+      "tutamail.com": "https://mail.tutanota.com/",
+
+      // Mail.com
+      "mail.com": "https://www.mail.com/",
+
+      // GMX
+      "gmx.com": "https://www.gmx.com/mail/",
+      "gmx.de": "https://www.gmx.com/mail/",
+      "gmx.net": "https://www.gmx.com/mail/",
+
+      // Yandex
+      "yandex.com": "https://mail.yandex.com/",
+      "yandex.ru": "https://mail.yandex.com/",
+      "yandex.by": "https://mail.yandex.com/",
+      "yandex.kz": "https://mail.yandex.com/",
+      "yandex.ua": "https://mail.yandex.com/",
+
+      // QQ Mail
+      "qq.com": "https://mail.qq.com/",
+
+      // 163.com
+      "163.com": "https://mail.163.com/",
+      "126.com": "https://mail.126.com/",
+      "sina.com": "https://mail.sina.com.cn/",
+      "sohu.com": "https://mail.sohu.com/",
+    };
+
+    // Check if we have a direct inbox URL for this provider
+    const inboxUrl = emailProviders[domain];
+
+    if (inboxUrl) {
+      // Open the specific provider's inbox with search parameters
+      window.open(inboxUrl, "_blank");
+      toast.success(`Opening ${domain} inbox...`);
+    } else {
+      // For unknown providers, try to open their website
+      const genericMailUrl = `https://${domain}`;
+      const newWindow = window.open(genericMailUrl, "_blank");
+
+      if (newWindow) {
+        toast.warning(
+          `Opening ${domain} website. Please search for emails from forgot-password@avenping.com`
+        );
+      } else {
+        // Fallback to mailto if popup is blocked
+        window.open(`mailto:${email}`, "_blank");
+        toast.info(`Opening default email client for ${email}`);
+      }
+    }
+  };
 
   // Security check - prevent direct access to password step
   useEffect(() => {
     if (step === "password" && !otpVerified) {
-      setStep("email")
-      toast.error("Please complete the OTP verification first")
+      setStep("email");
+      toast.error("Please complete the OTP verification first");
     }
-  }, [step, otpVerified])
+  }, [step, otpVerified]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -198,7 +320,10 @@ export default function ForgotPasswordPage() {
             {step === "email" && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                  <Label
+                    htmlFor="email"
+                    className="text-sm font-medium text-gray-700"
+                  >
                     Email Address
                   </Label>
                   <div className="relative">
@@ -228,7 +353,10 @@ export default function ForgotPasswordPage() {
             {step === "otp" && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="otp" className="text-sm font-medium text-gray-700">
+                  <Label
+                    htmlFor="otp"
+                    className="text-sm font-medium text-gray-700"
+                  >
                     6-Digit Code
                   </Label>
                   <Input
@@ -236,18 +364,25 @@ export default function ForgotPasswordPage() {
                     type="text"
                     placeholder="Enter 6-digit code"
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    onChange={(e) =>
+                      setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
                     maxLength={6}
                     className="text-center text-lg tracking-widest"
                   />
                 </div>
 
-                {/* Countdown Timer */}
-                {countdown > 0 && (
-                  <div className="text-center text-sm text-gray-500">
-                    Code expires in: {formatTime(countdown)}
-                  </div>
-                )}
+                <div className="flex justify-center">
+                  <Button
+                    onClick={resendOTP}
+                    disabled={countdown > 0}
+                    variant="link"
+                  >
+                    {countdown > 0
+                      ? `Resend in ${formatTime(countdown)}`
+                      : "Resend Code"}
+                  </Button>
+                </div>
 
                 <div className="space-y-3">
                   <Button
@@ -261,9 +396,9 @@ export default function ForgotPasswordPage() {
                   <div className="flex gap-2">
                     <Button
                       onClick={() => {
-                        setStep("email")
-                        setOtp("")
-                        setOtpVerified(false)
+                        setStep("email");
+                        setOtp("");
+                        setOtpVerified(false);
                       }}
                       variant="outline"
                       className="flex-1"
@@ -272,12 +407,12 @@ export default function ForgotPasswordPage() {
                     </Button>
 
                     <Button
-                      onClick={resendOTP}
-                      disabled={countdown > 0}
+                      onClick={handleOpenEmail}
                       variant="outline"
                       className="flex-1"
                     >
-                      {countdown > 0 ? `Resend in ${formatTime(countdown)}` : "Resend Code"}
+                      Open Email
+                      <ExternalLink className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
@@ -288,7 +423,10 @@ export default function ForgotPasswordPage() {
             {step === "password" && otpVerified && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword" className="text-sm font-medium text-gray-700">
+                  <Label
+                    htmlFor="newPassword"
+                    className="text-sm font-medium text-gray-700"
+                  >
                     New Password
                   </Label>
                   <div className="relative">
@@ -306,13 +444,20 @@ export default function ForgotPasswordPage() {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+                  <Label
+                    htmlFor="confirmPassword"
+                    className="text-sm font-medium text-gray-700"
+                  >
                     Confirm New Password
                   </Label>
                   <div className="relative">
@@ -327,17 +472,28 @@ export default function ForgotPasswordPage() {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
-                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 </div>
 
                 <Button
                   onClick={handleResetPassword}
-                  disabled={loading || !newPassword || !confirmPassword || newPassword !== confirmPassword}
+                  disabled={
+                    loading ||
+                    !newPassword ||
+                    !confirmPassword ||
+                    newPassword !== confirmPassword
+                  }
                   className="w-full bg-cyan-500 hover:bg-cyan-600 text-white"
                 >
                   {loading ? "Resetting..." : "Reset Password"}
@@ -350,11 +506,14 @@ export default function ForgotPasswordPage() {
         {/* Footer */}
         <div className="mt-6 text-center text-sm text-gray-600">
           Remember your password?{" "}
-          <Link href="/login" className="text-cyan-600 hover:text-cyan-700 font-medium">
+          <Link
+            href="/login"
+            className="text-cyan-600 hover:text-cyan-700 font-medium"
+          >
             Sign in
           </Link>
         </div>
       </div>
     </div>
-  )
+  );
 }
