@@ -123,9 +123,7 @@ export async function GET(request: Request) {
       hasMore: item.messages.length > take,
       nextCursor: item.messages[0].id,
     }));
-    // @ts-ignore
-    console.log("items.messages[0].id", items[0].messages[0]);
-
+    
     // items = await Promise.all(
     //   items.map(async (item: any) => ({
     //     ...item,

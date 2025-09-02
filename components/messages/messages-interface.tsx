@@ -69,6 +69,7 @@ export type Conversation = {
   nextCursor?: string | null;
   hasMore?: boolean;
   updatedAt?: string;
+  labels?: string;
 };
 
 type FilterType = "all" | "unread" | "label";
@@ -240,27 +241,6 @@ const MessagesInterface = () => {
     };
 
     await sendMessage(newMessage, selectedConversationId);
-
-    // Update the selected conversation with the new message
-    const updatedConversations = conversations.map((conv) => {
-      if (conv.id === selectedConversationId) {
-        return {
-          ...conv,
-          messages: [
-            ...conv.messages,
-            {
-              ...newMessage,
-              id: `m${Date.now()}`,
-              createdAt: new Date().toISOString(),
-            },
-          ],
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return conv;
-    });
-
-    setSelectedConversationId(updatedConversations[0].id);
   };
 
   const handleConversationSelect = (conversation: Conversation) => {

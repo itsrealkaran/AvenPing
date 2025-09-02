@@ -4,6 +4,7 @@ import "./globals.css";
 import Script from "next/script";
 import { AppProvider } from "@/context/app-provider";
 import { Toaster } from "sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,7 +46,7 @@ export default function RootLayout({
               };
             `}
         </Script>
-        <AppProvider>{children}</AppProvider>
+        <AppProvider><TooltipProvider>{children}</TooltipProvider></AppProvider>
         <Toaster richColors position="bottom-right" />
       </body>
     </html>

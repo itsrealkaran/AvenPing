@@ -14,6 +14,7 @@ import {
   Loader2,
   Headphones,
   UserPlus2,
+  BookMarked,
 } from "lucide-react";
 import { useMessages } from "@/context/messages-context";
 import { useUser } from "@/context/user-context";
@@ -22,6 +23,8 @@ import { Input } from "@/components/ui/input";
 import axios from "axios";
 import { generateColorFromString, getFirstLetter } from "@/lib/utils";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import SearchableDropdown from "../ui/searchable-dropdown";
 
 interface MessagePanelProps {
   conversation: Conversation;
@@ -33,8 +36,11 @@ interface MessagePanelProps {
 }
 
 const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
-  // Use state for the current conversation
-  const [currentConversation, setCurrentConversation] = useState(conversation);
+  // Get conversations from context to ensure we get the latest data
+  const { conversations, labels, addConversationLabel } = useMessages();
+  
+  // Find the current conversation from the context data
+  const currentConversation = conversations?.find(conv => conv.id === conversation.id) || conversation;
 
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -42,6 +48,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [matchingMessageIds, setMatchingMessageIds] = useState<string[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showLabelsDropdown, setShowLabelsDropdown] = useState(false);
   const searchAttemptsRef = useRef(0);
   const [hasMoreMessages, setHasMoreMessages] = useState(
     conversation.hasMore || false
@@ -50,9 +57,10 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
     conversation.nextCursor || null
   );
   const [allMessages, setAllMessages] = useState<Message[]>(
-    conversation.messages
+    currentConversation.messages
   );
   const searchRef = useRef<HTMLDivElement>(null);
+  const labelsRef = useRef<HTMLDivElement>(null);
   const messageListRef = useRef<HTMLDivElement>(null);
   const scrollToBottomRef = useRef<(() => void) | null>(null);
 
@@ -94,25 +102,15 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
       const conversationData = await getConversation(conversationId, cursor);
       
       if (conversationData) {
-        console.log("Conversation loaded:", {
-          id: conversationData.id,
-          messagesCount: conversationData.messages.length,
-          hasMore: conversationData.hasMore,
-          nextCursor: conversationData.nextCursor,
-        });
-
         // Only update state if this is still the current conversation
         if (conversationId === conversation.id) {
-          setCurrentConversation(conversationData);
           setAllMessages(conversationData.messages);
           setNextCursor(conversationData.nextCursor || null);
           setHasMoreMessages(conversationData.hasMore || false);
           hasLoadedConversation.current = true;
         }
       } else {
-        console.log("No conversation found, resetting state");
         if (conversationId === conversation.id) {
-          setCurrentConversation(conversationData as any);
           setAllMessages([]);
           setNextCursor(null);
           setHasMoreMessages(false);
@@ -125,31 +123,30 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
     }
   }, [getConversation, conversation.id]);
 
+  // Update local state when currentConversation changes (from context updates)
+  useEffect(() => {
+    setAllMessages(currentConversation.messages);
+    setNextCursor(currentConversation.nextCursor || null);
+    setHasMoreMessages(currentConversation.hasMore || false);
+  }, [currentConversation.messages, currentConversation.nextCursor, currentConversation.hasMore]);
+
   // Sync state with prop so UI updates immediately on conversation switch
   useEffect(() => {
     // Reset state when conversation changes
     if (conversation.id !== currentConversation.id) {
-      console.log("Conversation changed, resetting state:", {
-        from: currentConversation.id,
-        to: conversation.id
-      });
-      console.log("conversation.nextCursor", conversation.nextCursor);
-      console.log("conversation.hasMore", conversation.hasMore);
-      
       // Reset all state for the new conversation
       hasLoadedConversation.current = false;
-      setCurrentConversation(conversation);
-      setAllMessages(conversation.messages);
+      setAllMessages(currentConversation.messages);
       
       // Initialize with conversation data, but also load full conversation data
       // to get accurate hasMore and nextCursor values
-      setNextCursor(conversation.nextCursor || null);
-      setHasMoreMessages(conversation.hasMore || false);
+      setNextCursor(currentConversation.nextCursor || null);
+      setHasMoreMessages(currentConversation.hasMore || false);
       
       // Load the full conversation data to get accurate pagination info
       loadConversation(conversation.id);
     }
-  }, [conversation.id, conversation.messages, conversation.nextCursor, conversation.hasMore, loadConversation]);
+  }, [conversation.id, currentConversation.id, currentConversation.messages, currentConversation.nextCursor, currentConversation.hasMore, loadConversation]);
 
   // Scroll to bottom when conversation changes
   useEffect(() => {
@@ -168,16 +165,6 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
       }, 100);
     }
   }, [allMessages.length]);
-
-  // Debug logging for infinite scroll state
-  useEffect(() => {
-    console.log("MessagePanel infinite scroll state:", {
-      hasMoreMessages,
-      isLoadingMore,
-      nextCursor,
-      messagesCount: allMessages.length,
-    });
-  }, [hasMoreMessages, isLoadingMore, nextCursor, allMessages.length]);
 
   // Ensure conversation is loaded on initial mount
   useEffect(() => {
@@ -264,25 +251,6 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
       // For now, send all parameters as body parameters (this is the current approach)
       const templateParams = bodyParams;
 
-      console.log("Template variables debug:", {
-        sortedVariables: sortedVariables.map(v => ({
-          index: v.variableIndex,
-          component: v.componentType,
-          format: v.format,
-          value: v.value || v.fallbackValue
-        })),
-        headerParams,
-        bodyParams,
-        templateParams
-      });
-
-      console.log("Sending template with params:", {
-        templateId,
-        templateParams,
-        variablesCount: templateParams.length,
-        originalVariables: variables
-      });
-
       const response = await axios.post(
         `/api/whatsapp/messages?phoneNumberId=${userInfo?.whatsappAccount?.activePhoneNumber?.id}`,
         {
@@ -293,6 +261,20 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
           bodyParams: bodyParams
         }
       );
+
+      // update the messages state
+      setAllMessages(prevMessages => [...prevMessages, {
+        id: `m${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        message: templateId,
+        templateData: templateParams,
+        isOutbound: true,
+        phoneNumber: userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumber || "",
+        whatsAppPhoneNumberId: userInfo?.whatsappAccount?.activePhoneNumber?.id || "",
+        recipientId: currentConversation.id,
+        status: "SENT",
+        updatedAt: new Date().toISOString(),
+      }]);
       
       // Scroll to bottom after sending message
       setTimeout(() => {
@@ -307,18 +289,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
 
   // Load more messages when scrolling to top
   const handleLoadMore = async () => {
-    console.log("handleLoadMore called:", {
-      isLoadingMore,
-      hasMoreMessages,
-      nextCursor,
-    });
-
     if (isLoadingMore || !hasMoreMessages || !nextCursor) {
-      console.log("handleLoadMore early return:", {
-        isLoadingMore,
-        hasMoreMessages,
-        nextCursor,
-      });
       return;
     }
 
@@ -497,16 +468,23 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
         setCurrentMatchIndex(0);
         searchAttemptsRef.current = 0;
       }
+      
+      if (
+        labelsRef.current &&
+        !labelsRef.current.contains(event.target as Node)
+      ) {
+        setShowLabelsDropdown(false);
+      }
     };
 
-    if (showSearch) {
+    if (showSearch || showLabelsDropdown) {
       document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [showSearch]);
+  }, [showSearch, showLabelsDropdown]);
 
   const handleSearchToggle = () => {
     setShowSearch(!showSearch);
@@ -554,6 +532,22 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
     }
   };
 
+  // Label handlers
+  const handleLabelsToggle = () => {
+    setShowLabelsDropdown(!showLabelsDropdown);
+  };
+
+  const handleLabelSelect = async (item: { id: string; label: string; value: string }) => {
+    try {
+      await addConversationLabel(currentConversation.id, item.id);
+      setShowLabelsDropdown(false);
+      toast.success(`Label "${item.label}" applied to conversation`);
+    } catch (error) {
+      console.error('Error applying label:', error);
+      toast.error('Failed to apply label');
+    }
+  };
+
   // Use currentConversation for name and phoneNumber
   const { name, phoneNumber } = currentConversation;
 
@@ -578,24 +572,61 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
         </div>
 
         <div className="flex items-center gap-6">
-          <button className="text-gray-500 hover:text-gray-700">
-            <UserPlus2 size={18} />
-          </button>
-          <button className="text-gray-500 hover:text-gray-700">
-            <Headphones size={18} />
-          </button>
-          <button className="text-gray-500 hover:text-gray-700">
-            <Bookmark size={18} />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="text-gray-500 hover:text-gray-700">
+                <Headphones size={18} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Intervene</TooltipContent>
+          </Tooltip>
+          <div className="relative" ref={labelsRef}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  className="text-gray-500 hover:text-gray-700"
+                  onClick={handleLabelsToggle}
+                >
+                  <SearchableDropdown
+                    items={
+                      labels
+                        ? labels.map((label) => ({
+                            id: label.id,
+                            label: label.name,
+                            value: label.name,
+                          }))
+                        : []
+                    }
+                    onSelect={handleLabelSelect}
+                    className="pt-2"
+                    buttonContent={
+                      <Bookmark size={18} fill={currentConversation.labels && currentConversation.labels.length > 0 ? "#000" : "none"} />
+                    }
+                  />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Labels</TooltipContent>
+            </Tooltip>
+            
+            {showLabelsDropdown && (
+              <div className="absolute top-full right-0 mt-2 z-50">
+              </div>
+            )}
+          </div>
           <div className="relative" ref={searchRef}>
-            <button
-              className={`text-gray-500 hover:text-gray-700 flex items-center justify-center ${
-                showSearch ? "text-blue-600" : ""
-              }`}
-              onClick={handleSearchToggle}
-            >
-              <Search size={18} />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className={`text-gray-500 hover:text-gray-700 flex items-center justify-center ${
+                    showSearch ? "text-blue-600" : ""
+                  }`}
+                  onClick={handleSearchToggle}
+                >
+                  <Search size={18} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Search messages</TooltipContent>
+            </Tooltip>
 
             {showSearch && (
               <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">

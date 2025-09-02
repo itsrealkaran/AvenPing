@@ -79,7 +79,7 @@ const SearchableDropdown = ({
       {isOpen && (
         <div
           className={cn(
-            "absolute w-32 z-50 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg",
+            "absolute right-2 w-32 z-50 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg",
             variant === "outline" && "w-full"
           )}
         >

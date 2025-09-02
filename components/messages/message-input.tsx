@@ -169,6 +169,7 @@ const MessageInput = ({ onSendMessage, onSendTemplate, isMessageWindowOpen }: Me
 
       // Create preview URL for images and videos
       if (attachmentType === "image" || attachmentType === "video" || attachmentType === "document" || attachmentType === "audio") {
+        toast.loading("Uploading file...", { id: "upload-progress" });
 
         const mediaId = await axios.post("/api/whatsapp/upload-file", formData,  {
           headers: {
@@ -177,13 +178,14 @@ const MessageInput = ({ onSendMessage, onSendTemplate, isMessageWindowOpen }: Me
         });
 
         if (mediaId.status !== 200) {
-          toast.error("Failed to upload file");
+          toast.error("Failed to upload file", { id: "upload-progress" });
           throw new Error("Failed to upload file");
         }
 
         setAttachment({ name: file.name, type: attachmentType, size: file.size, mediaId: mediaId.data.mediaId });
         setAttachmentType(attachmentType);
         setAttachmentPreview(URL.createObjectURL(file));
+        toast.success("File uploaded successfully!", { id: "upload-progress" });
       }
 
       // Handle audio files
@@ -423,7 +425,7 @@ const MessageInput = ({ onSendMessage, onSendTemplate, isMessageWindowOpen }: Me
           ref={attachmentMenuRef}
           className="absolute bottom-full mb-2 left-4 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
         >
-          <div className="p-2 grid grid-cols-1 gap-1 w-48">
+          <div className="p-2 grid grid-cols-1 gap-1 min-h-48 w-48">
             {/* Only show media attachments if message window is open */}
             {isMessageWindowOpen && (
               <>
@@ -477,6 +479,7 @@ const MessageInput = ({ onSendMessage, onSendTemplate, isMessageWindowOpen }: Me
                   value: template.id,
                   description: `${template.status} • ${template.category} • ${template.language}`,
                 }))}
+                className=""
                 onSelect={(item) => {
                   const template = templates.find(t => t.id === item.id);
                   if (template) {
@@ -487,7 +490,6 @@ const MessageInput = ({ onSendMessage, onSendTemplate, isMessageWindowOpen }: Me
                 }}
                 placeholder="Select Template"
                 variant="outline"
-                className="w-full"
                 buttonContent={
                   <div className="flex items-center gap-3">
                     <FileText size={18} className="text-amber-500" />

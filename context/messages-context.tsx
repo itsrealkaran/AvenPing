@@ -63,6 +63,7 @@ interface Conversation {
   nextCursor?: string | null;
   hasMore?: boolean;
   updatedAt?: string;
+  labels?: string;
 }
 
 interface MessagesContextType {
@@ -90,6 +91,8 @@ interface MessagesContextType {
     conversationId: string,
     unreadCount: number
   ) => void;
+  addConversationLabel: (conversationId: string, labelId: string) => Promise<{ success: boolean }>;
+  removeConversationLabel: (conversationId: string, labelId: string) => Promise<{ success: boolean }>;
   createLabel: (labelData: {
     name: string;
     description?: string;
@@ -228,7 +231,8 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["messages", phoneNumberId] });
+      // Don't invalidate queries - we're using optimistic updates
+      // The message is already shown in the UI via optimistic update
     },
   });
 
@@ -266,21 +270,40 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       message: Omit<Message, "id" | "createdAt">,
       recipientId: string
     ) => {
+      // Create optimistic message first
+      const optimisticMessage: Message = {
+        ...message,
+        id: `temp-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      };
+      
+      // Update cache immediately for optimistic UI
+      const cached = messageCache.current.get(recipientId) || [];
+      messageCache.current.set(recipientId, [...cached, optimisticMessage]);
+      
+      // Update the React Query cache immediately - append message to existing array
+      queryClient.setQueryData(
+        ["messages", phoneNumberId, debouncedSearchQuery, label],
+        (oldData: Conversation[] | undefined) => {
+          if (!oldData) return oldData;
+          return oldData.map((conv) => {
+            if (conv.id === recipientId) {
+              return {
+                ...conv,
+                messages: [...conv.messages, optimisticMessage],
+                updatedAt: new Date().toISOString(),
+              };
+            }
+            return conv;
+          });
+        }
+      );
+      
+      // Then send the actual message
       await sendMessageMutation.mutateAsync({
         newMessage: message,
         recipientId,
       });
-      // Optimistically update cache for the recipient conversation
-      if (recipientId) {
-        const cached = messageCache.current.get(recipientId) || [];
-        // Create a fake message object for cache (id and createdAt will be replaced by backend on next fetch)
-        const fakeMessage: Message = {
-          ...message,
-          id: `temp-${Date.now()}`,
-          createdAt: new Date().toISOString(),
-        };
-        messageCache.current.set(recipientId, [...cached, fakeMessage]);
-      }
     },
     deleteMessage: async (messageId: string) => {
       await deleteMessageMutation.mutateAsync(messageId);
@@ -408,6 +431,122 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           });
         }
       );
+    },
+    addConversationLabel: async (conversationId: string, labelId: string) => {
+      try {
+        // Find the label to get its name
+        const label = labels?.find((l: Label) => l.id === labelId);
+        if (!label) {
+          throw new Error('Label not found');
+        }
+
+        // Make API call to add recipient to label
+        await axios.post(`/api/whatsapp/label/${labelId}`, {
+          recipientId: conversationId
+        });
+
+        // Update the cache optimistically
+        queryClient.setQueryData(
+          ["messages", phoneNumberId, debouncedSearchQuery, label],
+          (oldData: Conversation[] | undefined) => {
+            if (!oldData) return oldData;
+            return oldData.map((conv) => {
+              if (conv.id === conversationId) {
+                return {
+                  ...conv,
+                  labels: conv.labels ? `${conv.labels},${label.name}` : label.name,
+                };
+              }
+              return conv;
+            });
+          }
+        );
+
+        // Also update other query keys that might be cached
+        queryClient.setQueryData(
+          ["messages", phoneNumberId, debouncedSearchQuery, ""],
+          (oldData: Conversation[] | undefined) => {
+            if (!oldData) return oldData;
+            return oldData.map((conv) => {
+              if (conv.id === conversationId) {
+                return {
+                  ...conv,
+                  labels: conv.labels ? `${conv.labels},${label.name}` : label.name,
+                };
+              }
+              return conv;
+            });
+          }
+        );
+
+        return { success: true };
+      } catch (error) {
+        console.error('Error adding conversation label:', error);
+        throw error;
+      }
+    },
+    removeConversationLabel: async (conversationId: string, labelId: string) => {
+      try {
+        // Find the label to get its name
+        const label = labels?.find((l: Label) => l.id === labelId);
+        if (!label) {
+          throw new Error('Label not found');
+        }
+
+        // Make API call to remove recipient from label
+        await axios.put(`/api/whatsapp/label/${labelId}`, {
+          recipientId: conversationId
+        });
+
+        // Update the cache optimistically
+        queryClient.setQueryData(
+          ["messages", phoneNumberId, debouncedSearchQuery, label],
+          (oldData: Conversation[] | undefined) => {
+            if (!oldData) return oldData;
+            return oldData.map((conv) => {
+              if (conv.id === conversationId) {
+                const currentLabels = conv.labels || '';
+                const updatedLabels = currentLabels
+                  .split(',')
+                  .filter(l => l.trim() !== label.name)
+                  .join(',');
+                return {
+                  ...conv,
+                  labels: updatedLabels || undefined,
+                };
+              }
+              return conv;
+            });
+          }
+        );
+
+        // Also update other query keys that might be cached
+        queryClient.setQueryData(
+          ["messages", phoneNumberId, debouncedSearchQuery, ""],
+          (oldData: Conversation[] | undefined) => {
+            if (!oldData) return oldData;
+            return oldData.map((conv) => {
+              if (conv.id === conversationId) {
+                const currentLabels = conv.labels || '';
+                const updatedLabels = currentLabels
+                  .split(',')
+                  .filter(l => l.trim() !== label.name)
+                  .join(',');
+                return {
+                  ...conv,
+                  labels: updatedLabels || undefined,
+                };
+              }
+              return conv;
+            });
+          }
+        );
+
+        return { success: true };
+      } catch (error) {
+        console.error('Error removing conversation label:', error);
+        throw error;
+      }
     },
     createLabel: async (labelData: {
       name: string;
