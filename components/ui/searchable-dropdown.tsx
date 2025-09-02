@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,7 @@ interface SearchableDropdownProps {
     id: string;
     label: string;
     value: string;
+    isSelected?: boolean;
   }[];
   placeholder?: string;
   onSelect: (item: { id: string; label: string; value: string }) => void;
@@ -100,7 +101,7 @@ const SearchableDropdown = ({
               filteredItems.map((item) => (
                 <div
                   key={item.id}
-                  className={`px-3 py-1.5 hover:bg-gray-100 cursor-pointer text-sm ${
+                  className={`px-3 py-1.5 hover:bg-gray-100 cursor-pointer text-sm flex items-center justify-between ${
                     selectedLabel === item.label
                       ? "bg-gray-50 text-gray-900"
                       : "text-gray-700"
@@ -111,7 +112,10 @@ const SearchableDropdown = ({
                     setIsOpen(false);
                   }}
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  {item.isSelected && (
+                    <Check className="h-4 w-4 text-green-600" />
+                  )}
                 </div>
               ))
             ) : (

@@ -24,7 +24,7 @@ export type Message = {
   id: string;
   wamid?: string;
   status: "SENT" | "DELIVERED" | "READ" | "PENDING" | "FAILED";
-  message: string;
+  message: string | null;
   mediaIds?: string[];
   templateData?: Array<{
     type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
@@ -69,7 +69,7 @@ export type Conversation = {
   nextCursor?: string | null;
   hasMore?: boolean;
   updatedAt?: string;
-  labels?: string;
+  labels?: Array<{ name: string; description?: string; color: string }>;
 };
 
 type FilterType = "all" | "unread" | "label";

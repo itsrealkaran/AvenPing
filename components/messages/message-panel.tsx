@@ -37,7 +37,13 @@ interface MessagePanelProps {
 
 const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
   // Get conversations from context to ensure we get the latest data
-  const { conversations, labels, addConversationLabel } = useMessages();
+  const { conversations, 
+    labels, 
+    addConversationLabel, 
+    removeConversationLabel, 
+    getConversation, 
+    sendTemplateMessage: contextSendTemplateMessage
+  } = useMessages();
   
   // Find the current conversation from the context data
   const currentConversation = conversations?.find(conv => conv.id === conversation.id) || conversation;
@@ -79,9 +85,6 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
       setIsMessageWindowOpen(diffHours < 23);
     }
   }, [allMessages]);
-
-  const { getConversation } = useMessages();
-  const { userInfo } = useUser();
 
   // Track if we've already loaded the conversation to prevent duplicate calls
   const hasLoadedConversation = useRef(false);
@@ -192,89 +195,13 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
     }, 200);
   };
 
+
   const handleSendTemplateMessage = async (
     templateId: string,
     variables: any[]
   ) => {
-    // Send template message with variables
     try {
-      // Sort variables by their index to ensure correct order
-      const sortedVariables = variables.sort((a, b) => a.variableIndex - b.variableIndex);
-      
-      // Separate variables by component type for proper WhatsApp API structure
-      const headerParams = sortedVariables
-        .filter(variable => variable.componentType === "HEADER")
-        .map(variable => {
-          if (variable.format === "TEXT") {
-            return {
-              type: "text",
-              text: variable.value || variable.fallbackValue || `Variable ${variable.variableIndex}`
-            };
-          } else {
-            // For media parameters, use the correct WhatsApp API structure
-            return {
-              type: variable.format?.toLowerCase() || "text",
-              ...(variable.mediaId && { 
-                [variable.format?.toLowerCase() === "image" ? "image" : 
-                 variable.format?.toLowerCase() === "video" ? "video" : 
-                 variable.format?.toLowerCase() === "document" ? "document" : "image"]: {
-                  id: variable.mediaId
-                }
-              })
-            };
-          }
-        });
-
-      const bodyParams = sortedVariables
-        .filter(variable => variable.componentType === "BODY")
-        .map(variable => {
-          if (variable.format === "TEXT") {
-            return {
-              type: "text",
-              text: variable.value || variable.fallbackValue || `Variable ${variable.variableIndex}`
-            };
-          } else {
-            // For media parameters, use the correct WhatsApp API structure
-            return {
-              type: variable.format?.toLowerCase() || "text",
-              ...(variable.mediaId && { 
-                [variable.format?.toLowerCase() === "image" ? "image" : 
-                 variable.format?.toLowerCase() === "video" ? "video" : 
-                 variable.format?.toLowerCase() === "document" ? "document" : "image"]: {
-                  id: variable.mediaId
-                }
-              })
-            };
-          }
-        });
-
-      // For now, send all parameters as body parameters (this is the current approach)
-      const templateParams = bodyParams;
-
-      const response = await axios.post(
-        `/api/whatsapp/messages?phoneNumberId=${userInfo?.whatsappAccount?.activePhoneNumber?.id}`,
-        {
-          recipientId: currentConversation.id,
-          templateId: templateId,
-          templateParams: templateParams,
-          headerParams: headerParams,
-          bodyParams: bodyParams
-        }
-      );
-
-      // update the messages state
-      setAllMessages(prevMessages => [...prevMessages, {
-        id: `m${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        message: templateId,
-        templateData: templateParams,
-        isOutbound: true,
-        phoneNumber: userInfo?.whatsappAccount?.activePhoneNumber?.phoneNumber || "",
-        whatsAppPhoneNumberId: userInfo?.whatsappAccount?.activePhoneNumber?.id || "",
-        recipientId: currentConversation.id,
-        status: "SENT",
-        updatedAt: new Date().toISOString(),
-      }]);
+      await contextSendTemplateMessage(templateId, variables, currentConversation.id);
       
       // Scroll to bottom after sending message
       setTimeout(() => {
@@ -351,7 +278,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
     const matchingIds = allMessages
       .filter((message) =>
         message.message
-          .toLowerCase()
+          ?.toLowerCase()
           .includes(debouncedSearchQuery.toLowerCase())
       )
       .map((message) => message.id);
@@ -397,7 +324,7 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
         const newMatchingIds = newConversation.messages
           .filter((message) =>
             message.message
-              .toLowerCase()
+              ?.toLowerCase()
               .includes(debouncedSearchQuery.toLowerCase())
           )
           .map((message) => message.id);
@@ -539,12 +466,30 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
 
   const handleLabelSelect = async (item: { id: string; label: string; value: string }) => {
     try {
-      await addConversationLabel(currentConversation.id, item.id);
-      setShowLabelsDropdown(false);
-      toast.success(`Label "${item.label}" applied to conversation`);
+      if (currentConversation.labels && currentConversation.labels.find((l: any) => l.name === item.label)) {
+        toast.loading(`Removing label "${item.label}" from conversation`, {
+          id: "remove-label",
+        });
+        await removeConversationLabel(currentConversation.id, item.id);
+        setShowLabelsDropdown(false);
+        toast.success(`Label "${item.label}" removed from conversation`, {
+          id: "remove-label",
+        });
+      } else {
+        toast.loading(`Adding label "${item.label}" to conversation`, {
+          id: "add-label",
+        });
+        await addConversationLabel(currentConversation.id, item.id);
+        setShowLabelsDropdown(false);
+        toast.success(`Label "${item.label}" applied to conversation`, {
+          id: "add-label",
+        });
+      }
     } catch (error) {
       console.error('Error applying label:', error);
-      toast.error('Failed to apply label');
+      toast.error('Failed to apply label', {
+        id: "add-label",
+      });
     }
   };
 
@@ -594,6 +539,9 @@ const MessagePanel = ({ conversation, onSendMessage }: MessagePanelProps) => {
                             id: label.id,
                             label: label.name,
                             value: label.name,
+                            isSelected: currentConversation.labels
+                              ? currentConversation.labels.map((l: any) => l.name.trim()).includes(label.name)
+                              : false,
                           }))
                         : []
                     }

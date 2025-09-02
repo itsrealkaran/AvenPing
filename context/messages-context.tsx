@@ -18,7 +18,7 @@ interface Message {
   id: string;
   wamid?: string;
   status: "SENT" | "DELIVERED" | "READ" | "PENDING" | "FAILED";
-  message: string;
+  message: string | null;
   mediaIds?: string[];
   templateData?: Array<{
     type: "HEADER" | "BODY" | "FOOTER" | "BUTTON" | "BUTTONS";
@@ -63,7 +63,7 @@ interface Conversation {
   nextCursor?: string | null;
   hasMore?: boolean;
   updatedAt?: string;
-  labels?: string;
+  labels?: Array<{ name: string; description?: string; color: string }>;
 }
 
 interface MessagesContextType {
@@ -74,6 +74,11 @@ interface MessagesContextType {
   setSearchQuery: (query: string) => void;
   sendMessage: (
     message: Omit<Message, "id" | "createdAt">,
+    recipientId: string
+  ) => Promise<void>;
+  sendTemplateMessage: (
+    templateId: string,
+    variables: any[],
     recipientId: string
   ) => Promise<void>;
   deleteMessage: (messageId: string) => Promise<void>;
@@ -236,6 +241,132 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Send template message mutation
+  const sendTemplateMessageMutation = useMutation({
+    mutationFn: async ({
+      templateId,
+      variables,
+      recipientId,
+    }: {
+      templateId: string;
+      variables: any[];
+      recipientId: string;
+    }) => {
+      // Sort variables by their index to ensure correct order
+      const sortedVariables = variables.sort((a, b) => a.variableIndex - b.variableIndex);
+      
+      // Separate variables by component type for proper WhatsApp API structure
+      const headerParams = sortedVariables
+        .filter(variable => variable.componentType === "HEADER")
+        .map(variable => {
+          if (variable.format === "TEXT") {
+            return {
+              type: "text",
+              text: variable.value || variable.fallbackValue || `Variable ${variable.variableIndex}`
+            };
+          } else {
+            // For media parameters, use the correct WhatsApp API structure
+            return {
+              type: variable.format?.toLowerCase() || "text",
+              ...(variable.mediaId && { 
+                [variable.format?.toLowerCase() === "image" ? "image" : 
+                 variable.format?.toLowerCase() === "video" ? "video" : 
+                 variable.format?.toLowerCase() === "document" ? "document" : "image"]: {
+                  id: variable.mediaId
+                }
+              })
+            };
+          }
+        });
+
+      const bodyParams = sortedVariables
+        .filter(variable => variable.componentType === "BODY")
+        .map(variable => {
+          if (variable.format === "TEXT") {
+            return {
+              type: "text",
+              text: variable.value || variable.fallbackValue || `Variable ${variable.variableIndex}`
+            };
+          } else {
+            // For media parameters, use the correct WhatsApp API structure
+            return {
+              type: variable.format?.toLowerCase() || "text",
+              ...(variable.mediaId && { 
+                [variable.format?.toLowerCase() === "image" ? "image" : 
+                 variable.format?.toLowerCase() === "video" ? "video" : 
+                 variable.format?.toLowerCase() === "document" ? "document" : "image"]: {
+                  id: variable.mediaId
+                }
+              })
+            };
+          }
+        });
+
+      const response = await axios.post(
+        `/api/whatsapp/messages?phoneNumberId=${phoneNumberId}`,
+        {
+          recipientId: recipientId,
+          templateId: templateId,
+          templateParams: bodyParams,
+          headerParams: headerParams,
+          bodyParams: bodyParams
+        }
+      );
+      return response.data;
+    },
+    onSuccess: (data, variables) => {
+      // Update the optimistic message with the real message data from the API response
+      if (data && data.id) {
+        const realMessage: Message = {
+          id: data.id,
+          wamid: data.wamid,
+          message: data.message,
+          mediaIds: data.mediaIds || [],
+          templateData: data.templateData,
+          interactiveJson: data.interactiveJson,
+          isOutbound: data.isOutbound,
+          errorMessage: data.errorMessage,
+          phoneNumber: data.phoneNumber,
+          sentAt: data.sentAt,
+          deliveredAt: data.deliveredAt,
+          readAt: data.readAt,
+          whatsAppPhoneNumberId: data.whatsAppPhoneNumberId,
+          recipientId: data.recipientId,
+          status: data.status,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+        };
+
+        // Update the cache with the real message
+        const cached = messageCache.current.get(variables.recipientId) || [];
+        const updatedCache = cached.map(msg => 
+          msg.id.startsWith('temp-template-') ? realMessage : msg
+        );
+        messageCache.current.set(variables.recipientId, updatedCache);
+
+        // Update React Query cache
+        queryClient.setQueryData(
+          ["messages", phoneNumberId, debouncedSearchQuery, label],
+          (oldData: Conversation[] | undefined) => {
+            if (!oldData) return oldData;
+            return oldData.map((conv) => {
+              if (conv.id === variables.recipientId) {
+                return {
+                  ...conv,
+                  messages: conv.messages.map(msg => 
+                    msg.id.startsWith('temp-template-') ? realMessage : msg
+                  ),
+                  updatedAt: new Date().toISOString(),
+                };
+              }
+              return conv;
+            });
+          }
+        );
+      }
+    },
+  });
+
   // Delete message mutation
   const deleteMessageMutation = useMutation({
     mutationFn: async (messageId: string) => {
@@ -302,6 +433,70 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       // Then send the actual message
       await sendMessageMutation.mutateAsync({
         newMessage: message,
+        recipientId,
+      });
+    },
+    sendTemplateMessage: async (
+      templateId: string,
+      variables: any[],
+      recipientId: string
+    ) => {
+      // Create optimistic template message with structure matching the database response
+      const sortedVariables = variables.sort((a, b) => a.variableIndex - b.variableIndex);
+      
+      // Create templateData structure that matches the database format
+      const templateData = sortedVariables.map(variable => ({
+        text: variable.value || variable.fallbackValue || `Variable ${variable.variableIndex}`,
+        type: variable.componentType,
+        format: variable.format || "TEXT"
+      }));
+
+      const optimisticMessage: Message = {
+        id: `temp-template-${Date.now()}`,
+        wamid: undefined,
+        message: null, // Template messages have null message field
+        mediaIds: [],
+        templateData: templateData,
+        interactiveJson: null,
+        isOutbound: true,
+        errorMessage: null,
+        phoneNumber: user?.whatsappAccount?.phoneNumbers?.[0]?.phoneNumber || "",
+        sentAt: null,
+        deliveredAt: null,
+        readAt: null,
+        whatsAppPhoneNumberId: phoneNumberId || "",
+        recipientId: recipientId,
+        status: "PENDING",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      // Update cache immediately for optimistic UI
+      const cached = messageCache.current.get(recipientId) || [];
+      messageCache.current.set(recipientId, [...cached, optimisticMessage]);
+      
+      // Update the React Query cache immediately - append message to existing array
+      queryClient.setQueryData(
+        ["messages", phoneNumberId, debouncedSearchQuery, label],
+        (oldData: Conversation[] | undefined) => {
+          if (!oldData) return oldData;
+          return oldData.map((conv) => {
+            if (conv.id === recipientId) {
+              return {
+                ...conv,
+                messages: [...conv.messages, optimisticMessage],
+                updatedAt: new Date().toISOString(),
+              };
+            }
+            return conv;
+          });
+        }
+      );
+      
+      // Then send the actual template message
+      await sendTemplateMessageMutation.mutateAsync({
+        templateId,
+        variables,
         recipientId,
       });
     },
@@ -445,39 +640,34 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           recipientId: conversationId
         });
 
-        // Update the cache optimistically
-        queryClient.setQueryData(
+        // Update the cache optimistically for all possible query keys
+        const queryKeys = [
           ["messages", phoneNumberId, debouncedSearchQuery, label],
-          (oldData: Conversation[] | undefined) => {
-            if (!oldData) return oldData;
-            return oldData.map((conv) => {
-              if (conv.id === conversationId) {
-                return {
-                  ...conv,
-                  labels: conv.labels ? `${conv.labels},${label.name}` : label.name,
-                };
-              }
-              return conv;
-            });
-          }
-        );
-
-        // Also update other query keys that might be cached
-        queryClient.setQueryData(
           ["messages", phoneNumberId, debouncedSearchQuery, ""],
-          (oldData: Conversation[] | undefined) => {
+          ["messages", phoneNumberId, "", label],
+          ["messages", phoneNumberId, "", ""],
+        ];
+
+        queryKeys.forEach(queryKey => {
+          queryClient.setQueryData(queryKey, (oldData: Conversation[] | undefined) => {
             if (!oldData) return oldData;
             return oldData.map((conv) => {
               if (conv.id === conversationId) {
-                return {
-                  ...conv,
-                  labels: conv.labels ? `${conv.labels},${label.name}` : label.name,
-                };
+                const currentLabels = conv.labels || [];
+                // Check if label already exists to avoid duplicates
+                const labelExists = currentLabels.some((l: any) => l.name === label.name);
+                if (!labelExists) {
+                  return {
+                    ...conv,
+                    labels: [...currentLabels, { name: label.name, description: label.description, color: label.color }],
+                  };
+                }
+                return conv;
               }
               return conv;
             });
-          }
-        );
+          });
+        });
 
         return { success: true };
       } catch (error) {
@@ -498,49 +688,30 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           recipientId: conversationId
         });
 
-        // Update the cache optimistically
-        queryClient.setQueryData(
+        // Update the cache optimistically for all possible query keys
+        const queryKeys = [
           ["messages", phoneNumberId, debouncedSearchQuery, label],
-          (oldData: Conversation[] | undefined) => {
-            if (!oldData) return oldData;
-            return oldData.map((conv) => {
-              if (conv.id === conversationId) {
-                const currentLabels = conv.labels || '';
-                const updatedLabels = currentLabels
-                  .split(',')
-                  .filter(l => l.trim() !== label.name)
-                  .join(',');
-                return {
-                  ...conv,
-                  labels: updatedLabels || undefined,
-                };
-              }
-              return conv;
-            });
-          }
-        );
-
-        // Also update other query keys that might be cached
-        queryClient.setQueryData(
           ["messages", phoneNumberId, debouncedSearchQuery, ""],
-          (oldData: Conversation[] | undefined) => {
+          ["messages", phoneNumberId, "", label],
+          ["messages", phoneNumberId, "", ""],
+        ];
+
+        queryKeys.forEach(queryKey => {
+          queryClient.setQueryData(queryKey, (oldData: Conversation[] | undefined) => {
             if (!oldData) return oldData;
             return oldData.map((conv) => {
               if (conv.id === conversationId) {
-                const currentLabels = conv.labels || '';
-                const updatedLabels = currentLabels
-                  .split(',')
-                  .filter(l => l.trim() !== label.name)
-                  .join(',');
+                const currentLabels = conv.labels || [];
+                const updatedLabels = currentLabels.filter((l: any) => l.name !== label.name);
                 return {
                   ...conv,
-                  labels: updatedLabels || undefined,
+                  labels: updatedLabels,
                 };
               }
               return conv;
             });
-          }
-        );
+          });
+        });
 
         return { success: true };
       } catch (error) {
