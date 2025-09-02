@@ -47,8 +47,8 @@ export async function getPricingDetails(planName: string, planPeriod: "month" | 
     }
 
     // Safely derive price values
-    const monthlyPrice = plan?.monthlyPriceJson?.[region] ?? 0
-    const yearlyPrice = plan?.yearlyPriceJson?.[region] ?? 0
+    const monthlyPrice = typeof plan?.monthlyPriceJson === "string" ? JSON.parse(plan?.monthlyPriceJson)?.[region] : plan?.monthlyPriceJson?.[region] ?? 0
+    const yearlyPrice = typeof plan?.yearlyPriceJson === "string" ? JSON.parse(plan?.yearlyPriceJson)?.[region] : plan?.yearlyPriceJson?.[region] ?? 0
 
     if (isAddon) {
       const addonPlan = userPlans.find((plan: any) => plan.planName === planName)

@@ -10,6 +10,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const existingUser = await prisma.user.findUnique({
+      where: { id: session.userId as string },
+    })
+
+    if (!existingUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (existingUser.signupStatus !== "PAID") {
+      return NextResponse.json({ error: "Unpresisted Access" }, { status: 400 });
+    }
+
     const user = await prisma.user.update({
       where: { id: session.userId as string },
       data: {

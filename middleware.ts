@@ -58,10 +58,25 @@ export async function middleware(request: NextRequest) {
   try {
     const session = await getSessionFromRequest(request);
     
+    if (pathname.startsWith('/api')) return NextResponse.next();
+
+    // Normalize /signup to the correct status BEFORE allowing public routes
+    const isOnSignup = pathname === '/signup';
+    const currentSignupStatus = request.nextUrl.searchParams.get('status');
+    console.log(currentSignupStatus, "currentSignupStatus from middleware");
+    if (session && (session.signupStatus === 'REGISTERED' || session.signupStatus === 'PAID')) {
+      const desiredStatus = session.signupStatus === 'REGISTERED' ? 'registered' : 'paid';
+      const alreadyCorrect = isOnSignup && currentSignupStatus === desiredStatus;
+      if (!alreadyCorrect) {
+        const url = new URL('/signup', request.url);
+        url.searchParams.set('status', desiredStatus);
+        const redirectResponse = NextResponse.redirect(url);
+        redirectResponse.headers.set('x-middleware-cache', 'no-cache');
+        return redirectResponse;
+      }
+    }
     // Allow public routes without any checks
     if (publicRoutes.some((route) => pathname.startsWith(route))) {
-      
-      
       if (session && pathname.startsWith("/login")) {
         const url = new URL('/dashboard', request.url);
         const redirectResponse = NextResponse.redirect(url);
@@ -71,20 +86,6 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    console.log(session, "session from middleware");
-    if (pathname.startsWith('/api')) return NextResponse.next();
-    
-    if (session && session.signupStatus === 'REGISTERED' && !pathname.startsWith('/signup') ) {
-      const url = new URL('/signup?status=registered', request.url);
-      const redirectResponse = NextResponse.redirect(url);
-      redirectResponse.headers.set('x-middleware-cache', 'no-cache');
-      return redirectResponse;
-    } else if (session && session.signupStatus === 'PAID' && !pathname.startsWith('/signup')) {
-      const url = new URL('/signup?status=paid', request.url);
-      const redirectResponse = NextResponse.redirect(url);
-      redirectResponse.headers.set('x-middleware-cache', 'no-cache');
-      return redirectResponse;
-    }
 
     // Check if the current path requires authentication
     const requiresAuth = protectedRoutes.some((route) => pathname.startsWith(route));

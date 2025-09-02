@@ -356,9 +356,10 @@ function SignupContent() {
             .post("/api/whatsapp", {
               code: response.authResponse.code,
             })
-            .then((res) => {
+            .then(async (res) => {
               console.log(res.data);
               toast.success("WhatsApp connected successfully!");
+              await axios.post("/api/auth/signup/complete");
               router.push("/dashboard");
             })
             .catch((error) => {
@@ -661,23 +662,23 @@ function SignupContent() {
           />
         );
 
-      case 7:
-        return (
-          <AddonsStep
-            onNext={nextStep}
-            onShowPaymentModal={(addon, months, quantity, period, region) => {
-              handleShowAddonPaymentModal(
-                addon,
-                period,
-                region,
-                months,
-                quantity
-              );
-            }}
-          />
-        );
+      // case 7:
+      //   return (
+      //     <AddonsStep
+      //       onNext={nextStep}
+      //       onShowPaymentModal={(addon, months, quantity, period, region) => {
+      //         handleShowAddonPaymentModal(
+      //           addon,
+      //           period,
+      //           region,
+      //           months,
+      //           quantity
+      //         );
+      //       }}
+      //     />
+      //   );
 
-      case 8:
+      case 7:
         return (
           <div className="min-h-[260px] flex flex-col justify-center space-y-6">
             <div className="text-center">
@@ -760,8 +761,6 @@ function SignupContent() {
         return true; // Payment step is handled by the PaymentStep component
       case 7:
         return true; // WhatsApp connection step
-      case 8:
-        return true; // Addons step is handled by the AddonsStep component
       default:
         return false;
     }
@@ -828,7 +827,7 @@ function SignupContent() {
 
           {/* Progress Indicator */}
           <div className="flex items-center justify-center gap-2 mt-6">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((step) => (
+            {[1, 2, 3, 4, 5, 6, 7].map((step) => (
               <div
                 key={step}
                 className={`w-2 h-2 rounded-full transition-colors ${

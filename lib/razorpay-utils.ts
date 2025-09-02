@@ -89,6 +89,7 @@ export const initiateRazorpayPayment = async (
 
     // Create order
     const orderData = await createRazorpayOrder(planName, planPeriod, region, isAddon, months, quantity, redirectUrl)
+    console.log("orderData", orderData)
 
     const options: RazorpayOptions = {
       key: orderData.keyId,
