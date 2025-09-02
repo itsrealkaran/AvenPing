@@ -176,34 +176,46 @@ export default function ForgotPasswordPage() {
     // Email provider inbox URLs mapping with search parameters
     const emailProviders: { [key: string]: string } = {
       // Gmail
-      "gmail.com":
-        "https://mail.google.com/mail/u/0/#search/from%3Aforgot-password%40avenping.com",
-      "googlemail.com":
-        "https://mail.google.com/mail/u/0/#search/from%3Aforgot-password%40avenping.com",
+      "gmail.com": `https://mail.google.com/mail/u/${encodeURIComponent(
+        email
+      )}/#search/from%3Aforgot-password%40avenping.com`,
+      "googlemail.com": `https://mail.google.com/mail/u/${encodeURIComponent(
+        email
+      )}/#search/from%3Aforgot-password%40avenping.com`,
 
       // Outlook/Hotmail
-      "outlook.com":
-        "https://outlook.live.com/mail/0/#search/from%3Aforgot-password%40avenping.com",
-      "hotmail.com":
-        "https://outlook.live.com/mail/0/#search/from%3Aforgot-password%40avenping.com",
-      "live.com":
-        "https://outlook.live.com/mail/0/#search/from%3Aforgot-password%40avenping.com",
-      "msn.com":
-        "https://outlook.live.com/mail/0/#search/from%3Aforgot-password%40avenping.com",
+      "outlook.com": `https://outlook.live.com/mail/${encodeURIComponent(
+        email
+      )}/#search/from%3Aforgot-password%40avenping.com`,
+      "hotmail.com": `https://outlook.live.com/mail/${encodeURIComponent(
+        email
+      )}/#search/from%3Aforgot-password%40avenping.com`,
+      "live.com": `https://outlook.live.com/mail/${encodeURIComponent(
+        email
+      )}/#search/from%3Aforgot-password%40avenping.com`,
+      "msn.com": `https://outlook.live.com/mail/${encodeURIComponent(
+        email
+      )}/#search/from%3Aforgot-password%40avenping.com`,
 
       // Yahoo
-      "yahoo.com":
-        "https://mail.yahoo.com/d/search/keyword=from%3Aforgot-password%40avenping.com",
-      "yahoo.co.uk":
-        "https://mail.yahoo.co.uk/d/search/keyword=from%3Aforgot-password%40avenping.com",
-      "yahoo.ca":
-        "https://mail.yahoo.ca/d/search/keyword=from%3Aforgot-password%40avenping.com",
-      "yahoo.com.au":
-        "https://mail.yahoo.com.au/d/search/keyword=from%3Aforgot-password%40avenping.com",
-      "ymail.com":
-        "https://mail.yahoo.com/d/search/keyword=from%3Aforgot-password%40avenping.com",
-      "rocketmail.com":
-        "https://mail.yahoo.com/d/search/keyword=from%3Aforgot-password%40avenping.com",
+      "yahoo.com": `https://mail.yahoo.com/d/${encodeURIComponent(
+        email
+      )}/search/keyword=from%3Aforgot-password%40avenping.com`,
+      "yahoo.co.uk": `https://mail.yahoo.co.uk/d/${encodeURIComponent(
+        email
+      )}/search/keyword=from%3Aforgot-password%40avenping.com`,
+      "yahoo.ca": `https://mail.yahoo.ca/d/${encodeURIComponent(
+        email
+      )}/search/keyword=from%3Aforgot-password%40avenping.com`,
+      "yahoo.com.au": `https://mail.yahoo.com.au/d/${encodeURIComponent(
+        email
+      )}/search/keyword=from%3Aforgot-password%40avenping.com`,
+      "ymail.com": `https://mail.yahoo.com/d/${encodeURIComponent(
+        email
+      )}/search/keyword=from%3Aforgot-password%40avenping.com`,
+      "rocketmail.com": `https://mail.yahoo.com/d/${encodeURIComponent(
+        email
+      )}/search/keyword=from%3Aforgot-password%40avenping.com`,
 
       // Apple iCloud
       "icloud.com": "https://www.icloud.com/mail/",
@@ -215,10 +227,12 @@ export default function ForgotPasswordPage() {
       "proton.me": "https://mail.protonmail.com/",
 
       // Zoho
-      "zoho.com":
-        "https://mail.zoho.com/zm/#search/from%3Aforgot-password%40avenping.com",
-      "zohomail.com":
-        "https://mail.zoho.com/zm/#search/from%3Aforgot-password%40avenping.com",
+      "zoho.com": `https://mail.zoho.com/zm/${encodeURIComponent(
+        email
+      )}/#search/from%3Aforgot-password%40avenping.com`,
+      "zohomail.com": `https://mail.zoho.com/zm/${encodeURIComponent(
+        email
+      )}/#search/from%3Aforgot-password%40avenping.com`,
 
       // AOL
       "aol.com": "https://mail.aol.com/webmail-std/en-us/suite",
@@ -265,19 +279,227 @@ export default function ForgotPasswordPage() {
       window.open(inboxUrl, "_blank");
       toast.success(`Opening ${domain} inbox...`);
     } else {
-      // For unknown providers, try to open their website
-      const genericMailUrl = `https://${domain}`;
-      const newWindow = window.open(genericMailUrl, "_blank");
+      // For custom domains, try to detect the business email provider
+      const detectBusinessEmailProvider = async (
+        domain: string
+      ): Promise<string | null> => {
+        // Common business email provider patterns and their webmail URLs
+        const businessProviders = {
+          // Google Workspace (G Suite) - most common
+          "googlemail.com": `https://mail.google.com/mail/u/${encodeURIComponent(
+            email
+          )}/#search/from%3Aforgot-password%40avenping.com`,
+          "gmail.com": `https://mail.google.com/mail/u/${encodeURIComponent(
+            email
+          )}/#search/from%3Aforgot-password%40avenping.com`,
 
-      if (newWindow) {
-        toast.warning(
-          `Opening ${domain} website. Please search for emails from forgot-password@avenping.com`
-        );
-      } else {
-        // Fallback to mailto if popup is blocked
-        window.open(`mailto:${email}`, "_blank");
-        toast.info(`Opening default email client for ${email}`);
-      }
+          // Microsoft 365 / Office 365
+          "outlook.com": `https://outlook.live.com/mail/${encodeURIComponent(
+            email
+          )}/#search/from%3Aforgot-password%40avenping.com`,
+          "hotmail.com": `https://outlook.live.com/mail/${encodeURIComponent(
+            email
+          )}/#search/from%3Aforgot-password%40avenping.com`,
+          "live.com": `https://outlook.live.com/mail/${encodeURIComponent(
+            email
+          )}/#search/from%3Aforgot-password%40avenping.com`,
+          "msn.com": `https://outlook.live.com/mail/${encodeURIComponent(
+            email
+          )}/#search/from%3Aforgot-password%40avenping.com`,
+          "office365.com": `https://outlook.office365.com/mail/${encodeURIComponent(
+            email
+          )}/#search/from%3Aforgot-password%40avenping.com`,
+
+          // Zoho Mail
+          "zoho.com": `https://mail.zoho.com/zm/${encodeURIComponent(
+            email
+          )}/#search/from%3Aforgot-password%40avenping.com`,
+          "zohomail.com": `https://mail.zoho.com/zm/${encodeURIComponent(
+            email
+          )}/#search/from%3Aforgot-password%40avenping.com`,
+          "zohocorp.com": `https://mail.zoho.com/zm/${encodeURIComponent(
+            email
+          )}/#search/from%3Aforgot-password%40avenping.com`,
+
+          // Yahoo Business
+          "yahoo.com": `https://mail.yahoo.com/d/${encodeURIComponent(
+            email
+          )}/search/keyword=from%3Aforgot-password%40avenping.com`,
+          "ymail.com": `https://mail.yahoo.com/d/${encodeURIComponent(
+            email
+          )}/search/keyword=from%3Aforgot-password%40avenping.com`,
+          "rocketmail.com": `https://mail.yahoo.com/d/${encodeURIComponent(
+            email
+          )}/search/keyword=from%3Aforgot-password%40avenping.com`,
+        };
+
+        // Check for exact domain match first
+        if (Object.prototype.hasOwnProperty.call(businessProviders, domain)) {
+          return businessProviders[domain as keyof typeof businessProviders];
+        }
+
+        // Try to detect email provider using public APIs
+        try {
+          // Method 1: Use MXToolbox API (free, no API key required)
+          const mxResponse = await fetch(
+            `https://mxtoolbox.com/api/v1/lookup/mx/${domain}`,
+            {
+              method: "GET",
+              headers: {
+                Accept: "application/json",
+              },
+            }
+          );
+
+          if (mxResponse.ok) {
+            const mxData = await mxResponse.json();
+            if (mxData.Information && mxData.Information.length > 0) {
+              const mxRecord = mxData.Information[0].Name?.toLowerCase() || "";
+
+              // Map MX records to email providers
+              if (
+                mxRecord.includes("google") ||
+                mxRecord.includes("googlemail")
+              ) {
+                return `https://mail.google.com/mail/u/${encodeURIComponent(
+                  email
+                )}/#search/from%3Aforgot-password%40avenping.com`;
+              } else if (
+                mxRecord.includes("outlook") ||
+                mxRecord.includes("office365") ||
+                mxRecord.includes("microsoft")
+              ) {
+                return `https://outlook.office365.com/mail/${encodeURIComponent(
+                  email
+                )}/#search/from%3Aforgot-password%40avenping.com`;
+              } else if (mxRecord.includes("zoho")) {
+                return `https://mail.zoho.com/zm/${encodeURIComponent(
+                  email
+                )}/#search/from%3Aforgot-password%40avenping.com`;
+              } else if (mxRecord.includes("yahoo")) {
+                return `https://mail.yahoo.com/d/${encodeURIComponent(
+                  email
+                )}/search/keyword=from%3Aforgot-password%40avenping.com`;
+              }
+            }
+          }
+        } catch (error) {
+          console.log("MXToolbox API failed, trying alternative method");
+        }
+
+        try {
+          // Method 2: Use DNS lookup via a public DNS API
+          const dnsResponse = await fetch(
+            `https://dns.google/resolve?name=${domain}&type=MX`,
+            {
+              method: "GET",
+              headers: {
+                Accept: "application/json",
+              },
+            }
+          );
+
+          if (dnsResponse.ok) {
+            const dnsData = await dnsResponse.json();
+            if (dnsData.Answer && dnsData.Answer.length > 0) {
+              const mxRecord = dnsData.Answer[0].data?.toLowerCase() || "";
+
+              // Map MX records to email providers
+              if (
+                mxRecord.includes("google") ||
+                mxRecord.includes("googlemail")
+              ) {
+                return `https://mail.google.com/mail/u/${encodeURIComponent(
+                  email
+                )}/#search/from%3Aforgot-password%40avenping.com`;
+              } else if (
+                mxRecord.includes("outlook") ||
+                mxRecord.includes("office365") ||
+                mxRecord.includes("microsoft")
+              ) {
+                return `https://outlook.office365.com/mail/${encodeURIComponent(
+                  email
+                )}/#search/from%3Aforgot-password%40avenping.com`;
+              } else if (mxRecord.includes("zoho")) {
+                return `https://mail.zoho.com/zm/${encodeURIComponent(
+                  email
+                )}/#search/from%3Aforgot-password%40avenping.com`;
+              } else if (mxRecord.includes("yahoo")) {
+                return `https://mail.yahoo.com/d/${encodeURIComponent(
+                  email
+                )}/search/keyword=from%3Aforgot-password%40avenping.com`;
+              }
+            }
+          }
+        } catch (error) {
+          console.log("Google DNS API failed, falling back to default");
+        }
+
+        // Fallback: For custom domains, try the most common business email providers
+        // Most businesses use Google Workspace or Microsoft 365
+        const commonBusinessUrls = [
+          {
+            url: `https://mail.google.com/mail/u/${encodeURIComponent(
+              email
+            )}/#search/from%3Aforgot-password%40avenping.com`,
+            name: "Google Workspace",
+          },
+          {
+            url: `https://outlook.office365.com/mail/${encodeURIComponent(
+              email
+            )}/#search/from%3Aforgot-password%40avenping.com`,
+            name: "Microsoft 365",
+          },
+          {
+            url: `https://mail.zoho.com/zm/${encodeURIComponent(
+              email
+            )}/#search/from%3Aforgot-password%40avenping.com`,
+            name: "Zoho Mail",
+          },
+        ];
+
+        // Return the most common one (Google Workspace) for custom domains
+        return commonBusinessUrls[0].url;
+      };
+
+      detectBusinessEmailProvider(domain)
+        .then((businessProviderUrl) => {
+          if (businessProviderUrl) {
+            // Open the detected business provider's inbox
+            window.open(businessProviderUrl, "_blank");
+            toast.success(`Opening business email inbox for ${domain}...`);
+          } else {
+            // For unknown providers, try to open their website
+            const genericMailUrl = `https://${domain}`;
+            const newWindow = window.open(genericMailUrl, "_blank");
+
+            if (newWindow) {
+              toast.warning(
+                `Opening ${domain} website. Please search for emails from forgot-password@avenping.com`
+              );
+            } else {
+              // Fallback to mailto if popup is blocked
+              window.open(`mailto:${email}`, "_blank");
+              toast.info(`Opening default email client for ${email}`);
+            }
+          }
+        })
+        .catch((error) => {
+          console.error("Error detecting email provider:", error);
+          // Fallback to opening the domain website
+          const genericMailUrl = `https://${domain}`;
+          const newWindow = window.open(genericMailUrl, "_blank");
+
+          if (newWindow) {
+            toast.warning(
+              `Opening ${domain} website. Please search for emails from forgot-password@avenping.com`
+            );
+          } else {
+            // Fallback to mailto if popup is blocked
+            window.open(`mailto:${email}`, "_blank");
+            toast.info(`Opening default email client for ${email}`);
+          }
+        });
     }
   };
 
