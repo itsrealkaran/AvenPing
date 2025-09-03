@@ -52,6 +52,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     
     const { name, triggers, automationJson, status = "INACTIVE" } = body;
+    
+    // Ensure status is uppercase to match FlowStatus enum
+    const normalizedStatus = status?.toUpperCase() === "ACTIVE" ? "ACTIVE" : "INACTIVE";
 
     // Validate required fields
     if (!name || !triggers || !automationJson) {
@@ -115,7 +118,7 @@ export async function POST(req: NextRequest) {
         triggers,
         automationJson,
         recipientArray: [],
-        status,
+        status: normalizedStatus,
         accountId: user.whatsAppAccount.id,
       },
     });
@@ -213,7 +216,10 @@ export async function PUT(req: NextRequest) {
     if (name !== undefined) updateData.name = name;
     if (triggers !== undefined) updateData.triggers = triggers;
     if (automationJson !== undefined) updateData.automationJson = automationJson;
-    if (status !== undefined) updateData.status = status;
+    if (status !== undefined) {
+      // Ensure status is uppercase to match FlowStatus enum
+      updateData.status = status?.toUpperCase() === "ACTIVE" ? "ACTIVE" : "INACTIVE";
+    }
 
     const flow = await prisma.whatsAppFlow.update({
       where: { 

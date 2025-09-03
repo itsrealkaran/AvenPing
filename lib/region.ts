@@ -229,12 +229,18 @@ function getRegionFromCoordinates(latitude: number, longitude: number): Region {
 
 /**
  * Gets the user's region based on their location
- * Uses multiple methods: geolocation API, IP geolocation, and coordinate fallback
+ * Uses multiple methods: IP geolocation, browser geolocation fallback, and coordinate fallback
  * @returns Promise<Region>
  */
 export async function getUserRegion(): Promise<Region> {
   try {
-    // Method 1: Try browser geolocation first (most accurate)
+    // Method 1: Try IP-based geolocation first (most reliable, no permission required)
+    const ipData = await getIPGeolocationData();
+    if (ipData && ipData.countryCode) {
+      return getRegionFromCountryCode(ipData.countryCode);
+    }
+    
+    // Method 2: Fallback to browser geolocation (requires user permission)
     const geoData = await getGeolocationData();
     if (geoData) {
       if (geoData.countryCode) {
@@ -244,12 +250,6 @@ export async function getUserRegion(): Promise<Region> {
       if (geoData.latitude && geoData.longitude) {
         return getRegionFromCoordinates(geoData.latitude, geoData.longitude);
       }
-    }
-    
-    // Method 2: Fallback to IP-based geolocation
-    const ipData = await getIPGeolocationData();
-    if (ipData && ipData.countryCode) {
-      return getRegionFromCountryCode(ipData.countryCode);
     }
     
     // Method 3: Default to global if all methods fail

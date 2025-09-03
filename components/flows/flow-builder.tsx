@@ -601,7 +601,7 @@ export default function FlowBuilder({
     }
 
     const flowId = editingFlow?.id || `${+new Date()}`;
-    const status = editingFlow?.status || "active";
+    const status = editingFlow?.status || "ACTIVE";
     const date = editingFlow?.date || new Date().toISOString();
     const flowJson = buildFlowJson({
       nodes,
