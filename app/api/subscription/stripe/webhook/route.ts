@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import Stripe from "stripe"
 import { getTotalContactsOrFlows } from "@/lib/subscription-utils"
+import { sendPaymentSuccessEmail } from "@/lib/email-utils"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-06-30.basil",
@@ -75,6 +76,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         select: {
           signupStatus: true,
           plans: true,
+          email: true,
+          name: true,
         },
       })
 
@@ -96,6 +99,23 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
               ...(addonMaxLimit || {}),
             },
           })
+
+          // Send payment success email for addon update
+          if (userPlans?.email && userPlans?.name) {
+            try {
+              await sendPaymentSuccessEmail(
+                userPlans.email,
+                userPlans.name,
+                `${planName} Add-on (Updated)`,
+                session.amount_total ? session.amount_total / 100 : 0, // Convert from cents
+                `${months} month${months > 1 ? 's' : ''}`
+              )
+              console.log(`Payment success email sent to ${userPlans.email} for addon update`)
+            } catch (emailError) {
+              console.error('Error sending payment success email for addon update:', emailError)
+              // Don't throw error - email failure shouldn't break payment processing
+            }
+          }
           return
         }
 
@@ -117,6 +137,23 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
             ...(addonMaxLimit || {}),
           },
         })
+
+        // Send payment success email for addon
+        if (userPlans?.email && userPlans?.name) {
+          try {
+            await sendPaymentSuccessEmail(
+              userPlans.email,
+              userPlans.name,
+              `${planName} Add-on`,
+              session.amount_total ? session.amount_total / 100 : 0, // Convert from cents
+              `${months} month${months > 1 ? 's' : ''}`
+            )
+            console.log(`Payment success email sent to ${userPlans.email} for addon`)
+          } catch (emailError) {
+            console.error('Error sending payment success email for addon:', emailError)
+            // Don't throw error - email failure shouldn't break payment processing
+          }
+        }
         
         console.log(`Updated user ${userId} with addon ${planName} for ${quantity} × ${months} months`)
       } else {
@@ -151,6 +188,23 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
             signupStatus: signupStatus,
           },
         })
+
+        // Send payment success email
+        if (userPlans?.email && userPlans?.name) {
+          try {
+            await sendPaymentSuccessEmail(
+              userPlans.email,
+              userPlans.name,
+              planName,
+              session.amount_total ? session.amount_total / 100 : 0, // Convert from cents
+              planPeriod
+            )
+            console.log(`Payment success email sent to ${userPlans.email}`)
+          } catch (emailError) {
+            console.error('Error sending payment success email:', emailError)
+            // Don't throw error - email failure shouldn't break payment processing
+          }
+        }
       }
     }
   }
