@@ -25,6 +25,7 @@ interface UserInfo {
       name: string;
       email: string;
       status: string;
+      businessVerificationStatus: string;
       phoneNumbers: {
         id: string;
         name: string;
@@ -88,6 +89,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           whatsappAccount: {
             id: response.data.userData.whatsappAccount.id,
             status: response.data.userData.whatsappAccount.status,
+            businessVerificationStatus: response.data.userData.whatsappAccount.businessVerificationStatus,
             phoneNumbers: phoneNumbers,
             activePhoneNumber: activePhoneNumber,
           },

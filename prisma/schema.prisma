@@ -111,6 +111,8 @@ model WhatsAppAccount {
 
   displayName     String
   verified        Boolean               @default(false)
+  healthStatus    Json?
+  businessVerificationStatus String?     @default("unverified") // verified, unverified, rejected
   status          String                @default("INACTIVE") // ACTIVE, SUSPENDED, DELETED
 
   createdAt       DateTime              @default(now())

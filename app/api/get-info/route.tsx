@@ -34,6 +34,7 @@ export async function GET(request: Request) {
               },
             },
             status: true,
+            businessVerificationStatus: true,
           }
         },
       },
@@ -53,6 +54,7 @@ export async function GET(request: Request) {
       whatsappAccount: {
         id: user?.whatsAppAccount?.id,
         status: user?.whatsAppAccount?.status,
+        businessVerificationStatus: user?.whatsAppAccount?.businessVerificationStatus,
         phoneNumbers: user?.whatsAppAccount?.phoneNumbers,
         codeVerificationStatus: user?.whatsAppAccount?.phoneNumbers[0]?.codeVerificationStatus,
       },

@@ -53,8 +53,8 @@ export default function DashboardPage() {
     }
 
     if (
-      userInfo?.whatsappAccount?.status &&
-    userInfo?.whatsappAccount?.status === "ACTIVE"
+      userInfo?.whatsappAccount?.businessVerificationStatus &&
+    userInfo?.whatsappAccount?.businessVerificationStatus === "verified"
     ) {
       setIsVerified(true);
     } else {

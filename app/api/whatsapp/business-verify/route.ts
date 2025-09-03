@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'WhatsApp account not found' }, { status: 404 });
     }
     
-    const response = await axios.get(`https://graph.facebook.com/v23.0/${whatsappAccount.wabaid}?fields=status,name`, {
+    const response = await axios.get(`https://graph.facebook.com/v23.0/${whatsappAccount.wabaid}?fields=status,name,health_status,business_verification_status`, {
       headers: {
         Authorization: `Bearer ${whatsappAccount.accessToken}`,
       },
@@ -32,16 +32,18 @@ export async function POST(request: Request) {
       where: { id: whatsappAccount.id },
       data: { 
         status: response.data.status,
+        healthStatus: response.data.health_status,
+        businessVerificationStatus: response.data.business_verification_status,
         ...(response.data.name && { displayName: response.data.name }),
       },
     });
 
-    if (response.data.status === 'ACTIVE') {
+    if (response.data.business_verification_status === 'verified') {
       return NextResponse.json({ success: true, isVerified: true }, { status: 200 });
     } else {
       return NextResponse.json({ success: true, isVerified: false }, { status: 200 });
     }
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to verify WhatsApp account', details: error }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to verify WhatsApp account' , success: false, isVerified: false }, { status: 500 });
   }
 }

@@ -21,6 +21,9 @@ export default function BusinessVerificationCardContent({
       if (res.data.isVerified) {
         setIsVerified(true);
         toast.success("WhatsApp account verified successfully!");
+      }
+      else if (res.data.isVerified === false && res.data.success === true) {
+        toast.error("Your Meta Business Account is not verified. Please contact support.");
       } else {
         toast.error("Failed to verify WhatsApp account. Please try again.");
       }
