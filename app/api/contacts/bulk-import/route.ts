@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Process contacts in batches of 10
-    const batchSize = 10;
+    const batchSize = 20;
     for (let i = 0; i < contactsToProcess.length; i += batchSize) {
       const batch = contactsToProcess.slice(i, i + batchSize);
       
