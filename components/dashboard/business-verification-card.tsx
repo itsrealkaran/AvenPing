@@ -1,14 +1,44 @@
 import { Button } from "@/components/ui/button";
-import { CheckCircle, AlertCircle } from "lucide-react";
+import axios from "axios";
+import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 type Props = {
   isVerified: boolean;
+  setIsVerified: (isVerified: boolean) => void;
 };
 
-export default function BusinessVerificationCardContent({ isVerified }: Props) {
+export default function BusinessVerificationCardContent({
+  isVerified,
+  setIsVerified,
+}: Props) {
+  const [isLoading, setIsLoading] = useState(false);
+  const handleVerify = async () => {
+    setIsLoading(true);
+    try {
+      const res = await axios.post("/api/whatsapp/business-verify");
+      if (res.data.isVerified) {
+        setIsVerified(true);
+        toast.success("WhatsApp account verified successfully!");
+      } else {
+        toast.error("Failed to verify WhatsApp account. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error verifying WhatsApp account:", error);
+      toast.error("Failed to verify WhatsApp account. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
     <div className="flex items-center justify-between">
-      {isVerified ? (
+      {isLoading ? (
+        <div className="flex items-center gap-3 text-green-600">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <p className="font-medium">Verifying WhatsApp account...</p>
+        </div>
+      ) : isVerified ? (
         <div className="flex items-center gap-3 text-green-600">
           <CheckCircle className="w-6 h-6" />
           <p className="font-medium">
@@ -28,12 +58,7 @@ export default function BusinessVerificationCardContent({ isVerified }: Props) {
           <Button
             size="sm"
             className="text-black"
-            onClick={() => {
-              window.open(
-                "https://business.facebook.com/latest/settings/security_center/",
-                "_blank"
-              );
-            }}
+            onClick={handleVerify}
           >
             Verify Now
           </Button>
