@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import nodemailer from "nodemailer"
 import redis from "@/lib/redis"
+import { sendForgotPasswordEmail } from "@/lib/email-utils"
 
-// Email transporter configuration
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-})
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,41 +29,7 @@ export async function POST(request: NextRequest) {
     await redis.setex(redisKey, 300, otp) // 300 seconds = 5 minutes
 
     // Email content
-    const mailOptions = {
-      from: "forgot-password <forgot-password@avenping.com>",
-      to: email,
-      subject: "[No Reply] Password Reset OTP - AvenPing",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center;">
-            <h1 style="color: white; margin: 0;">AvenPing</h1>
-          </div>
-          <div style="padding: 30px; background: #f9f9f9;">
-            <h2 style="color: #333; margin-bottom: 20px;">Password Reset Request</h2>
-            <p style="color: #666; line-height: 1.6;">
-              You have requested to reset your password. Please use the following OTP to proceed:
-            </p>
-            <div style="background: #fff; border: 2px dashed #667eea; padding: 20px; margin: 20px 0; text-align: center;">
-              <h1 style="color: #667eea; font-size: 32px; margin: 0; letter-spacing: 5px;">${otp}</h1>
-            </div>
-            <p style="color: #666; line-height: 1.6;">
-              This OTP will expire in 5 minutes for security reasons.
-            </p>
-            <p style="color: #666; line-height: 1.6;">
-              If you didn't request this password reset, please ignore this email.
-            </p>
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-              <p style="color: #999; font-size: 12px;">
-                This is an automated email. Please do not reply to this message.
-              </p>
-            </div>
-          </div>
-        </div>
-      `,
-    }
-
-    // Send email
-    await transporter.sendMail(mailOptions)
+    await sendForgotPasswordEmail(email, otp);
 
     return NextResponse.json({ 
       message: "OTP sent successfully",

@@ -6,6 +6,7 @@ import { getSession } from "@/lib/jwt"
 import { PlanPeriod } from "@prisma/client"
 import { getPricingDetails } from "@/lib/get-pricing-details"
 import { getTotalContactsOrFlows } from "@/lib/subscription-utils"
+import { sendPaymentSuccessEmail } from "@/lib/email-utils"
 import crypto from "crypto"
 
 interface PriceJson {
@@ -177,6 +178,8 @@ export async function GET(request: NextRequest) {
           select: {
             signupStatus: true,
             plans: true,
+            email: true,
+            name: true,
           },
         })
   
@@ -198,6 +201,23 @@ export async function GET(request: NextRequest) {
                 ...(addonMaxLimit || {}),
               },
             })
+
+            // Send payment success email for addon update
+            if (userPlans?.email && userPlans?.name) {
+              try {
+                await sendPaymentSuccessEmail(
+                  userPlans.email,
+                  userPlans.name,
+                  `${planName} Add-on (Updated)`,
+                  Number(payment.amount) / 100, // Convert from paise to rupees
+                  `${months} month${months > 1 ? 's' : ''}`
+                )
+                console.log(`Payment success email sent to ${userPlans.email} for addon update`)
+              } catch (emailError) {
+                console.error('Error sending payment success email for addon update:', emailError)
+                // Don't throw error - email failure shouldn't break payment processing
+              }
+            }
             return
           }
 
@@ -219,6 +239,23 @@ export async function GET(request: NextRequest) {
               ...(addonMaxLimit || {}),
             },
           })
+
+          // Send payment success email for addon
+          if (userPlans?.email && userPlans?.name) {
+            try {
+              await sendPaymentSuccessEmail(
+                userPlans.email,
+                userPlans.name,
+                `${planName} Add-on`,
+                Number(payment.amount) / 100, // Convert from paise to rupees
+                `${months} month${months > 1 ? 's' : ''}`
+              )
+              console.log(`Payment success email sent to ${userPlans.email} for addon`)
+            } catch (emailError) {
+              console.error('Error sending payment success email for addon:', emailError)
+              // Don't throw error - email failure shouldn't break payment processing
+            }
+          }
         } else {
           // For regular plans, remove existing BASIC, PREMIUM, ENTERPRISE plans
           const basicPlanIndex = existingPlans.findIndex((p: any) => p.planName === "BASIC")
@@ -266,6 +303,23 @@ export async function GET(request: NextRequest) {
               endDate: endDate,
             },
           })
+
+          // Send payment success email for regular plan
+          if (userPlans?.email && userPlans?.name) {
+            try {
+              await sendPaymentSuccessEmail(
+                userPlans.email,
+                userPlans.name,
+                planName,
+                Number(payment.amount) / 100, // Convert from paise to rupees
+                planPeriod
+              )
+              console.log(`Payment success email sent to ${userPlans.email} for ${planName} plan`)
+            } catch (emailError) {
+              console.error('Error sending payment success email for regular plan:', emailError)
+              // Don't throw error - email failure shouldn't break payment processing
+            }
+          }
         }
       }
 

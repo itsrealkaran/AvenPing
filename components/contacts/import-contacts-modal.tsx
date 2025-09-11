@@ -52,7 +52,7 @@ const ImportContactsModal = ({ isOpen, onClose }: ImportContactsModalProps) => {
   const { userInfo } = useUser();
 
   // Batch size for processing contacts
-  const BATCH_SIZE = 50;
+  const BATCH_SIZE = 20;
 
   // Database fields that can be mapped
   const databaseFields = [
@@ -660,51 +660,54 @@ const ImportContactsModal = ({ isOpen, onClose }: ImportContactsModalProps) => {
                 </div>
               )}
 
-              {/* Progress Bar */}
-              {(isImporting || isProcessing) && (
-                <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium text-blue-700">
-                      {isProcessing ? "Processing Contacts..." : "Importing Contacts..."}
-                    </Label>
-                    <span className="text-xs text-blue-600 font-medium">
-                      {currentBatch > 0 && totalBatches > 0 ? `Batch ${currentBatch} of ${totalBatches}` : ""}
-                    </span>
-                  </div>
-                  
-                  {/* Main Progress Bar */}
-                  <div className="w-full bg-blue-200 rounded-full h-3">
-                    <div
-                      className="bg-[#30CFED] h-3 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    ></div>
-                  </div>
-                  
-                  {/* Progress Details */}
-                  <div className="flex items-center justify-between text-xs text-blue-600">
-                    <span>{Math.round(uploadProgress)}% complete</span>
-                    <span>{processedContacts} of {totalContacts} contacts processed</span>
-                  </div>
-                  
-                  {/* Batch Progress */}
-                  {isProcessing && totalBatches > 1 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs text-blue-600">
-                        <span>Batch Progress:</span>
-                        <span>{currentBatch} of {totalBatches}</span>
-                      </div>
-                      <div className="w-full bg-blue-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-400 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${(currentBatch / totalBatches) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </div>
+
+          {/* Progress Bar - Show when processing */}
+          { isProcessing && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium text-gray-700">
+                      Importing Contacts
+                    </span>
+                  </div>
+                  <span className="text-sm text-gray-600 mb-4">
+                    {processedContacts} of {totalContacts}
+                  </span>
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="relative">
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-300 ease-out relative"
+                      style={{ width: `${totalContacts > 0 ? (processedContacts / totalContacts) * 100 : 0}%` }}
+                    >
+                      {/* Animated shimmer effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"></div>
+                    </div>
+                  </div>
+                  
+                  {/* Progress percentage */}
+                  <div className="absolute -top-6 right-0 text-xs font-medium text-gray-600">
+                    {totalContacts > 0 ? Math.round((processedContacts / totalContacts) * 100) : 0}%
+                  </div>
+                </div>
+
+                {/* Batch progress */}
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>Batch {currentBatch} of {totalBatches}</span>
+                  <span className="flex items-center gap-1">
+                    <Users className="w-3 h-3" />
+                    {processedContacts} contacts processed
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Fixed Footer with Action Buttons */}
           <div className="flex gap-3 p-6 border-t border-gray-200 flex-shrink-0">

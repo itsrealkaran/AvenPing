@@ -53,9 +53,8 @@ export default function DashboardPage() {
     }
 
     if (
-      userInfo?.whatsappAccount?.activePhoneNumber &&
-      userInfo?.whatsappAccount?.activePhoneNumber?.codeVerificationStatus ===
-        "VERIFIED"
+      userInfo?.whatsappAccount?.businessVerificationStatus &&
+    userInfo?.whatsappAccount?.businessVerificationStatus === "verified"
     ) {
       setIsVerified(true);
     } else {
@@ -310,7 +309,7 @@ export default function DashboardPage() {
               : undefined
           }
         >
-          <BusinessVerificationCardContent isVerified={isVerified} />
+          <BusinessVerificationCardContent isVerified={isVerified} setIsVerified={setIsVerified} />
         </Card>
       </div>
 

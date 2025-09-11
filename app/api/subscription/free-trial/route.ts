@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         period: "FREE_TRIAL",
         amount: 0,
         currency: "USD",
-        endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       }
     })
 
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       period: "FREE_TRIAL",
       isAddOn: false,
       quantity: 0,
-      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     }]
 
     await prisma.user.update({

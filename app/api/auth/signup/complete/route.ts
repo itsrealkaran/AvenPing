@@ -1,3 +1,4 @@
+import { sendSignupCompleteEmail } from "@/lib/email-utils";
 import { createToken, getSession } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
@@ -51,6 +52,8 @@ export async function POST(request: NextRequest) {
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", 
       maxAge: 60 * 60 * 24 // 24 hours
     });
+
+    await sendSignupCompleteEmail(user.email, user.name);
   
     return response;
   } catch (error) {

@@ -24,6 +24,8 @@ interface UserInfo {
       id: string;
       name: string;
       email: string;
+      status: string;
+      businessVerificationStatus: string;
       phoneNumbers: {
         id: string;
         name: string;
@@ -100,8 +102,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           plans: response.data.userData.plans,
           whatsappAccount: {
             id: response.data.userData.whatsappAccount.id,
-            name: response.data.userData.whatsappAccount.name,
-            email: response.data.userData.whatsappAccount.email,
+            status: response.data.userData.whatsappAccount.status,
+            businessVerificationStatus: response.data.userData.whatsappAccount.businessVerificationStatus,
             phoneNumbers: phoneNumbers,
             activePhoneNumber: activePhoneNumber,
           },
@@ -148,6 +150,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           name: userInfo.name,
           email: userInfo.email,
           plans: userInfo.plans,
+          status: userInfo.status,
           whatsappAccount: {
             ...userInfo.whatsappAccount,
             activePhoneNumber: phoneNumbers,
