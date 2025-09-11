@@ -8,6 +8,7 @@ import {
   useEffect,
 } from "react";
 import { Node, Edge } from "@xyflow/react";
+import { useUser } from "./user-context";
 
 // Define the Flow type based on the existing structure
 export interface Flow {
@@ -69,6 +70,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { userInfo } = useUser();
 
   // Convert database flow to frontend flow format
   const convertDatabaseFlowToFlow = (dbFlow: DatabaseFlow): Flow => {
@@ -259,7 +261,7 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
           return await createFlow(newFlow);
         }
       } catch (err: any) {
-        const errorMessage = err|| "Failed to save flow";
+        const errorMessage = err || "Failed to save flow";
         setError(errorMessage);
         throw new Error(errorMessage);
       }
@@ -411,10 +413,16 @@ export const FlowProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
   }, []);
 
-  // Load flows on mount
+  // Load flows on mount and when user changes
   useEffect(() => {
-    fetchFlows();
-  }, [fetchFlows]);
+    if (userInfo?.whatsappAccount?.id) {
+      console.log("FlowProvider: User account available, fetching flows");
+      fetchFlows();
+    } else {
+      console.log("FlowProvider: No user account, clearing flows");
+      setFlows([]);
+    }
+  }, [fetchFlows, userInfo?.whatsappAccount?.id]);
 
   const value: FlowContextType = {
     flows,

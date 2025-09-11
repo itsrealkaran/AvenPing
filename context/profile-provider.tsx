@@ -1,9 +1,16 @@
-'use client';
+"use client";
 
-import { createContext, useContext, ReactNode, useState, useCallback, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import { useUser } from './user-context';
+import {
+  createContext,
+  useContext,
+  ReactNode,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { useUser } from "./user-context";
 
 interface WhatsAppProfile {
   about?: string;
@@ -31,42 +38,59 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const { userInfo: user } = useUser();
   const [phoneNumberId, setPhoneNumberId] = useState<string | null>(null);
 
-  // Set phone number ID when user info is available
-  const updatePhoneNumberId = useCallback(() => {
-    if (user?.whatsappAccount?.phoneNumbers?.[0]?.phoneNumberId) {
-      const newPhoneNumberId = user.whatsappAccount.phoneNumbers[0].phoneNumberId;
-      
+  // Update phone number ID when user info changes
+  useEffect(() => {
+    // Use activePhoneNumber if available, otherwise fall back to first phone number
+    const activePhone =
+      user?.whatsappAccount?.activePhoneNumber ||
+      user?.whatsappAccount?.phoneNumbers?.[0];
+
+    if (activePhone?.phoneNumberId) {
+      const newPhoneNumberId = activePhone.phoneNumberId;
+
       // Only update if the phone number ID has actually changed
       if (newPhoneNumberId !== phoneNumberId) {
+        console.log(
+          "ProfileProvider: Phone number changed, updating to:",
+          newPhoneNumberId
+        );
         setPhoneNumberId(newPhoneNumberId);
-        
-        // Clear profile query to force fresh data fetch
-        queryClient.removeQueries({ queryKey: ['whatsapp-profile'] });
+
+        // Invalidate profile query to trigger fresh data fetch
+        queryClient.invalidateQueries({ queryKey: ["whatsapp-profile"] });
+        queryClient.invalidateQueries({
+          queryKey: ["whatsapp-profile", newPhoneNumberId],
+        });
       }
     } else {
       // Reset if no user data
-      setPhoneNumberId(null);
-      queryClient.removeQueries({ queryKey: ['whatsapp-profile'] });
+      if (phoneNumberId !== null) {
+        console.log("ProfileProvider: No user data, resetting phone number");
+        setPhoneNumberId(null);
+        queryClient.invalidateQueries({ queryKey: ["whatsapp-profile"] });
+      }
     }
-  }, [user, phoneNumberId, queryClient]);
-
-  // Update phone number ID when user info changes
-  useEffect(() => {
-    updatePhoneNumberId();
-  }, [updatePhoneNumberId]);
+  }, [
+    user?.whatsappAccount?.activePhoneNumber,
+    user?.whatsappAccount?.phoneNumbers,
+    phoneNumberId,
+    queryClient,
+  ]);
 
   // Fetch profile data
-  const { 
-    data: profile, 
-    isLoading, 
-    error 
+  const {
+    data: profile,
+    isLoading,
+    error,
   } = useQuery({
-    queryKey: ['whatsapp-profile', phoneNumberId],
+    queryKey: ["whatsapp-profile", phoneNumberId],
     queryFn: async () => {
       if (!phoneNumberId) {
-        throw new Error('Phone number ID is required');
+        throw new Error("Phone number ID is required");
       }
-      const response = await axios.get(`/api/whatsapp/profile?phoneNumberId=${phoneNumberId}`);
+      const response = await axios.get(
+        `/api/whatsapp/profile?phoneNumberId=${phoneNumberId}`
+      );
       return response.data;
     },
     enabled: !!phoneNumberId,
@@ -76,14 +100,19 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const updateProfileMutation = useMutation({
     mutationFn: async (profileData: Partial<WhatsAppProfile>) => {
       if (!phoneNumberId) {
-        throw new Error('Phone number ID is required');
+        throw new Error("Phone number ID is required");
       }
-      const response = await axios.post(`/api/whatsapp/profile?phoneNumberId=${phoneNumberId}`, profileData);
+      const response = await axios.post(
+        `/api/whatsapp/profile?phoneNumberId=${phoneNumberId}`,
+        profileData
+      );
       return response.data;
     },
     onSuccess: () => {
       // Invalidate and refetch profile data
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-profile', phoneNumberId] });
+      queryClient.invalidateQueries({
+        queryKey: ["whatsapp-profile", phoneNumberId],
+      });
     },
   });
 
@@ -99,16 +128,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ProfileContext.Provider value={value}>
-      {children}
-    </ProfileContext.Provider>
+    <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>
   );
 }
 
 export function useProfile() {
   const context = useContext(ProfileContext);
   if (context === undefined) {
-    throw new Error('useProfile must be used within a ProfileProvider');
+    throw new Error("useProfile must be used within a ProfileProvider");
   }
   return context;
 }

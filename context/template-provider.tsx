@@ -76,9 +76,40 @@ export function TemplateProvider({ children }: TemplateProviderProps) {
 
   useEffect(() => {
     if (userInfo?.whatsappAccount?.id) {
-      setSelectedWhatsAppAccountId(userInfo.whatsappAccount.id);
+      const newAccountId = userInfo.whatsappAccount.id;
+
+      // Only update if the account ID has actually changed
+      if (newAccountId !== selectedWhatsAppAccountId) {
+        console.log(
+          "TemplateProvider: WhatsApp account changed, updating to:",
+          newAccountId
+        );
+        setSelectedWhatsAppAccountId(newAccountId);
+
+        // Invalidate templates query to trigger fresh data fetch
+        queryClient.invalidateQueries({ queryKey: ["templates"] });
+        queryClient.invalidateQueries({
+          queryKey: ["templates", newAccountId],
+        });
+
+        // Remove all cached data for the old account
+        if (selectedWhatsAppAccountId) {
+          queryClient.removeQueries({
+            queryKey: ["templates", selectedWhatsAppAccountId],
+          });
+        }
+      }
+    } else {
+      // Reset if no user data
+      if (selectedWhatsAppAccountId !== null) {
+        console.log("TemplateProvider: No user data, resetting account");
+        setSelectedWhatsAppAccountId(null);
+
+        // Clear all template-related queries
+        queryClient.removeQueries({ queryKey: ["templates"] });
+      }
     }
-  }, [userInfo, setSelectedWhatsAppAccountId]);
+  }, [userInfo?.whatsappAccount?.id, selectedWhatsAppAccountId, queryClient]);
 
   const fetchTemplates = async (
     whatsAppAccountId: string

@@ -1,9 +1,15 @@
-'use client';
+"use client";
 
-import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import { useUser } from './user-context';
+import {
+  createContext,
+  useContext,
+  ReactNode,
+  useState,
+  useEffect,
+} from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { useUser } from "./user-context";
 
 interface UserSetting {
   id: string;
@@ -36,10 +42,18 @@ interface SettingsContextType {
   isLoading: boolean;
   error: Error | null;
   toggleOptOut: () => Promise<void>;
-  updateNotificationSetting: (notificationType: string, isEnabled: boolean) => Promise<void>;
-  updateNotificationSettings: (settings: Array<{ notificationType: string; isEnabled: boolean }>) => Promise<void>;
+  updateNotificationSetting: (
+    notificationType: string,
+    isEnabled: boolean
+  ) => Promise<void>;
+  updateNotificationSettings: (
+    settings: Array<{ notificationType: string; isEnabled: boolean }>
+  ) => Promise<void>;
   updateOptOutKeywords: (keywords: string[]) => Promise<void>;
-  submitOBARequest: (phoneNumberId: string, data: OBARequestData) => Promise<void>;
+  submitOBARequest: (
+    phoneNumberId: string,
+    data: OBARequestData
+  ) => Promise<void>;
   obaStatus: OBAStatus | undefined;
   isOBAStatusLoading: boolean;
   obaStatusError: Error | null;
@@ -52,18 +66,24 @@ interface SettingsContextType {
   paymentHistoryError: Error | null;
 }
 
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+const SettingsContext = createContext<SettingsContextType | undefined>(
+  undefined
+);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const { userInfo: user } = useUser();
 
   // Fetch user settings
-  const { data: userSettings, isLoading, error } = useQuery({
-    queryKey: ['userSettings', user?.id],
+  const {
+    data: userSettings,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["userSettings", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const response = await axios.get('/api/settings');
+      const response = await axios.get("/api/settings");
       return response.data;
     },
     enabled: !!user?.id,
@@ -72,19 +92,25 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // Toggle opt-out mutation
   const toggleOptOutMutation = useMutation({
     mutationFn: async () => {
-      const response = await axios.post('/api/settings/toggle-opt-out');
+      const response = await axios.post("/api/settings/toggle-opt-out");
       return response.data;
     },
     onSuccess: () => {
       // Invalidate and refetch user settings
-      queryClient.invalidateQueries({ queryKey: ['userSettings', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["userSettings", user?.id] });
     },
   });
 
   // Update notification setting mutation
   const updateNotificationSettingMutation = useMutation({
-    mutationFn: async ({ notificationType, isEnabled }: { notificationType: string; isEnabled: boolean }) => {
-      const response = await axios.put('/api/settings/notification', {
+    mutationFn: async ({
+      notificationType,
+      isEnabled,
+    }: {
+      notificationType: string;
+      isEnabled: boolean;
+    }) => {
+      const response = await axios.put("/api/settings/notification", {
         notificationType,
         isEnabled,
       });
@@ -92,59 +118,86 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       // Invalidate and refetch user settings
-      queryClient.invalidateQueries({ queryKey: ['userSettings', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["userSettings", user?.id] });
     },
   });
 
   // Update all notification settings mutation
   const updateNotificationSettingsMutation = useMutation({
-    mutationFn: async (settings: Array<{ notificationType: string; isEnabled: boolean }>) => {
-      const response = await axios.put('/api/settings/notifications', { settings });
+    mutationFn: async (
+      settings: Array<{ notificationType: string; isEnabled: boolean }>
+    ) => {
+      const response = await axios.put("/api/settings/notifications", {
+        settings,
+      });
       return response.data;
     },
     onSuccess: () => {
       // Invalidate and refetch user settings
-      queryClient.invalidateQueries({ queryKey: ['userSettings', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["userSettings", user?.id] });
     },
   });
 
   // Update opt-out keywords mutation
   const updateOptOutKeywordsMutation = useMutation({
     mutationFn: async (keywords: string[]) => {
-      const response = await axios.put('/api/settings/opt-out-keywords', { keywords });
+      const response = await axios.put("/api/settings/opt-out-keywords", {
+        keywords,
+      });
       return response.data;
     },
     onSuccess: () => {
       // Invalidate and refetch user settings
-      queryClient.invalidateQueries({ queryKey: ['userSettings', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["userSettings", user?.id] });
     },
   });
 
   // Submit OBA request mutation
   const submitOBARequestMutation = useMutation({
-    mutationFn: async ({ phoneNumberId, data }: { phoneNumberId: string; data: OBARequestData }) => {
-      const response = await axios.post(`/api/oba/request?phoneNumberId=${phoneNumberId}`, data);
+    mutationFn: async ({
+      phoneNumberId,
+      data,
+    }: {
+      phoneNumberId: string;
+      data: OBARequestData;
+    }) => {
+      const response = await axios.post(
+        `/api/oba/request?phoneNumberId=${phoneNumberId}`,
+        data
+      );
       return response.data;
     },
   });
 
   // Get OBA status query - will be fetched when user has WhatsApp account
-  const { data: obaStatus, isLoading: isOBAStatusLoading, error: obaStatusError, refetch: refetchOBAStatus } = useQuery({
-    queryKey: ['obaStatus', user?.id],
+  const {
+    data: obaStatus,
+    isLoading: isOBAStatusLoading,
+    error: obaStatusError,
+    refetch: refetchOBAStatus,
+  } = useQuery({
+    queryKey: [
+      "obaStatus",
+      user?.id,
+      user?.whatsappAccount?.activePhoneNumber?.id,
+    ],
     queryFn: async () => {
-      if (!user?.id) return null;
-      
-      // For now, we'll need to get the phoneNumberId from the component
-      // This query will be enabled when we have the phoneNumberId
-      return null;
+      if (!user?.id || !user?.whatsappAccount?.activePhoneNumber?.id)
+        return null;
+
+      // Fetch OBA status for the current active phone number
+      const response = await axios.get(
+        `/api/oba/status?phoneNumberId=${user.whatsappAccount.activePhoneNumber.id}`
+      );
+      return response.data;
     },
-    enabled: false, // Disabled by default, will be enabled when phoneNumberId is available
+    enabled: !!(user?.id && user?.whatsappAccount?.activePhoneNumber?.id),
   });
 
   // Delete account mutation
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
-      const response = await axios.post('/api/settings/delete-account');
+      const response = await axios.post("/api/settings/delete-account");
       return response.data;
     },
   });
@@ -152,16 +205,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // disconnect whatsapp account mutation
   const disconnectWhatsappAccountMutation = useMutation({
     mutationFn: async () => {
-      const response = await axios.post('/api/settings/disconnect-whatsapp');
+      const response = await axios.post("/api/settings/disconnect-whatsapp");
       return response.data;
     },
   });
 
   // fetch payment history
   const paymentHistoryQuery = useQuery({
-    queryKey: ['paymentHistory', user?.id],
+    queryKey: ["paymentHistory", user?.id],
     queryFn: async () => {
-      const response = await axios.get('/api/subscription/payment-history');
+      const response = await axios.get("/api/subscription/payment-history");
       return response.data;
     },
   });
@@ -173,10 +226,18 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     toggleOptOut: async () => {
       await toggleOptOutMutation.mutateAsync();
     },
-    updateNotificationSetting: async (notificationType: string, isEnabled: boolean) => {
-      await updateNotificationSettingMutation.mutateAsync({ notificationType, isEnabled });
+    updateNotificationSetting: async (
+      notificationType: string,
+      isEnabled: boolean
+    ) => {
+      await updateNotificationSettingMutation.mutateAsync({
+        notificationType,
+        isEnabled,
+      });
     },
-    updateNotificationSettings: async (settings: Array<{ notificationType: string; isEnabled: boolean }>) => {
+    updateNotificationSettings: async (
+      settings: Array<{ notificationType: string; isEnabled: boolean }>
+    ) => {
       await updateNotificationSettingsMutation.mutateAsync(settings);
     },
     updateOptOutKeywords: async (keywords: string[]) => {
@@ -191,11 +252,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     refetchOBAStatus,
     fetchOBAStatus: async (phoneNumberId: string) => {
       // Update the query to fetch OBA status for the specific phone number
-      const response = await axios.get(`/api/oba/status?phoneNumberId=${phoneNumberId}`);
+      const response = await axios.get(
+        `/api/oba/status?phoneNumberId=${phoneNumberId}`
+      );
       const data = response.data as OBAStatus;
-      
+
       // Update the query cache manually
-      queryClient.setQueryData(['obaStatus', user?.id], data);
+      queryClient.setQueryData(["obaStatus", user?.id], data);
     },
     deleteAccount: async () => {
       await deleteAccountMutation.mutateAsync();
@@ -218,8 +281,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 export function useSettings() {
   const context = useContext(SettingsContext);
   if (context === undefined) {
-    throw new Error('useSettings must be used within a SettingsProvider');
+    throw new Error("useSettings must be used within a SettingsProvider");
   }
   return context;
 }
-
