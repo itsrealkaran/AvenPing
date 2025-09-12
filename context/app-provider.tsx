@@ -11,28 +11,29 @@ import { TemplateProvider } from "./template-provider";
 import { CampaignProvider } from "./campaign-provider";
 import { NotificationProvider } from "./notification-provider";
 import { SettingsProvider } from "./settings-provider";
+import { PhoneNumberProvider } from "./phone-number-context";
 
 export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <TanStackQueryProvider>
       <UserProvider>
-        <MessagesProvider>
-          <ProfileProvider>
-            <ContactProvider>
-              <FlowProvider>
-                <TemplateProvider>
-                  <CampaignProvider>
-                    <NotificationProvider>
-                      <SettingsProvider>
-                        {children}
-                      </SettingsProvider>
-                    </NotificationProvider>
-                  </CampaignProvider>
-                </TemplateProvider>
-              </FlowProvider>
-            </ContactProvider>
-          </ProfileProvider>
-        </MessagesProvider>
+        <PhoneNumberProvider>
+          <MessagesProvider>
+            <ProfileProvider>
+              <ContactProvider>
+                <FlowProvider>
+                  <TemplateProvider>
+                    <CampaignProvider>
+                      <NotificationProvider>
+                        <SettingsProvider>{children}</SettingsProvider>
+                      </NotificationProvider>
+                    </CampaignProvider>
+                  </TemplateProvider>
+                </FlowProvider>
+              </ContactProvider>
+            </ProfileProvider>
+          </MessagesProvider>
+        </PhoneNumberProvider>
       </UserProvider>
     </TanStackQueryProvider>
   );

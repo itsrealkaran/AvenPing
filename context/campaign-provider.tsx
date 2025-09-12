@@ -10,6 +10,7 @@ import React, {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useTemplates } from "./template-provider";
+import { useUser } from "./user-context";
 
 export interface Campaign {
   id: string;
@@ -64,6 +65,45 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   const { templates } = useTemplates();
+  const { userInfo } = useUser();
+
+  // Update WhatsApp account ID when user info changes
+  useEffect(() => {
+    if (userInfo?.whatsappAccount?.id) {
+      const newAccountId = userInfo.whatsappAccount.id;
+
+      // Only update if the account ID has actually changed
+      if (newAccountId !== selectedWhatsAppAccountId) {
+        console.log(
+          "CampaignProvider: WhatsApp account changed, updating to:",
+          newAccountId
+        );
+        setSelectedWhatsAppAccountId(newAccountId);
+
+        // Invalidate campaigns query to trigger fresh data fetch
+        queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+        queryClient.invalidateQueries({
+          queryKey: ["campaigns", newAccountId],
+        });
+
+        // Remove all cached data for the old account
+        if (selectedWhatsAppAccountId) {
+          queryClient.removeQueries({
+            queryKey: ["campaigns", selectedWhatsAppAccountId],
+          });
+        }
+      }
+    } else {
+      // Reset if no user data
+      if (selectedWhatsAppAccountId !== null) {
+        console.log("CampaignProvider: No user data, resetting account");
+        setSelectedWhatsAppAccountId(null);
+
+        // Clear all campaign-related queries
+        queryClient.removeQueries({ queryKey: ["campaigns"] });
+      }
+    }
+  }, [userInfo?.whatsappAccount?.id, selectedWhatsAppAccountId, queryClient]);
 
   // Fetch campaigns
   const {

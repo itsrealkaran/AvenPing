@@ -157,6 +157,8 @@ export default function Sidebar({
   const handleLogout = async () => {
     const response = await axios.post("/api/auth/signout");
     if (response.status === 200) {
+      // Clear saved phone number choice on logout
+      sessionStorage.removeItem("selectedPhoneNumber");
       router.push("/login");
     }
   };

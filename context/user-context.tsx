@@ -78,8 +78,22 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       if (response.data.userData.whatsappAccount) {
         const phoneNumbers =
           response.data.userData.whatsappAccount.phoneNumbers || [];
-        const activePhoneNumber =
-          phoneNumbers.length > 0 ? phoneNumbers[0] : null;
+
+        // Check sessionStorage for saved phone number choice
+        const savedPhoneNumber = sessionStorage.getItem("selectedPhoneNumber");
+        let activePhoneNumber = null;
+
+        if (savedPhoneNumber && phoneNumbers.length > 0) {
+          // Try to find the saved phone number in the available phone numbers
+          activePhoneNumber = phoneNumbers.find(
+            (phone: any) => phone.phoneNumber === savedPhoneNumber
+          );
+        }
+
+        // Fallback to first phone number if saved choice not found or no saved choice
+        if (!activePhoneNumber && phoneNumbers.length > 0) {
+          activePhoneNumber = phoneNumbers[0];
+        }
 
         setUserInfo({
           id: response.data.userData.id,
@@ -95,12 +109,16 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           },
         });
       } else {
+        // Clear saved phone number if no WhatsApp account
+        sessionStorage.removeItem("selectedPhoneNumber");
         setUserInfo({
           plans: [],
           whatsappAccount: null,
         });
       }
     } catch (error) {
+      // Clear saved phone number on error
+      sessionStorage.removeItem("selectedPhoneNumber");
       setUserInfo({
         plans: [],
         whatsappAccount: null,
@@ -123,6 +141,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       );
       if (phoneNumbers) {
         console.log("UserContext: Setting active phone number:", phoneNumbers);
+
+        // Save the selected phone number to sessionStorage
+        sessionStorage.setItem("selectedPhoneNumber", phoneNumber);
+
         setUserInfo({
           id: userInfo.id,
           name: userInfo.name,

@@ -114,29 +114,51 @@ export function ContactProvider({ children }: { children: ReactNode }) {
   const [phoneNumberId, setPhoneNumberId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Set phone number ID when user info is available
-  const updatePhoneNumberId = useCallback(() => {
-    if (user?.whatsappAccount?.phoneNumbers?.[0]?.id) {
-      const newPhoneNumberId = user.whatsappAccount.phoneNumbers[0].id;
+  // Update phone number ID when user info changes
+  useEffect(() => {
+    // Use activePhoneNumber if available, otherwise fall back to first phone number
+    const activePhone =
+      user?.whatsappAccount?.activePhoneNumber ||
+      user?.whatsappAccount?.phoneNumbers?.[0];
+
+    if (activePhone?.id) {
+      const newPhoneNumberId = activePhone.id;
 
       // Only update if the phone number ID has actually changed
       if (newPhoneNumberId !== phoneNumberId) {
+        console.log(
+          "ContactProvider: Phone number changed, updating to:",
+          newPhoneNumberId
+        );
         setPhoneNumberId(newPhoneNumberId);
 
-        // Clear contacts query to force fresh data fetch
-        queryClient.removeQueries({ queryKey: ["contacts"] });
+        // Invalidate contacts query to trigger fresh data fetch
+        queryClient.invalidateQueries({ queryKey: ["contacts"] });
+        queryClient.invalidateQueries({
+          queryKey: ["contacts", newPhoneNumberId],
+        });
+
+        // Remove all cached data for the old phone number
+        if (phoneNumberId) {
+          queryClient.removeQueries({ queryKey: ["contacts", phoneNumberId] });
+        }
       }
     } else {
       // Reset if no user data
-      setPhoneNumberId(null);
-      queryClient.removeQueries({ queryKey: ["contacts"] });
-    }
-  }, [user, phoneNumberId, queryClient]);
+      if (phoneNumberId !== null) {
+        console.log("ContactProvider: No user data, resetting phone number");
+        setPhoneNumberId(null);
 
-  // Update phone number ID when user info changes
-  useEffect(() => {
-    updatePhoneNumberId();
-  }, [updatePhoneNumberId]);
+        // Clear all contact-related queries
+        queryClient.removeQueries({ queryKey: ["contacts"] });
+      }
+    }
+  }, [
+    user?.whatsappAccount?.activePhoneNumber,
+    user?.whatsappAccount?.phoneNumbers,
+    phoneNumberId,
+    queryClient,
+  ]);
 
   // Fetch contacts
   const {
