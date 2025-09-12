@@ -58,6 +58,11 @@ enum SubscriptionStatus {
   CANCELLED
 }
 
+enum userStatus {
+  ACTIVE
+  SUSPENDED
+}
+
 enum SignupStatus {
   REGISTERED
   PAID
@@ -87,7 +92,7 @@ model User {
   whatsAppAccount WhatsAppAccount? @relation("UserWhatsAppAccount", fields: [whatsAppAccountId], references: [id])
   whatsAppAccountId String? @unique
 
-  status SubscriptionStatus @default(PENDING)
+  status userStatus @default(ACTIVE)
   expiresAt DateTime?
 
   plans Json[] // { [planName: string, period: string, isAddOn: boolean, quantity?: number, endDate: string] }
