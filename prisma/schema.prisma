@@ -87,6 +87,9 @@ model User {
   maxContacts Int @default(0)
   maxFlows    Int @default(0)
 
+  code        String?
+  webhookUrl  String?
+
   signupStatus SignupStatus @default(REGISTERED)
 
   whatsAppAccount WhatsAppAccount? @relation("UserWhatsAppAccount", fields: [whatsAppAccountId], references: [id])

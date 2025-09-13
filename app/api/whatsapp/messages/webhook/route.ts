@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
                   });
 
                   const recipient = whatsAppPhoneNumber.recipients.find(
-                    (recipient) => recipient.phoneNumber === phoneNumber
+                    (recipient: any) => recipient.phoneNumber === phoneNumber
                   );
 
                   if (recipient && recipient.activeCampaignId) {
@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
             ) {
               for (const message of change.value.messages) {
                 const recipient = whatsAppPhoneNumber.recipients.find(
-                  (recipient) => recipient.phoneNumber === message.from
+                  (recipient: any) => recipient.phoneNumber === message.from
                 );
                 let isOptedOut = false;
                 // Check for opt-out in text messages or button responses
@@ -270,7 +270,7 @@ export async function POST(req: NextRequest) {
                     });
                   }
                 } else {
-                  const newData = await prisma.$transaction(async (tx) => {
+                  const newData = await prisma.$transaction(async (tx: any) => {
                     const newRecipient = await tx.whatsAppRecipient.create({
                       data: {
                         phoneNumber: message.from,
@@ -328,6 +328,18 @@ export async function POST(req: NextRequest) {
                     } catch (flowError) {
                       console.error('Error processing flow:', flowError);
                     }
+                  }
+
+                  // send the new lead to the user's webhook endpoint
+                  if (whatsAppPhoneNumber.account.user?.webhookUrl) {
+                    await fetch(whatsAppPhoneNumber.account.user.webhookUrl, {
+                      method: 'POST',
+                      body: JSON.stringify({ newLead: {
+                        name: newData.newRecipient.name,
+                        phoneNumber: newData.newRecipient.phoneNumber,
+                        messages: newData.newRecipient.messages,
+                      } }),
+                    });
                   }
                 }
 
@@ -398,6 +410,14 @@ export async function POST(req: NextRequest) {
                   },
                 };
                 await sendMessageToUserSafe(whatsAppPhoneNumber.account.id!, eventData);
+
+                // send the new message to the user's webhook endpoint
+                if (whatsAppPhoneNumber.account.user?.webhookUrl) {
+                  await fetch(whatsAppPhoneNumber.account.user.webhookUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ newMessage: message }),
+                  });
+                }
               }
             }
           }
