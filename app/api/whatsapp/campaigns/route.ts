@@ -178,7 +178,7 @@ export async function POST(request: Request) {
 
       try {
         // Send all data to the message API, let it handle personalization
-        const messageResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/whatsapp/messages/send-template-message`, {
+        const messageResponse = axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/whatsapp/messages/send-template-message`, {
           contacts: selectedContacts,
           templateName,
           templateData,
@@ -192,18 +192,6 @@ export async function POST(request: Request) {
           },
         });
 
-        console.log("Message creation response:", messageResponse.data);
-
-        // Update campaign status to COMPLETED if messages were sent successfully
-        if (messageResponse.status === 200) {
-          await prisma.whatsAppCampaign.update({
-            where: { id: campaign.id },
-            data: {
-              status: "COMPLETED",
-              completedAt: new Date(),
-            },
-          });
-        }
       } catch (messageError: any) {
         console.error("Error creating messages:", messageError);
         
